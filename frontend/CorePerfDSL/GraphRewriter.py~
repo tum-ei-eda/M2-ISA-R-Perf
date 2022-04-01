@@ -1,0 +1,101 @@
+# 
+# Copyright 2022 Chair of EDA, Technical University of Munich
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# 
+#       http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+import Instances as inst # TODO: Remove? Only used for InstructionInstance. Create in Description?
+
+import copy
+
+class GraphRewriter:
+
+    def __init__(self, description_):
+        self.description = description_
+        self.modelTrees = []
+        
+    def generateInstrList(self):
+
+        all_flag = False
+        
+        for map in self.description.microactionMappingList.getList():
+            if(map.singleInstr):
+                if map.instrName == "[ALL]":
+                    all_flag = True
+                instr = inst.InstructionInstance(map.instrName)
+                instr.microactions.extend(map.microactions)
+                self.description.instructionList.add(instr)
+            else:
+                for instr_i in map.instrGr.instructions:
+                    if(instr_i == "[?]"):
+                        instr = inst.InstructionInstance("_default_")
+                    else:
+                        instr = inst.InstructionInstance(instr_i)
+                    instr.microactions.extend(map.microactions)
+                    self.description.instructionList.add(instr)
+            
+        if all_flag:
+            all_microactions = self.description.instructionList.get("[ALL]").microactions
+            for instr_i in self.description.instructionList.getList():
+                if(instr_i.name != "[ALL]"):
+                    instr_i.microactions.extend(all_microactions)
+            self.description.instructionList.delete("[ALL]")
+
+    def extractModelTrees(self):
+        
+        for corePerfModel in self.description.corePerfModelList.getList():
+
+            virResources = []
+            virMicroactions = []
+            supportedMicroactions = []
+
+            corePerfModel.instrList = self.description.instructionList
+            modelTree = copy.deepcopy(corePerfModel)
+
+            # Find virt. instances and supported microactions
+            for st in modelTree.pipeline.stages:
+                for uA in st.microactions:
+                    supportedMicroactions.append(uA)
+                    if uA.isVirtual():
+                        virMicroactions.append(uA)
+                    else:
+                        if uA.resource is not None:
+                            if uA.resource.isVirtual():
+                                virResources.append(uA.resource)
+            
+            # Check if corePerfModel provides all required microactions
+            for (vuA, uA) in modelTree.microactionAssignments:
+                if vuA in supportedMicroactions:
+                    supportedMicroactions.append(uA) # TODO: This might no be necessary. Instruction mapping likely to use virtual instances!?
+
+            for instr in modelTree.instrList.getList():
+                for uA in instr.microactions:
+                    if uA not in supportedMicroactions:
+                        print("ERROR: Instruction %s requires %s microaction. Not provided by CorePerfModel %s" % (instr.name, uA.name, modelTree.name))
+                        
+            # Resolve virtual instances
+            for (vuA, uA) in modelTree.microactionAssignments:
+                vuA.replaceVirtual(uA)
+                virMicroactions.remove(vuA)
+            for vuA in virMicroactions:
+                print("ERROR: CorePerfModel %s does not assign a microaction to virtual microaction %s" % (modelTree.name, vuA.name))
+                
+                
+            for (vRes, res) in modelTree.resourceAssignments:
+                vRes.replaceVirtual(res)
+                virResources.remove(vRes)
+            for vRes in virResources:
+                print("ERROR: CorePerfModel %s does not assign a resource to virtual resource %s" % (modelTree.name, vRes.name))
+
+            #Store model tree
+            self.modelTrees.append(modelTree)

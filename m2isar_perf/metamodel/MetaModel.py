@@ -44,6 +44,52 @@ class CorePerfModel(MetaModel_base):
         self.instructions = []
 
         super().__init__()
+
+    def getAllStages(self):
+
+        if self.pipeline is None:
+            raise TypeError("Cannot call MetaModel.CorePerfModel.getAllStages before a pipeline has been assigned!")
+
+        stages = []
+        for st in self.pipeline.stages:
+            stages.append(st)
+
+        return stages
+
+    def getAllMicroactions(self):
+
+        microactions = []
+        for st in self.getAllStages():
+            for uA in st.microactions:
+                microactions.append(uA)
+
+        return microactions
+
+    def getAllConnectorModels(self):
+        return self.connectorModels
+        
+    def getAllResourceModels(self):
+        return self.resourceModels
+        
+    def getAllInstructions(self):
+        return self.instructions
+    
+    def getPipelineUsageDict(self):
+        pipelineUsageDict = {}
+        
+        for instr in self.instructions:
+            pipelineUsage = {}
+   
+            for st in self.getAllStages():
+                usedMicroactions = []
+                for uA in st.microactions:
+                    if uA in instr.microactions:
+                        usedMicroactions.append(uA)
+
+                pipelineUsage[st.name] = usedMicroactions
+
+            pipelineUsageDict[instr.name] = pipelineUsage
+        return pipelineUsageDict                
         
 class Pipeline(MetaModel_base):
 
@@ -69,9 +115,9 @@ class Microaction(MetaModel_base):
         self.inConnector = None
         self.resource = None
         self.outConnector = None
-
+         
         super().__init__()
-        
+
 class Resource(MetaModel_base):
 
     def __init__(self):

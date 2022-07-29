@@ -57,9 +57,11 @@ def main(description_, outdir_=None):
             pickle.dump(top, f)
         
     return top
-    
+
+# Run this if frontend is called stand-alone (i.e. this file is directly called)
 if __name__ == '__main__':
 
+    # Parse command line arguments
     argParser = argparse.ArgumentParser()
     argParser.add_argument("description", help="File containing the CorePerfDSL description.")
     argParser.add_argument("-o", "--output_dir", help="Directory to store generated model.")

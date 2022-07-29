@@ -29,4 +29,4 @@ class ModelGen():
 
     def buildModel(self):
         builder = Builder(self.dictionary)
-        top = builder.buildTopModel()
+        return builder.buildTopModel()

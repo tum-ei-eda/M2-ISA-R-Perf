@@ -70,20 +70,18 @@ class Builder():
                 virRes.resourceModel = res.resourceModel
 
             # Check that all virtual components of CorePerfModel have been resolved and link resource models to corePerfModel
-            # TODO: For-loops like this assume a certain structure of the Meta-Model. Avoid by used of API e.g.: corePerfModel.getMicroactions()?
-            for st in corePerfModel.pipeline.stages:
-                for uA in st.microactions:
-                    if uA.name == "":
-                        print("ERROR: CorePerfModel %s does not assign a microaction to virtual microaction %s" % (corePerfModel.name, uA.virtualAlias)) # Add proper error handling
-                    else:
-                        res = uA.resource
-                        if res is not None:
-                            if res.name == "":
-                                print("ERROR: CorePerfModel %s does not assign a microaction to virtual microaction %s" % (corePerfModel.name, res.virtualAlias)) # Add proper error handling
-                            else:
-                                resModel = res.resourceModel
-                                if resModel is not None:
-                                    corePerfModel.resourceModels.append(resModel)
+            for uA in corePerfModel.getAllMicroactions():
+                if uA.name == "":
+                    print("ERROR: CorePerfModel %s does not assign a microaction to virtual microaction %s" % (corePerfModel.name, uA.virtualAlias)) # Add proper error handling
+                else:
+                    res = uA.resource
+                    if res is not None:
+                        if res.name == "":
+                            print("ERROR: CorePerfModel %s does not assign a microaction to virtual microaction %s" % (corePerfModel.name, res.virtualAlias)) # Add proper error handling
+                        else:
+                            resModel = res.resourceModel
+                            if resModel is not None:
+                                corePerfModel.resourceModels.append(resModel)
             
             # Establish link from Connectors to ConnectorModel & set connector type
             #   (Remember: Connector type is set seen from perspective of microaction.
@@ -98,10 +96,9 @@ class Builder():
                     self.__setConnectorType(outCon, Defs.CON_TYPE_IN, conModel, corePerfModel)
 
             # Check that there are no connectors without a connector model & that connector type matches microaction
-            for st in corePerfModel.pipeline.stages:
-                for uA in st.microactions:
-                    self.__checkConnector(uA.inConnector, Defs.CON_TYPE_IN, uA, corePerfModel)
-                    self.__checkConnector(uA.outConnector, Defs.CON_TYPE_OUT, uA, corePerfModel)
+            for uA in corePerfModel.getAllMicroactions():
+                self.__checkConnector(uA.inConnector, Defs.CON_TYPE_IN, uA, corePerfModel)
+                self.__checkConnector(uA.outConnector, Defs.CON_TYPE_OUT, uA, corePerfModel)
                         
             # Add finalized CorePerfModel to TopModel
             top.corePerfModels.append(corePerfModel)

@@ -17,6 +17,8 @@
 #!/usr/bin/env python3
 
 import argparse
+import pathlib
+import pickle
 import sys
 
 # Read command line arguments
@@ -32,5 +34,10 @@ if args.description.endswith('.corePerfDsl'):
 else:
     sys.exit("FATAL: Description format is not supported. Currently only supporting files of type .corePerfDsl")
 
+# Import backend
+import backends.estimator_gen.run as backend
+    
 # Call frontend
 model = frontend.main(args.description, args.dump_dir)
+
+backend.main(model)

@@ -35,7 +35,8 @@ else:
     sys.exit("FATAL: Description format is not supported. Currently only supporting files of type .corePerfDsl")
 
 # Import backend
-import backends.estimator_gen.run as backend
+#import backends.estimator_gen.run as backend
+import backends.graph_printer.run as backend
     
 # Call frontend
 model = frontend.main(args.description, args.dump_dir)

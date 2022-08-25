@@ -31,6 +31,9 @@ class TopModel(MetaModel_base):
         self.corePerfModels = []
 
         super().__init__()
+
+    def getAllCorePerfModels(self):
+        return self.corePerfModels
         
 class CorePerfModel(MetaModel_base):
 
@@ -73,6 +76,9 @@ class CorePerfModel(MetaModel_base):
         
     def getAllInstructions(self):
         return self.instructions
+
+    def getPipeline(self):
+        return self.pipeline
     
     def getPipelineUsageDict(self):
         pipelineUsageDict = {}
@@ -83,7 +89,7 @@ class CorePerfModel(MetaModel_base):
             for st in self.getAllStages():
                 usedMicroactions = []
                 for uA in st.microactions:
-                    if uA in instr.microactions:
+                    if uA in instr.getUsedMicroactions():
                         usedMicroactions.append(uA)
 
                 pipelineUsage[st.name] = usedMicroactions
@@ -106,6 +112,9 @@ class Stage(MetaModel_base):
         self.microactions = []
 
         super().__init__()
+
+    def getUsedMicroactions(self):
+        return self.microactions
         
 class Microaction(MetaModel_base):
 
@@ -118,6 +127,15 @@ class Microaction(MetaModel_base):
          
         super().__init__()
 
+    def getInConnector(self):
+        return self.inConnector
+
+    def getResource(self):
+        return self.resource
+
+    def getOutConnector(self):
+        return self.outConnector
+        
 class Resource(MetaModel_base):
 
     def __init__(self):
@@ -134,8 +152,11 @@ class Connector(MetaModel_base):
         self.name = ""
         self.connectorModel = None
         self.connectorType = ""
-
+        
         super().__init__()
+
+    def getConnectorModel(self):
+        return self.connectorModel
         
 class ResourceModel(MetaModel_base):
 
@@ -174,3 +195,6 @@ class Instruction(MetaModel_base):
         self.traceValueAssignments = []
         
         super().__init__()
+
+    def getUsedMicroactions(self):
+        return self.microactions

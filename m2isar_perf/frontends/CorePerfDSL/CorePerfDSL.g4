@@ -15,7 +15,7 @@ connectorModel_def : 'ConnectorModel' (connectorModel | '{' connectorModel (',' 
 
 connectorModel : name=ID '(' (
 	      'trace' ':' (traceVals+=traceValue_ref | '{' traceVals+=traceValue_ref (',' traceVals+=traceValue_ref)* '}')
-	      | 'link' ':' link=ID
+	      | 'link' ':' link=FILE
 	      | 'connectorIn' ':' (inCons+=connector_ref | '{' inCons+=connector_ref (',' inCons+=connector_ref)* '}')
 	      | 'connectorOut' ':' (outCons+=connector_ref | '{' outCons+=connector_ref (',' outCons+=connector_ref)* '}')
 	      )* ')'
@@ -27,7 +27,7 @@ resourceModel_def : 'ResourceModel' (resourceModel | '{' resourceModel (',' reso
 
 resourceModel : name=ID '(' (
 	      'trace' ':' (traceVals+=traceValue_ref | '{' traceVals+=traceValue_ref (',' traceVals+=traceValue_ref)* '}')
-	      | 'link' ':' link=ID
+	      | 'link' ':' link=FILE
 	      )* ')'
 ;
 
@@ -53,8 +53,8 @@ microactionMapping : instr=instructionOrInstrGroup_ref ':' (microactions+=microa
 
 instrGroup_def : 'InstrGroup' (instrGroup | '{' instrGroup (',' instrGroup)* '}');
 
-instrGroup : name=ID '(' instructions+=ID (',' instructions+=ID)* ')';
-//instrGroup : name=ID '(' instructions+=(ID|KEYWORD_REST) (',' instructions+=(ID|KEYWORD_REST))* ')';
+//instrGroup : name=ID '(' instructions+=ID (',' instructions+=ID)* ')';
+instrGroup : name=ID '(' instructions+=(ID|KEYWORD_REST) (',' instructions+=(ID|KEYWORD_REST))* ')';
 
 //////////////////////////// CORE_PERFORMANCE_MODEL ////////////////////////////
 
@@ -121,8 +121,6 @@ traceValue_assign: trVal=traceValue_ref '=' '"' description=ID '"';
 
 //////////////////////////// REFERENCES ////////////////////////////
 
-//instruction_ref : name=(ID|KEYWORD_REST);
-
 connector_ref : name=ID ;
 
 traceValue_ref : name=ID ; 
@@ -137,7 +135,9 @@ resourceOrConnector_ref : name=ID ;
 
 microaction_ref : name=ID ;
 
-instructionOrInstrGroup_ref : name=(ID|KEYWORD_ALL|KEYWORD_REST) ;
+//instruction_ref : name=(ID|KEYWORD_REST);
+
+instructionOrInstrGroup_ref : name=(ID|KEYWORD_ALL) ;
 
 stage_ref : name=ID ;
 
@@ -147,10 +147,11 @@ pipeline_ref : name=ID ;
 
 ID : [a-zA-Z] [a-zA-Z0-9_]*  ;
 INT : [0-9][0-9]* ;
+FILE : [a-zA-Z] [a-zA-Z0-9_./]*  ;
 
 KEYWORD_ALL  : '[ALL]' ;
 KEYWORD_REST : '[?]' ;
 
 ML_COMMENT: '/*' .*? '*/' -> skip;
-SL_COMMENT: '//' ~('\n'|'r')* ('r'? '\n')? -> skip;
+SL_COMMENT: '//' ~('\n'|'\r')* ('\r'? '\n')? -> skip;
 WS: [ \t\r\n]+ -> skip;

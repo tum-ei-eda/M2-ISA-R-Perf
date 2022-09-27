@@ -34,7 +34,7 @@ def main(description_, outdir_=None):
     modelGen = ModelGen()
     modelGen.extractInstances(tree)
     top = modelGen.buildModel()
-
+    
     # If outdir is set, dump top-model to file
     if outdir is not None:
         print("")

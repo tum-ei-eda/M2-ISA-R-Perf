@@ -58,7 +58,7 @@ class Builder():
                 viruAct.name = uAct.name
                 viruAct.inConnector = uAct.inConnector
                 viruAct.resource = uAct.resource
-                viruAct.outConnector = viruAct.outConnector
+                viruAct.outConnector = uAct.outConnector
 
             # Resolve virtual resources
             for resAss in corePerfModel.resourceAssignments:

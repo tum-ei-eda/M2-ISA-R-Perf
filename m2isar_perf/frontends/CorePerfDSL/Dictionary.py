@@ -105,7 +105,7 @@ class Dictionary():
     def addMicroaction(self, name_, refs_):
         uAction = MetaModel.Microaction()
         uAction.name = name_
-
+        
         # Evaluate references (inCon -> Res -> outCon)
         if(len(refs_)>0 and len(refs_)<4):
             nextType = "inCon_or_res"

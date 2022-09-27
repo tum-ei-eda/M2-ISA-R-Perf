@@ -42,6 +42,9 @@ class MathModel(MetaMathModel_base):
     def addCorePerfModel(self, corePerfMod_):
         self.corePerfModels.append(corePerfMod_)
 
+    def getAllCorePerfModels(self):
+        return self.corePerfModels
+        
 class CorePerfModel(MetaMathModel_base):
 
     def __init__(self, name_):
@@ -76,7 +79,13 @@ class CorePerfModel(MetaMathModel_base):
         if self.pipeline is None:
             raise TypeError("Cannot call MetaMathModel.CorePerfModel.getAllStages before a pipeline has been assigned to the model (%s)" % self.name)
         return self.pipeline.getAllStages()
-        
+
+    def addInstruction(self, instr_):
+        self.instructions[instr_.name] = instr_
+    
+    def getInstructionDict(self):
+        return self.instructions
+    
 class Pipeline(MetaMathModel_base):
 
     def __init__(self, name_):
@@ -129,12 +138,18 @@ class Instruction(MetaMathModel_base):
 
         super().__init__()
 
+    def getTimeFunction(self):
+        return self.timeFunction
+        
 class TimeFunction(MetaMathModel_base):
 
     def __init__(self, endNode_):
         self.endNode = endNode_
 
         super().__init__()
+
+    def getEndNode(self):
+        return self.endNode
         
 # TODO: What goes here? For the moment, develop meta model buttom up
 
@@ -143,6 +158,7 @@ class Node_base(MetaMathModel_base):
     def __init__(self):
         self.__in = None
         self.__out = [] # The inNode that represents a stage, i.e. the point when all microactions of that state get activated, need multiple outs. No harm in letting all nodes have them?
+        self.id = 0
         
         super().__init__()
 
@@ -152,6 +168,35 @@ class Node_base(MetaMathModel_base):
 
     def getPrev(self):
         return self.__in
+
+    def setId(self, id_):
+        self.id = id_
+
+    def getId(self):
+        return self.id
+
+    def getIdStr(self):
+        return ("n_" + str(self.id))
+
+    def hasMultipleInputs(self):
+        return False
+
+    def hasName(self):
+        return False
+
+    def isAddNode(self):
+        return False
+    
+class IONode_base(Node_base):
+
+    def __init__(self, name_, model_):
+        self.name = name_
+        self.model = model_
+
+        super().__init__()
+
+    def hasName(self):
+        return True
 
 class MultiInNode_base(Node_base):
 
@@ -166,18 +211,18 @@ class MultiInNode_base(Node_base):
 
     def getPrev(self):
         return self.__in
+
+    def hasMultipleInputs(self):
+        return True
     
 class SimpleNode(Node_base):
 
-    def __init__(self, id_):
-        self.id = id_
-
+    def __init__(self):
         super().__init__()
 
-    # TODO: EVER USED? REMOVE?
     # This function disconnects the node (self) from following nodes (self.__out)
     # and connects the newNode_ instead.
-    # Note: Inputs to this node (self) are not reconnected
+    # NOTE: Inputs to this node (self) are not reconnected
     def replace(self, newNode_):
         for n in self._Node_base__out:
             if isinstance(n, MultiInNode_base):
@@ -185,25 +230,19 @@ class SimpleNode(Node_base):
                 n.connect(newNode_)
             else:
                 n.connect(newNode_)
-        
-class InNode(SimpleNode):
+                
+class InNode(IONode_base):
 
-    def __init__(self, name_, model_, id_):
-        self.name = name_
-        self.model = model_
-
-        super().__init__(id_)
+    def __init__(self, name_, model_):
+        super().__init__(name_, model_)
 
     def connect(self, inNode_):
         raise TypeError("Cannot connect a node to %s (%s) of type InNode" % (self.name, self.id))
-        
-class OutNode(SimpleNode):
+   
+class OutNode(IONode_base):
 
-    def __init__(self, name_, model_, id_):
-        self.name = name_
-        self.model = model_
-
-        super().__init__(id_)
+    def __init__(self, name_, model_):
+        super().__init__(name_, model_)
         
 class AddNode(Node_base):
 
@@ -222,6 +261,18 @@ class AddNode(Node_base):
 
         super().__init__()
 
+    def isAddNode(self):
+        return True
+
+    def hasModel(self):
+        return (self.model is not None)
+    
+    def getModel(self):
+        return self.model
+
+    def getDelay(self):
+        return self.delay
+        
 class MaxNode(MultiInNode_base):
 
     def __init__(self):

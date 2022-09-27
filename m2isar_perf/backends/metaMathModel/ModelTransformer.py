@@ -54,13 +54,17 @@ class ModelTransformer:
                 
             # For every microaction in frontend model, make a MicroactionMathModel (intermediate model for transformation, not part of MetaMathModel)
             microactionMathModelDict = {}
+            inConMathNodeDict = {}
             for uA_front in corePerfModel_front.getAllMicroactions():
                 uA_math = MicroactionMathModel(uA_front.name)
 
                 inCon_front = uA_front.inConnector
                 if inCon_front is not None:
-                    uA_math.addInConnector(inCon_front.name, corePerfModel_math.getConnectorModel(inCon_front.connectorModel.name))
-
+                    if inCon_front.name in inConMathNodeDict:
+                        uA_math.setInConnector(inConMathNodeDict[inCon_front.name])
+                    else:
+                        inConMathNodeDict[inCon_front.name] = uA_math.addInConnector(inCon_front.name, corePerfModel_math.getConnectorModel(inCon_front.connectorModel.name))
+                        
                 res_front = uA_front.resource
                 if res_front is not None:
                     resModel_front = res_front.resourceModel
@@ -80,6 +84,9 @@ class ModelTransformer:
             for instr_front in corePerfModel_front.getAllInstructions():
                 instr_math = MetaMathModel.Instruction(instr_front.name)
 
+                # Deepcopy the microaction dictionary. Otherwise linking of nodes for this instruction will affect other instructions
+                microactionMathModelDict_cpy = copy.deepcopy(microactionMathModelDict)
+                
                 try:
                     pipelineUsage = pipelineUsageDict[instr_front.name]
                 except KeyError:
@@ -89,33 +96,37 @@ class ModelTransformer:
                 numStages = len(allStages_math)
 
                 firstStage_math = allStages_math[0]
-                currentNode = MetaMathModel.InNode(firstStage_math.name, firstStage_math, firstStage_math.name + "_prev")
+                currentNode = MetaMathModel.InNode(firstStage_math.name, firstStage_math)
                 
                 for i, st_math in enumerate(allStages_math):
 
                     # TODO/NOTE: This method makes certain assumptions, which might need to be re-evluated for more complex cores:
                     # - Assumes that stages are executed in order of the stages-list in the pipeline models
-                    # - Assumes that every stage has at least one used microaction
+                    # - Assumes that every instruction stays at least 1 clock cycle in each stage. I.e. if no microaction is defined for a stage a "bypass delay" of 1 is implemented
                     
                     # For each used microaction, connect currentNode (i.e. start point of current stage) to inNode, and store outNode
                     microactionOutNodes = []
                     for uA_front in pipelineUsage[st_math.name]:
-                        uA_math = copy.deepcopy(microactionMathModelDict[uA_front.name])
+                        uA_math = microactionMathModelDict_cpy[uA_front.name]
                         uA_math.inNode.replace(currentNode)
                         microactionOutNodes.append(uA_math.outNode)
 
+                    # If no microaction is defined for the stage, add a "bypass delay"
                     if(len(microactionOutNodes) < 1):
-                        raise TypeError("For instruction %s: No microaction is used in stage %s. Currently not supported!" % (instr_front.name, st_math.name))
+                        bypassDelayNode = MetaMathModel.AddNode(delay_=1)
+                        bypassDelayNode.connect(currentNode)
+                        microactionOutNodes.append(bypassDelayNode)
+                        print("INFO: For instruction %s: No microaction is used in stage %s. Current handling: Adding a single \"bypass resource\" with delay 1 into the stage." % (instr_front.name, st_math.name))
                         
-                    # If there is a next stage, create an inNode
+                    # If there is a next stage, create an inNode representing that stage ("backwards preasure" of next stage)
                     if (i < numStages - 1):
                         nxSt_math = allStages_math[i+1]
-                        nxStInNode = MetaMathModel.InNode(nxSt_math.name, nxSt_math, nxSt_math.name + "_prev")
+                        nxStInNode = MetaMathModel.InNode(nxSt_math.name, nxSt_math)
                     else:
                         nxStInNode = None
 
-                    # Combine outNodes from microactions and nextStageInNode. Result is outNode for this stage
-                    curStOutNode = MetaMathModel.OutNode(st_math.name, st_math, st_math.name + "_next")
+                    # Combine outNodes from microactions and nextStageInNode. Result is outNode for this stage (curStOutNode)
+                    curStOutNode = MetaMathModel.OutNode(st_math.name, st_math)
                     if (nxStInNode is not None) or (len(microactionOutNodes) > 1):
                         maxOp = MetaMathModel.MaxNode()
                         if(nxStInNode is not None):
@@ -129,51 +140,63 @@ class ModelTransformer:
                     # Set currentNode for next stage
                     currentNode = curStOutNode
 
-                timeFunc_math = MetaMathModel.TimeFunction(currentNode)
-                instr_math.timeFunction = timeFunc_math
+                # Assign unique ID to all nodes
+                self.__assignNodeId_recursive(currentNode, 0)
+                
+                # Create time function and add instruction to corePerfModel
+                instr_math.timeFunction = MetaMathModel.TimeFunction(currentNode)
+                corePerfModel_math.addInstruction(instr_math)
 
         return model_math 
-    
-# FOR DEGUG -> DELETE
-#    def __recSearch(self, node_, prefix_=""):
-#
-#        if type(node_) is MetaMathModel.MaxNode:
-#            for n in node_.getPrev():
-#                self.__recSearch(n, prefix_="  ")
-#            print(prefix_ + "max")
-#        elif node_.getPrev() is None:
-#            print(prefix_ + node_.id)
-#            return
-#        else:
-#            self.__recSearch(node_.getPrev())
-#            if type(node_) is MetaMathModel.AddNode:
-#                print(prefix_ + "+")
-#            else:
-#                print(prefix_ + node_.id)
-                    
+
+
+    def __assignNodeId_recursive(self, node_, id_):
+
+        if node_.hasMultipleInputs():
+            id = id_
+            for prev in node_.getPrev():
+                id = self.__assignNodeId_recursive(prev, id)
+                
+        else:
+            prev = node_.getPrev()
+            if prev is not None:
+                id = self.__assignNodeId_recursive(prev, id_)
+            else:
+                id = id_
+
+        node_.setId(id)
+        return (id + 1)
                 
 class MicroactionMathModel:
 
     def __init__(self, name_):
         self.name = name_
-        self.inNode = MetaMathModel.SimpleNode(self.name + "_0")
+        self.inNode = MetaMathModel.SimpleNode()
         self.outNode = self.inNode
         
         self.__addOpSet = False
-        self.__idCnt = 1
-        
+                
     def addInConnector(self, name_, model_):
         if self.__addOpSet:
             raise TypeError("ModelTransformer.MicroactionMathModel.addInConnector: Cannot call this function after an AddOperator has been added to the same object!")
 
-        inCon = MetaMathModel.InNode(name_, model_, self.name + "_" + str(self.__idCnt))
-        self.__idCnt += 1
-        
+        inCon = MetaMathModel.InNode(name_, model_)
+                
         maxOp = MetaMathModel.MaxNode()
         maxOp.connect(self.inNode)
         maxOp.connect(inCon)
         self.outNode = maxOp
 
+        return inCon
+
+    # Same as addInConnector but uses an existing InNode instead of creating one
+    def setInConnector(self, inCon_):
+
+        maxOp = MetaMathModel.MaxNode()
+        maxOp.connect(self.inNode)
+        maxOp.connect(inCon_)
+        self.outNode = maxOp
+        
     def addResource(self, delay_=0, model_=None):
 
         addOp = MetaMathModel.AddNode(delay_, model_)
@@ -186,9 +209,8 @@ class MicroactionMathModel:
         if not self.__addOpSet:
             raise TypeError("ModelTransformer.MicroactionMathModel.addOutConnector: Cannot add an OutConnector for this object. The object has no AddOperator assigned to it!")
 
-        outCon = MetaMathModel.OutNode(name_, model_, self.name + "_" + str(self.__idCnt))
-        self.__idCnt += 1
-        
+        outCon = MetaMathModel.OutNode(name_, model_)
+                
         outCon.connect(self.outNode)
         self.outNode = outCon
 

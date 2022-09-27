@@ -1,100 +1,146 @@
-/********************
-**** SimpleRISCV ****
-********************/
+/*********************************** Microaction Section ***********************************/
+Connector {PC, PC_p, PC_np}
+Connector {R_a, R_b, R_d}
 
+Resource {PC_Gen, Decoder, ALU, Multi, Reg, DPort_W(DCache_model), DPort_R(DCache_model), IPort_R(ICache_model)}
+virtual Resource v_IPort
 
-// COMMENT
-Connector {PC, PC_p, PC_np, R_a, R_b, R_d}
-
-virtual Resource vD_MEM
-Resource D_MEM_st(5)
-Resource D_MEM_dy(dCache)
-Resource {PC_GEN, ID, ALU, MULTI(3), D_MEM_bp, REG}
-
-Microaction{
-    uA_IF (PC -> PC_GEN -> PC_p),
-    uA_ID (ID),
+// General Microactions
+Microaction {
+    uA_IF (PC -> v_IPort),
+    uA_PC_GEN (PC -> PC_Gen -> PC_p),
+    uA_ID (Decoder),
     uA_OF_A (R_a),
     uA_OF_B (R_b),
     uA_ALU_branch (ALU -> PC_np),
-    uA_MUL (MULTI),
-    uA_MEM (vD_MEM),
-    uA_MEM_bp (D_MEM_bp),
-    uA_WB (REG -> R_d)
+    uA_ALU_mem (ALU),
+    uA_MEM_W (DPort_W)
 }
 
-virtual Microaction vuA_ALU
-Microaction{
-    uA_ALU(ALU),
-    uA_ALU_fw(ALU -> R_d)
+// Non-forwarding Microactions
+Microaction {
+    uA_ALU_arith_nfw (ALU),
+    uA_MUL_nfw (Multi),
+    uA_MEM_R_nfw (DPort_R),
+    uA_WB_nfw (Reg -> R_d)
 }
 
-Stage{
-    IF_stage (uA_IF),
+// Forwarding Microactions
+Microaction {
+    uA_ALU_arith_fw (ALU -> R_d),
+    uA_MUL_fw (Multi -> R_d),
+    uA_MEM_R_fw (DPort_R -> R_d),
+    uA_WB_fw (Reg)
+}
+
+// Virtual Microactions
+virtual Microaction {
+    vuA_ALU_arith,
+    vuA_MUL,
+    vuA_MEM_R,
+    vuA_WB
+}
+
+/*********************************** Stages & Pipeline ***********************************/
+Stage {
+    IF_stage (uA_IF, uA_PC_GEN),
     ID_stage (uA_ID, uA_OF_A, uA_OF_B),
-    EX_stage (vuA_ALU, uA_ALU_branch, uA_MUL),
-    MEM_stage(uA_MEM, uA_MEM_bp),
-    WB_stage (uA_WB)
+    EX_stage (vuA_ALU_arith, vuA_MUL, uA_ALU_branch, uA_ALU_mem),
+    MEM_stage (vuA_MEM_R, uA_MEM_W),
+    WB_stage (vuA_WB)
 }
-
 Pipeline SimplePipeline (IF_stage -> ID_stage -> EX_stage -> MEM_stage -> WB_stage)
 
-CorePerfModel SimpleRISCV(
-  use Pipeline: SimplePipeline
-  use ConnectorModel : {branchPredict, reg}
-  assign Resource: vD_MEM = D_MEM_dy
-  assign Microaction : vuA_ALU = uA_ALU
+/*********************************** External Models ***********************************/
+TraceValue {ra_addr, rb_addr, rd_addr, pc_val, jmp_addr, mem_addr}
+
+ConnectorModel Register_model (
+    link : StandardRegister.cpp
+    trace : {ra_addr, rb_addr, rd_addr}
+    connectorIn : R_d
+    connectorOut : {R_a, R_b}
 )
 
-CorePerfModel SimpleRISCV_static(
-  use Pipeline: SimplePipeline
-  use ConnectorModel : {branchPredict, reg}
-  assign Resource: vD_MEM = D_MEM_st
-  assign Microaction : vuA_ALU = uA_ALU_fw
+ConnectorModel DynBranchPredict_model (
+    link : DynamicBranchPrediction.cpp
+    trace : {pc_val, jmp_addr}
+    connectorIn : {PC_p, PC_np}
+    connectorOut : PC
 )
 
-InstrGroup{
-Arith  (ADD, SUB),
-Branch (BNE, BEQ),
-Memory (LW, SW),
-Default (KDW, HH, MUN)
+ConnectorModel StaBranchPredict_model (
+    link : StaticBranchPrediction.cpp
+    trace : {pc_val, jmp_addr}
+    connectorIn : {PC_p, PC_np}
+    connectorOut : PC
+)
+
+ConnectorModel NoBranchPredict_model (
+    link : NoBranchPrediction.cpp
+    trace : {pc_val, jmp_addr}
+    connectorIn : {PC_p, PC_np}
+    connectorOut : PC
+)
+
+ResourceModel ICache_model (
+    link : SimpleICache.cpp
+    trace: pc_val
+)
+
+ResourceModel DCache_model (
+    link : SimpleDCache.cpp
+    trace: mem_addr
+)
+
+/*********************************** Instruction Section ***********************************/
+InstrGroup {
+    Arith_Ra_Rb (add, sub, sll, xor, or, and, c_add),
+    Mul (mul, rem),
+    Arith_Ra (addi, sltiu, xori, ori, andi, c_addi, c_slli, c_addi16sp),
+    Arith_Rb (c_mv),
+    Arith_X (c_li),
+    Store (sb, sh, sw, c_sw),
+    Load (lh, lw, lbu, lhu, c_lw),
+    Branch_Ra_Rb (beq, bne, blt, bge, bltu, bgeu),
+    Branch_Ra (c_beqz, c_bnez),
+    Default ([?])
 }
 
-MicroactionMapping{
-[ALL] : {uA_IF, uA_ID, uA_OF_A, uA_OF_B, uA_WB},
-[?]   : {vuA_ALU, uA_MEM_bp},
-Arith : {vuA_ALU, uA_MEM_bp},
-MUL   : {uA_MUL, uA_MEM_bp},
-Branch: {uA_ALU_branch, uA_MEM_bp},
-Memory: {vuA_ALU, uA_MEM}
+MicroactionMapping {
+    [ALL] : {uA_IF, uA_PC_GEN, uA_ID},
+    //Default : {},
+    Arith_Ra_Rb : {uA_OF_A, uA_OF_B, vuA_ALU_arith, vuA_WB},
+    Arith_Ra : {uA_OF_A, vuA_ALU_arith, vuA_WB},
+    Arith_Rb : {uA_OF_B, vuA_ALU_arith, vuA_WB},
+    Arith_X :  {vuA_ALU_arith, vuA_WB},
+    Mul : {uA_OF_A, uA_OF_B, vuA_MUL, vuA_WB},
+    Store : {uA_OF_A, uA_OF_B, uA_ALU_mem, uA_MEM_W},
+    Load : {uA_OF_A, uA_ALU_mem, vuA_MEM_R, vuA_WB},
+    Branch_Ra_Rb : {uA_OF_A, uA_OF_B, uA_ALU_branch},
+    Branch_Ra : {uA_OF_A, uA_ALU_branch}
 }
 
-TraceValueMapping{
-ADD	: { pc_val = "pc",
-      	    ra_addr = "rs1"
-      	},
-[?]	: { pc_val = "PC",
-      	    ra_addr = "RS1"
-      	}
+TraceValueMapping {
+    [ALL] : {
+        ra_addr = "XXX",
+        rb_addr = "XXX",
+        rd_addr = "XXX",
+        pc_val = "XXX",
+        jmp_addr = "XXX",
+	mem_addr = "XXX"
+    }
 }
 
-TraceValue {mem_addr, pc_val, ra_addr, rb_addr, rd_addr}
+/*********************************** Variants ***********************************/
 
-ResourceModel dCache(
-trace : mem_addr
-link : dCacheModel
-)
-
-ConnectorModel branchPredict(
-trace        : pc_val
-connectorIn  : {PC_p, PC_np}
-connectorOut : PC
-link	     : simpleBranchPredictModel
-)
-
-ConnectorModel reg(
-trace        : {ra_addr, rb_addr, rd_addr}
-connectorIn  : R_d
-connectorOut : {R_a, R_b}
-link	     : standardRegisterModel
+CorePerfModel SimpleRISCV_H_fw_dynBrPred (
+    use Pipeline : SimplePipeline
+    use ConnectorModel : {DynBranchPredict_model, Register_model}
+    assign Resource : v_IPort = IPort_R
+    assign Microaction : {
+        vuA_ALU_arith = uA_ALU_arith_fw,
+        vuA_MUL = uA_MUL_fw,
+        vuA_MEM_R = uA_MEM_R_fw,
+        vuA_WB = uA_WB_fw
+    }
 )

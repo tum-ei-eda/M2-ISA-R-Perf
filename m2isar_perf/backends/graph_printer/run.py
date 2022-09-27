@@ -24,22 +24,41 @@ import os
 
 from mako.template import Template
 
+from backends.metaMathModel.ModelTransformer import ModelTransformer
 from .ModelPrinter import ModelPrinter
-from .utils import *
+from .MathModelPrinter import MathModelPrinter
+
+from . import Defs
 
 def main(model_):
 
     # Create temp and out directory
+    print("Creating temp and output directories")
     curDir = pathlib.Path(__file__).parents[0]
     tempDir = createOrReplaceDir(curDir / "temp")
     outDir = createOrReplaceDir(curDir / "out")
-
-    modelPrinter = ModelPrinter(tempDir, curDir / "templates", outDir)
-        
     for corePerfModel in model_.getAllCorePerfModels():
+        createOrReplaceDir(curDir / "out" / corePerfModel.name / Defs.OVERVIEW_FOLDER)
+        for instr in corePerfModel.getAllInstructions():
+            createOrReplaceDir(curDir / "out" / corePerfModel.name / instr.name )
+    
+    # Create printer instances
+    modelPrinter = ModelPrinter(tempDir, curDir / "templates", outDir)
+    mathModelPrinter = MathModelPrinter(tempDir, outDir)
 
-        modelPrinter.printModel(corePerfModel)
-                
+    ## TODO: REACTIVATE THIS BLOCK
+    ## Print (top) model
+    #print()
+    #print("Print model diagrams")
+    #modelPrinter.printModel(model_)
+
+    # Print math models
+    print("Print math-model graphs")
+    print()
+    print("Transforming top model into math-model")
+    mathModel = ModelTransformer().transform(model_)
+    print()
+    mathModelPrinter.printMathModel(mathModel)
 
 def createOrReplaceDir(dir_):
     try:

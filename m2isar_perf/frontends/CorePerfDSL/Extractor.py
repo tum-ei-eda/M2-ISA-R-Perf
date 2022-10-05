@@ -115,9 +115,6 @@ class Extractor(CorePerfDSLVisitor):
             trRefs = [self.visit(tr) for tr in ctx.traceVals]
             inConRefs = [self.visit(inCon) for inCon in ctx.inCons]
             outConRefs = [self.visit(outCon) for outCon in ctx.outCons]
-            #trRefs = [self.visit(tr).name for tr in ctx.traceVals] # TODO: Sure to use names instead of pointer here?
-            #inConRefs = [self.visit(inCon).name for inCon in ctx.inCons] # TODO: Sure to use names instead of pointer here?
-            #outConRefs = [self.visit(outCon).name for outCon in ctx.outCons] # TODO: Sure to use names instead of pointer here?
             if ctx.link is not None:
                 self.dictionary.addConnectorModel(ctx.name.text, ctx.link.text, inConRefs, outConRefs, trRefs)
             else:
@@ -125,7 +122,7 @@ class Extractor(CorePerfDSLVisitor):
  
     def visitResourceModel(self, ctx):
         if self.level.isLevel("MODELS_AND_TRACE_VALUE_MAPPING"):
-            trRefs = [self.visit(tr).name for tr in ctx.traceVals] # TODO: Sure to use names instead of pointer here?
+            trRefs = [self.visit(tr) for tr in ctx.traceVals]
             if ctx.link is not None:
                 self.dictionary.addResourceModel(ctx.name.text, ctx.link.text, trRefs)
             else:

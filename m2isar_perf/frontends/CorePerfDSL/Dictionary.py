@@ -84,7 +84,7 @@ class Dictionary():
         resModel = MetaModel.ResourceModel()
         resModel.name = name_
         resModel.link = link_
-        resModel.traceValues = trVals_,
+        resModel.traceValues = trVals_
         self.__addInstance(resModel, "ResourceModel")
 
     def addResource(self, name_, delay_=0, model_=None):

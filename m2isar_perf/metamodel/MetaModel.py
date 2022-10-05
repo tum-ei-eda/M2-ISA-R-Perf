@@ -193,6 +193,10 @@ class Instruction(MetaModel_base):
         self.group = ""
         self.microactions = []
         self.traceValueAssignments = []
+
+        # TODO / FIXME: Temp. workaround! Replace with ID to decouple estimator from CoreDSL2
+        self.opcode = ""
+        self.mask = ""
         
         super().__init__()
 

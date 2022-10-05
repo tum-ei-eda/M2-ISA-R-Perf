@@ -39,7 +39,127 @@ class Builder():
                 instr.microactions.extend(self.dictionary.REST_Instruction.microactions)
             if instr_name not in self.dictionary.instrTraceValueMapped:
                 instr.traceValueAssignments.extend(self.dictionary.REST_Instruction.traceValueAssignments)
-        
+
+            if instr_name == Defs.KEYWORD_REST:
+                instr.name = Defs.DEFAULT_INSTR_NAME
+                instr_name = instr.name # TODO: Only used for the opcode/mask assignment below. Remove?
+                
+            # TODO / FIXME: Temp workaround! Replace with unique instruction-type-id assignment, to decouple estimator model from CoreDSL2
+            if instr_name == "add":
+                instr.opcode = "0x00000033"
+                instr.mask   = "0xfe00707f"
+            elif instr_name == "sub":
+                instr.opcode = "0x40000033"
+                instr.mask   = "0xfe00707f"
+            elif instr_name == "sll":
+                instr.opcode = "0x00001033"
+                instr.mask   = "0xfe00707f"
+            elif instr_name == "xor":
+                instr.opcode = "0x00004033"
+                instr.mask   = "0xfe00707f"
+            elif instr_name == "or":
+                instr.opcode = "0x00006033"
+                instr.mask   = "0xfe00707f"
+            elif instr_name == "and":
+                instr.opcode = "0x00007033"
+                instr.mask   = "0xfe00707f"
+            elif instr_name == "mul":
+                instr.opcode = "0x02000033"
+                instr.mask   = "0xfe00707f"
+            elif instr_name == "rem":
+                instr.opcode = "0x02006033"
+                instr.mask   = "0xfe00707f"
+            elif instr_name == "addi":
+                instr.opcode = "0x00000013"
+                instr.mask   = "0x0000707f"
+            elif instr_name == "sltiu":
+                instr.opcode = "0x00003013"
+                instr.mask   = "0xfe00707f"
+            elif instr_name == "xori":
+                instr.opcode = "0x00004013"
+                instr.mask   = "0x0000707f"
+            elif instr_name == "ori":
+                instr.opcode = "0x00006013"
+                instr.mask   = "0x0000707f"
+            elif instr_name == "andi":
+                instr.opcode = "0x00007013"
+                instr.mask   = "0x0000707f"
+            elif instr_name == "sb":
+                instr.opcode = "0x00000023"
+                instr.mask   = "0x0000707f"
+            elif instr_name == "sh":
+                instr.opcode = "0x00001023"
+                instr.mask   = "0x0000707f"
+            elif instr_name == "sw":
+                instr.opcode = "0x00002023"
+                instr.mask   = "0x0000707f"
+            elif instr_name == "beq":
+                instr.opcode = "0x00000063"
+                instr.mask   = "0x0000707f"
+            elif instr_name == "bne":
+                instr.opcode = "0x00001063"
+                instr.mask   = "0x0000707f"
+            elif instr_name == "blt":
+                instr.opcode = "0x00004063"
+                instr.mask   = "0x0000707f"
+            elif instr_name == "bge":
+                instr.opcode = "0x00005063"
+                instr.mask   = "0x0000707f"
+            elif instr_name == "bltu":
+                instr.opcode = "0x00006063"
+                instr.mask   = "0x0000707f"
+            elif instr_name == "bgeu":
+                instr.opcode = "0x00007063"
+                instr.mask   = "0x0000707f"
+            elif instr_name == "lh":
+                instr.opcode = "0x00001003"
+                instr.mask   = "0x0000707f"
+            elif instr_name == "lw":
+                instr.opcode = "0x00002003"
+                instr.mask   = "0x0000707f"
+            elif instr_name == "lbu":
+                instr.opcode = "0x00004003"
+                instr.mask   = "0x0000707f"
+            elif instr_name == "lhu":
+                instr.opcode = "0x00005003"
+                instr.mask   = "0x0000707f"
+            elif instr_name == "c_beqz":
+                instr.opcode = "0x0000c001"
+                instr.mask   = "0x0000e003"
+            elif instr_name == "c_bnez":
+                instr.opcode = "0x0000e001"
+                instr.mask   = "0x0000e003"
+            elif instr_name == "c_add":
+                instr.opcode = "0x00009002"
+                instr.mask   = "0x0000f003"
+            elif instr_name == "c_addi":
+                instr.opcode = "0x00000001"
+                instr.mask   = "0x0000e003"
+            elif instr_name == "c_slli":
+                instr.opcode = "0x00000002"
+                instr.mask   = "0x0000f003"
+            elif instr_name == "c_addi16sp":
+                instr.opcode = "0x00006101"
+                instr.mask   = "0x0000ef83"
+            elif instr_name == "c_lw":
+                instr.opcode = "0x00004000"
+                instr.mask   = "0x0000e003"
+            elif instr_name == "c_sw":
+                instr.opcode = "0x0000c000"
+                instr.mask   = "0x0000e003"
+            elif instr_name == "c_mv":
+                instr.opcode = "0x00008002"
+                instr.mask   = "0x0000f003"
+            elif instr_name == "c_li":
+                instr.opcode = "0x00004001"
+                instr.mask   = "0x0000e003"
+            elif instr_name == Defs.DEFAULT_INSTR_NAME:
+                instr.opcode = "0xffffffff"
+                instr.mask   = "0x00000000"
+            else:
+                print("Unknown instruction: " + instr_name)
+                
+                
         # Finalize the CorePerfModels and add to TopModel
         for model_name, model in self.dictionary.corePerfModels.items():
 

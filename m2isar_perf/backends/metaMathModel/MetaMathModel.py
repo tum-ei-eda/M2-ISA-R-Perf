@@ -63,13 +63,22 @@ class CorePerfModel(MetaMathModel_base):
 
     def getConnectorModel(self, name_):
         return super()._MetaMathModel_base__getFromDict(name_, self.connectorModels)
-        
+
+    def getAllConnectorModels(self):
+        return self.connectorModels.values()
+    
     def addResourceModel(self, resMod_):
         self.resourceModels[resMod_.name] = resMod_
 
     def getResourceModel(self, name_):
         return super()._MetaMathModel_base__getFromDict(name_, self.resourceModels)
 
+    def getAllResourceModels(self):
+        return self.resourceModels.values()
+    
+    def getPipeline(self):
+        return self.pipeline
+    
     def getStage(self, name_):
         if self.pipeline is None:
             raise TypeError("Cannot call MetaMathModel.CorePerfModel.getStage before a pipeline has been assigned to the model (%s)" % self.name)
@@ -104,7 +113,7 @@ class Pipeline(MetaMathModel_base):
 
     def getAllStages(self):
         return list(self.stages.values())
-                
+    
 class Stage(MetaMathModel_base):
 
     def __init__(self, name_):
@@ -117,7 +126,7 @@ class ResourceModel(MetaMathModel_base):
     def __init__(self, name_, link_):
         self.name = name_
         self.link = link_
-        self.traceValues = [] # TODO: Required? Currently not implemented, i.e not copied from frontend
+        self.traceValues = [] # TODO: Currently only a list of names, i.e. not pointing to traceValue objects
         
         super().__init__()
 
@@ -126,7 +135,7 @@ class ConnectorModel(MetaMathModel_base):
     def __init__(self, name_, link_):
         self.name = name_
         self.link = link_
-        self.traceValues = [] # TODO: Required? Currently not implemented, i.e not copied from frontend
+        self.traceValues = [] # TODO: Currently only a list of names, i.e. not pointing to traceValue objects
 
         super().__init__()
         
@@ -136,8 +145,15 @@ class Instruction(MetaMathModel_base):
         self.name = name_
         self.timeFunction = None
 
+        # TODO / FIXME: Temp. workaround! Replace with ID to decouple estimator from CoreDSL2
+        self.opcode = ""
+        self.mask = ""
+        
         super().__init__()
 
+    def setTimeFunction(self, timeFunc_):
+        self.timeFunction = timeFunc_
+        
     def getTimeFunction(self):
         return self.timeFunction
         
@@ -150,15 +166,37 @@ class TimeFunction(MetaMathModel_base):
 
     def getEndNode(self):
         return self.endNode
-        
-# TODO: What goes here? For the moment, develop meta model buttom up
 
+    def forAllNodes(self, fuTuple_):
+        self.__iterateNodes_recursive(self.endNode, [], fuTuple_)
+
+    def __iterateNodes_recursive(self, node_, coveredNodes_, fuTuple_):
+
+        if node_.getId() not in coveredNodes_:
+
+            # Unpack function tuple
+            func, funcDict = fuTuple_
+            
+            # Call previous node(s)
+            if node_.hasMultipleInputs():
+                for prev in node_.getPrev():
+                    self.__iterateNodes_recursive(prev, coveredNodes_, (func, funcDict))
+            else:
+                if node_.getPrev() is not None:
+                    self.__iterateNodes_recursive(node_.getPrev(), coveredNodes_, (func, funcDict))
+
+            # Execute
+            func(node_, funcDict)
+            
+            # Add node to list of coveredNodes
+            coveredNodes_.append(node_.getId())
+                    
 class Node_base(MetaMathModel_base):
 
     def __init__(self):
         self.__in = None
         self.__out = [] # The inNode that represents a stage, i.e. the point when all microactions of that state get activated, need multiple outs. No harm in letting all nodes have them?
-        self.id = 0
+        self.id = -1
         
         super().__init__()
 
@@ -186,6 +224,15 @@ class Node_base(MetaMathModel_base):
 
     def isAddNode(self):
         return False
+
+    def isMaxNode(self):
+        return False
+
+    def isInNode(self):
+        return False
+
+    def isOutNode(self):
+        return False
     
 class IONode_base(Node_base):
 
@@ -198,6 +245,9 @@ class IONode_base(Node_base):
     def hasName(self):
         return True
 
+    def getModel(self):
+        return self.model
+    
 class MultiInNode_base(Node_base):
 
     def __init__(self):
@@ -238,11 +288,17 @@ class InNode(IONode_base):
 
     def connect(self, inNode_):
         raise TypeError("Cannot connect a node to %s (%s) of type InNode" % (self.name, self.id))
-   
+
+    def isInNode(self):
+        return True
+    
 class OutNode(IONode_base):
 
     def __init__(self, name_, model_):
         super().__init__(name_, model_)
+
+    def isOutNode(self):
+        return True
         
 class AddNode(Node_base):
 
@@ -277,3 +333,6 @@ class MaxNode(MultiInNode_base):
 
     def __init__(self):
         super().__init__()
+
+    def isMaxNode(self):
+        return True

@@ -37,11 +37,21 @@ class ModelTransformer:
             # For every connectorModel in frontend model, create equivalent in mathModel
             for conMod_front in corePerfModel_front.getAllConnectorModels():
                 conMod_math = MetaMathModel.ConnectorModel(conMod_front.name, conMod_front.link)
+                
+                # TODO: Only copy name of trace value for now. Rethink?
+                for trV_i in conMod_front.traceValues:
+                    conMod_math.traceValues.append(trV_i.name)
+                
                 corePerfModel_math.addConnectorModel(conMod_math)
                 
             # For every resourceModel in frontend model, create equivalent in mathModel
             for resMod_front in corePerfModel_front.getAllResourceModels():
                 resMod_math = MetaMathModel.ResourceModel(resMod_front.name, resMod_front.link)
+
+                # TODO: Only copy name of trace value for now. Rethink?
+                for trV_i in resMod_front.traceValues:
+                    resMod_math.traceValues.append(trV_i.name)
+                
                 corePerfModel_math.addResourceModel(resMod_math)
 
             # Create a pipelineModel equivalent for mathModel
@@ -84,6 +94,10 @@ class ModelTransformer:
             for instr_front in corePerfModel_front.getAllInstructions():
                 instr_math = MetaMathModel.Instruction(instr_front.name)
 
+                # TODO / FIXME: Temp workaround! Replace with unique instruction-type-id assignment, to decouple estimator model from CoreDSL2
+                instr_math.opcode = instr_front.opcode
+                instr_math.mask = instr_front.mask
+                
                 # Deepcopy the microaction dictionary. Otherwise linking of nodes for this instruction will affect other instructions
                 microactionMathModelDict_cpy = copy.deepcopy(microactionMathModelDict)
                 
@@ -96,7 +110,7 @@ class ModelTransformer:
                 numStages = len(allStages_math)
 
                 firstStage_math = allStages_math[0]
-                currentNode = MetaMathModel.InNode(firstStage_math.name, firstStage_math)
+                currentNode = MetaMathModel.InNode(firstStage_math.name, corePerfModel_math.getPipeline())
                 
                 for i, st_math in enumerate(allStages_math):
 
@@ -121,12 +135,12 @@ class ModelTransformer:
                     # If there is a next stage, create an inNode representing that stage ("backwards preasure" of next stage)
                     if (i < numStages - 1):
                         nxSt_math = allStages_math[i+1]
-                        nxStInNode = MetaMathModel.InNode(nxSt_math.name, nxSt_math)
+                        nxStInNode = MetaMathModel.InNode(nxSt_math.name, corePerfModel_math.getPipeline())
                     else:
                         nxStInNode = None
 
                     # Combine outNodes from microactions and nextStageInNode. Result is outNode for this stage (curStOutNode)
-                    curStOutNode = MetaMathModel.OutNode(st_math.name, st_math)
+                    curStOutNode = MetaMathModel.OutNode(st_math.name, corePerfModel_math.getPipeline())
                     if (nxStInNode is not None) or (len(microactionOutNodes) > 1):
                         maxOp = MetaMathModel.MaxNode()
                         if(nxStInNode is not None):
@@ -139,33 +153,28 @@ class ModelTransformer:
 
                     # Set currentNode for next stage
                     currentNode = curStOutNode
-
-                # Assign unique ID to all nodes
-                self.__assignNodeId_recursive(currentNode, 0)
                 
-                # Create time function and add instruction to corePerfModel
-                instr_math.timeFunction = MetaMathModel.TimeFunction(currentNode)
+                # Create time function, give node unique ids, and add instruction to corePerfModel
+                instr_math.setTimeFunction(MetaMathModel.TimeFunction(currentNode))
+                self.__assignNodeIds(instr_math.getTimeFunction())
                 corePerfModel_math.addInstruction(instr_math)
 
         return model_math 
 
 
-    def __assignNodeId_recursive(self, node_, id_):
+    def __assignNodeIds(self, timeFunc_):
 
-        if node_.hasMultipleInputs():
-            id = id_
-            for prev in node_.getPrev():
-                id = self.__assignNodeId_recursive(prev, id)
-                
-        else:
-            prev = node_.getPrev()
-            if prev is not None:
-                id = self.__assignNodeId_recursive(prev, id_)
-            else:
-                id = id_
+        
+        def addNodeId(node_, funcDict_):
+            try:
+                id = funcDict_["id"]
+            except KeyError:
+                raise TypeError("Function dictionary for addNodeId does not contain an item with key \"id\"")
 
-        node_.setId(id)
-        return (id + 1)
+            node_.setId(id)
+            funcDict_["id"] = id + 1
+
+        timeFunc_.forAllNodes((addNodeId, {"id" : 0}))
                 
 class MicroactionMathModel:
 

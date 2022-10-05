@@ -39,12 +39,9 @@ class MathModelPrinter:
             print()
             print("Creating math-model graphs for " + corePerfModel.name)
 
-            #instr = corePerfModel.getInstructionDict()["add"]
             for instr in corePerfModel.getInstructionDict().values():
                 self.__printTimeFunction(instr)
             
-            #self.__printTimeFunction(instr)
-
     def __printTimeFunction(self, instr_):
 
         # Create dotGraph for instruction
@@ -66,53 +63,41 @@ class MathModelPrinter:
 
         dotGraph = graphviz.Digraph(comment=instr_.name)
 
-        coveredNodes = []
-        self.__generateDotGraph_recursive(instr_.getTimeFunction().getEndNode(), None, dotGraph, coveredNodes)
+        # Define function that shall be executed for every node of the instruction's timeFunction
+        def drawNode(node_, funcDict_):
 
-        return dotGraph
-        
-    def __generateDotGraph_recursive(self, node_, parentIdStr_, dot_, coveredNodes_):
-
-        if node_.getId() not in coveredNodes_:
-        
-            # Mark node as covered
-            coveredNodes_.append(node_.getId())
-
+            # Unpack function dictionary
+            try:
+                dot = funcDict_["dotGraph"]
+            except:
+                raise TypeError("Function dictionary for drawNode does not contain an item with key \"dotGraph\"")
+                
             # Find text description for this node
-            if isinstance(node_, MetaMathModel.AddNode):
+            if node_.isAddNode():
                 text = '+'
-            elif isinstance(node_, MetaMathModel.MaxNode):
-                text = 'max'
+                if node_.hasModel():
+                    text += node_.getModel().name
+                else:
+                    text += str(node_.getDelay())
+            elif node_.isMaxNode():
+                text = 'max'                
             elif node_.hasName():
                 text = node_.name
             else:
                 text = node_.getIdStr()
 
-            # Add node to graph and connect with following node
-            dot_.node(node_.getIdStr(), text)
-            if parentIdStr_ is not None:
-                dot_.edge(node_.getIdStr(), parentIdStr_)
-
-            if node_.isAddNode():
-                if node_.hasModel():
-                    dot_.node((node_.getIdStr() + "_res"), node_.getModel().name, shape="box")
-                else:
-                    dot_.node((node_.getIdStr() + "_res"), str(node_.getDelay()), shape="box")
-                dot_.edge((node_.getIdStr() + "_res"), node_.getIdStr())
-
-
-            # Call previous node(s)
+            # Add node to graph an draw edge to previous nodes
+            dot.node(node_.getIdStr(), text)
             if node_.hasMultipleInputs():
                 for prev in node_.getPrev():
-                    self.__generateDotGraph_recursive(prev, node_.getIdStr(), dot_, coveredNodes_)
-            else:
-                prev = node_.getPrev()
-                if prev is not None:
-                    self.__generateDotGraph_recursive(prev, node_.getIdStr(), dot_, coveredNodes_)
+                    dot.edge(prev.getIdStr(), node_.getIdStr())
+            elif node_.getPrev() is not None:
+                dot.edge(node_.getPrev().getIdStr(), node_.getIdStr())
 
-        else:
-            if parentIdStr_ is not None:
-                dot_.edge(node_.getIdStr(), parentIdStr_)        
+        # Execute drawNode for all nodes of the instruction's timeFunction
+        instr_.getTimeFunction().forAllNodes((drawNode, {"dotGraph" : dotGraph}))
+
+        return dotGraph
         
     def __createSubDir_temp(self, name_):
         subDir = self.curTempDir / name_

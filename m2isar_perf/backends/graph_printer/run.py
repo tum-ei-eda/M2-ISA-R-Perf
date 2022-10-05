@@ -18,39 +18,33 @@ import argparse
 import pathlib
 import sys
 import pickle
-import shutil
-import errno
-import os
-
-from mako.template import Template
 
 from backends.metaMathModel.ModelTransformer import ModelTransformer
 from .ModelPrinter import ModelPrinter
 from .MathModelPrinter import MathModelPrinter
-
 from . import Defs
+from backends import utils as backendUtils
 
 def main(model_):
 
     # Create temp and out directory
     print("Creating temp and output directories")
     curDir = pathlib.Path(__file__).parents[0]
-    tempDir = createOrReplaceDir(curDir / "temp")
-    outDir = createOrReplaceDir(curDir / "out")
+    tempDir = backendUtils.createOrReplaceDir(curDir / "temp")
+    outDir = backendUtils.createOrReplaceDir(curDir / "out")
     for corePerfModel in model_.getAllCorePerfModels():
-        createOrReplaceDir(curDir / "out" / corePerfModel.name / Defs.OVERVIEW_FOLDER)
+        backendUtils.createOrReplaceDir(curDir / "out" / corePerfModel.name / Defs.OVERVIEW_FOLDER)
         for instr in corePerfModel.getAllInstructions():
-            createOrReplaceDir(curDir / "out" / corePerfModel.name / instr.name )
+            backendUtils.createOrReplaceDir(curDir / "out" / corePerfModel.name / instr.name )
     
     # Create printer instances
     modelPrinter = ModelPrinter(tempDir, curDir / "templates", outDir)
     mathModelPrinter = MathModelPrinter(tempDir, outDir)
 
-    ## TODO: REACTIVATE THIS BLOCK
-    ## Print (top) model
-    #print()
-    #print("Print model diagrams")
-    #modelPrinter.printModel(model_)
+    # Print (top) model
+    print()
+    print("Print model diagrams")
+    modelPrinter.printModel(model_)
 
     # Print math models
     print("Print math-model graphs")
@@ -59,19 +53,6 @@ def main(model_):
     mathModel = ModelTransformer().transform(model_)
     print()
     mathModelPrinter.printMathModel(mathModel)
-
-def createOrReplaceDir(dir_):
-    try:
-        pathlib.Path(dir_).mkdir(parents=True)
-    except OSError as e:
-        if e.errno == errno.EEXIST:
-            # TODO: Better handling here? Wait for user input?
-            print("WARNING: %s folder exists and is replaced" %(os.path.basename(os.path.normpath(str(dir_))))) 
-            shutil.rmtree(dir_)
-        else:
-            raise
-    return dir_
-
         
 # Run this if backend is called stand-alone (i.e. this file is directly called)
 if __name__ == '__main__':

@@ -15,7 +15,7 @@ connectorModel_def : 'ConnectorModel' (connectorModel | '{' connectorModel (',' 
 
 connectorModel : name=ID '(' (
 	      'trace' ':' (traceVals+=traceValue_ref | '{' traceVals+=traceValue_ref (',' traceVals+=traceValue_ref)* '}')
-	      | 'link' ':' link=FILE
+	      | 'link' ':' link=ID
 	      | 'connectorIn' ':' (inCons+=connector_ref | '{' inCons+=connector_ref (',' inCons+=connector_ref)* '}')
 	      | 'connectorOut' ':' (outCons+=connector_ref | '{' outCons+=connector_ref (',' outCons+=connector_ref)* '}')
 	      )* ')'
@@ -27,7 +27,7 @@ resourceModel_def : 'ResourceModel' (resourceModel | '{' resourceModel (',' reso
 
 resourceModel : name=ID '(' (
 	      'trace' ':' (traceVals+=traceValue_ref | '{' traceVals+=traceValue_ref (',' traceVals+=traceValue_ref)* '}')
-	      | 'link' ':' link=FILE
+	      | 'link' ':' link=ID
 	      )* ')'
 ;
 

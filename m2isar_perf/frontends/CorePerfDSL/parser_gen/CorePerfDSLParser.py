@@ -105,8 +105,8 @@ def serializedATN():
         buf.write("\u008d\u008e\3\2\2\2\u008e\u0090\3\2\2\2\u008f\u008d\3")
         buf.write("\2\2\2\u0090\u0091\7\6\2\2\u0091\u0093\3\2\2\2\u0092\u0086")
         buf.write("\3\2\2\2\u0092\u0087\3\2\2\2\u0093\u00b8\3\2\2\2\u0094")
-        buf.write("\u0095\7\n\2\2\u0095\u0096\7\t\2\2\u0096\u00b8\7!\2\2")
-        buf.write("\u0097\u0098\7\13\2\2\u0098\u00a5\7\t\2\2\u0099\u00a6")
+        buf.write("\u0095\7\n\2\2\u0095\u0096\7\t\2\2\u0096\u00b8\7\37\2")
+        buf.write("\2\u0097\u0098\7\13\2\2\u0098\u00a5\7\t\2\2\u0099\u00a6")
         buf.write("\5B\"\2\u009a\u009b\7\4\2\2\u009b\u00a0\5B\"\2\u009c\u009d")
         buf.write("\7\5\2\2\u009d\u009f\5B\"\2\u009e\u009c\3\2\2\2\u009f")
         buf.write("\u00a2\3\2\2\2\u00a0\u009e\3\2\2\2\u00a0\u00a1\3\2\2\2")
@@ -137,7 +137,7 @@ def serializedATN():
         buf.write("\u00db\3\2\2\2\u00da\u00d8\3\2\2\2\u00db\u00dc\7\6\2\2")
         buf.write("\u00dc\u00de\3\2\2\2\u00dd\u00d1\3\2\2\2\u00dd\u00d2\3")
         buf.write("\2\2\2\u00de\u00e3\3\2\2\2\u00df\u00e0\7\n\2\2\u00e0\u00e1")
-        buf.write("\7\t\2\2\u00e1\u00e3\7!\2\2\u00e2\u00cf\3\2\2\2\u00e2")
+        buf.write("\7\t\2\2\u00e1\u00e3\7\37\2\2\u00e2\u00cf\3\2\2\2\u00e2")
         buf.write("\u00df\3\2\2\2\u00e3\u00e6\3\2\2\2\u00e4\u00e2\3\2\2\2")
         buf.write("\u00e4\u00e5\3\2\2\2\u00e5\u00e7\3\2\2\2\u00e6\u00e4\3")
         buf.write("\2\2\2\u00e7\u00e8\7\r\2\2\u00e8\21\3\2\2\2\u00e9\u00f6")
@@ -874,14 +874,11 @@ class CorePerfDSLParser ( Parser ):
             self.inCons = list() # of Connector_refContexts
             self.outCons = list() # of Connector_refContexts
 
-        def ID(self):
-            return self.getToken(CorePerfDSLParser.ID, 0)
-
-        def FILE(self, i:int=None):
+        def ID(self, i:int=None):
             if i is None:
-                return self.getTokens(CorePerfDSLParser.FILE)
+                return self.getTokens(CorePerfDSLParser.ID)
             else:
-                return self.getToken(CorePerfDSLParser.FILE, i)
+                return self.getToken(CorePerfDSLParser.ID, i)
 
         def traceValue_ref(self, i:int=None):
             if i is None:
@@ -980,7 +977,7 @@ class CorePerfDSLParser ( Parser ):
                     self.state = 147
                     self.match(CorePerfDSLParser.T__6)
                     self.state = 148
-                    localctx.link = self.match(CorePerfDSLParser.FILE)
+                    localctx.link = self.match(CorePerfDSLParser.ID)
                     pass
                 elif token in [CorePerfDSLParser.T__8]:
                     self.state = 149
@@ -1169,14 +1166,11 @@ class CorePerfDSLParser ( Parser ):
             self.traceVals = list() # of TraceValue_refContexts
             self.link = None # Token
 
-        def ID(self):
-            return self.getToken(CorePerfDSLParser.ID, 0)
-
-        def FILE(self, i:int=None):
+        def ID(self, i:int=None):
             if i is None:
-                return self.getTokens(CorePerfDSLParser.FILE)
+                return self.getTokens(CorePerfDSLParser.ID)
             else:
-                return self.getToken(CorePerfDSLParser.FILE, i)
+                return self.getToken(CorePerfDSLParser.ID, i)
 
         def traceValue_ref(self, i:int=None):
             if i is None:
@@ -1268,7 +1262,7 @@ class CorePerfDSLParser ( Parser ):
                     self.state = 222
                     self.match(CorePerfDSLParser.T__6)
                     self.state = 223
-                    localctx.link = self.match(CorePerfDSLParser.FILE)
+                    localctx.link = self.match(CorePerfDSLParser.ID)
                     pass
                 else:
                     raise NoViableAltException(self)

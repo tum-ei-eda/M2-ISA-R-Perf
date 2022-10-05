@@ -1,18 +1,18 @@
 /*********************************** Microaction Section ***********************************/
-Connector {PC, PC_p, PC_np}
-Connector {R_a, R_b, R_d}
+Connector {Pc, Pc_p, Pc_np}
+Connector {Xa, Xb, Xd}
 
-Resource {PC_Gen, Decoder, ALU, Multi, Reg, DPort_W(DCache_model), DPort_R(DCache_model), IPort_R(ICache_model)}
+Resource {PC_Gen, Decoder, ALU, Multi, Reg, DPort_W(dMemModel), DPort_R(dMemModel), IPort_R(iMemModel)}
 virtual Resource v_IPort
 
 // General Microactions
 Microaction {
-    uA_IF (PC -> v_IPort),
-    uA_PC_GEN (PC -> PC_Gen -> PC_p),
+    uA_IF (Pc -> v_IPort),
+    uA_PC_GEN (Pc -> PC_Gen -> Pc_p),
     uA_ID (Decoder),
-    uA_OF_A (R_a),
-    uA_OF_B (R_b),
-    uA_ALU_branch (ALU -> PC_np),
+    uA_OF_A (Xa),
+    uA_OF_B (Xb),
+    uA_ALU_branch (ALU -> Pc_np),
     uA_ALU_mem (ALU),
     uA_MEM_W (DPort_W)
 }
@@ -22,14 +22,14 @@ Microaction {
     uA_ALU_arith_nfw (ALU),
     uA_MUL_nfw (Multi),
     uA_MEM_R_nfw (DPort_R),
-    uA_WB_nfw (Reg -> R_d)
+    uA_WB_nfw (Reg -> Xd)
 }
 
 // Forwarding Microactions
 Microaction {
-    uA_ALU_arith_fw (ALU -> R_d),
-    uA_MUL_fw (Multi -> R_d),
-    uA_MEM_R_fw (DPort_R -> R_d),
+    uA_ALU_arith_fw (ALU -> Xd),
+    uA_MUL_fw (Multi -> Xd),
+    uA_MEM_R_fw (DPort_R -> Xd),
     uA_WB_fw (Reg)
 }
 
@@ -52,44 +52,42 @@ Stage {
 Pipeline SimplePipeline (IF_stage -> ID_stage -> EX_stage -> MEM_stage -> WB_stage)
 
 /*********************************** External Models ***********************************/
-TraceValue {ra_addr, rb_addr, rd_addr, pc_val, jmp_addr, mem_addr}
+TraceValue {rs1, rs2, rd, pc, brTarget}
 
-ConnectorModel Register_model (
-    link : StandardRegister.cpp
-    trace : {ra_addr, rb_addr, rd_addr}
-    connectorIn : R_d
-    connectorOut : {R_a, R_b}
+ConnectorModel regModel (
+    link : StandardRegisterModel
+    trace : {rs1, rs2, rd}
+    connectorIn : Xd
+    connectorOut : {Xa, Xb}
 )
 
-ConnectorModel DynBranchPredict_model (
-    link : DynamicBranchPrediction.cpp
-    trace : {pc_val, jmp_addr}
-    connectorIn : {PC_p, PC_np}
-    connectorOut : PC
+ConnectorModel dynBranchPredModel (
+    link : DynamicBranchPredictModel
+    trace : {pc, brTarget}
+    connectorIn : {Pc_p, Pc_np}
+    connectorOut : Pc
 )
 
-ConnectorModel StaBranchPredict_model (
-    link : StaticBranchPrediction.cpp
-    trace : {pc_val, jmp_addr}
-    connectorIn : {PC_p, PC_np}
-    connectorOut : PC
+ConnectorModel staBranchPredModel (
+    link : StaticBranchPredictModel
+    trace : {pc, brTarget}
+    connectorIn : {Pc_p, Pc_np}
+    connectorOut : Pc
 )
 
-ConnectorModel NoBranchPredict_model (
-    link : NoBranchPrediction.cpp
-    trace : {pc_val, jmp_addr}
-    connectorIn : {PC_p, PC_np}
-    connectorOut : PC
+ConnectorModel noBranchPredModel (
+    link : NoBranchPredictModel
+    trace : {pc, brTarget}
+    connectorIn : {Pc_p, Pc_np}
+    connectorOut : Pc
 )
 
-ResourceModel ICache_model (
-    link : SimpleICache.cpp
-    trace: pc_val
+ResourceModel iMemModel (
+    link : DummyMemoryModel
 )
 
-ResourceModel DCache_model (
-    link : SimpleDCache.cpp
-    trace: mem_addr
+ResourceModel dMemModel (
+    link : DummyMemoryModel
 )
 
 /*********************************** Instruction Section ***********************************/
@@ -122,20 +120,19 @@ MicroactionMapping {
 
 TraceValueMapping {
     [ALL] : {
-        ra_addr = "XXX",
-        rb_addr = "XXX",
-        rd_addr = "XXX",
-        pc_val = "XXX",
-        jmp_addr = "XXX",
-	mem_addr = "XXX"
+        rs1 = "XXX",
+        rs2 = "XXX",
+        rd = "XXX",
+        pc = "XXX",
+        brTarget = "XXX"
     }
 }
 
 /*********************************** Variants ***********************************/
 
-CorePerfModel SimpleRISCV_H_fw_dynBrPred (
+CorePerfModel SimpleRISCV_H_fw_DynBrPred (
     use Pipeline : SimplePipeline
-    use ConnectorModel : {DynBranchPredict_model, Register_model}
+    use ConnectorModel : {dynBranchPredModel, regModel}
     assign Resource : v_IPort = IPort_R
     assign Microaction : {
         vuA_ALU_arith = uA_ALU_arith_fw,

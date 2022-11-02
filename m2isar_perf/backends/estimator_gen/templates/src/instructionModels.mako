@@ -37,8 +37,7 @@ InstructionModelSet* ${corePerfModel_.name}_InstrModelSet = new InstructionModel
 static InstructionModel *instrModel_${instr_i.name} = new InstructionModel(
   ${corePerfModel_.name}_InstrModelSet,
   "${instr_i.name}",
-  ${instr_i.opcode},
-  ${instr_i.mask},
+  ${instr_i.identifier},
   [](PerformanceModel* perfModel_){
   ${corePerfModel_.name}_Model* perfModel = static_cast<${corePerfModel_.name}_Model*>(perfModel_);
   % for line_i in codeArrayDict_[instr_i.name]:

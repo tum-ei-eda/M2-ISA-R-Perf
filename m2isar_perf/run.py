@@ -24,7 +24,7 @@ import sys
 # Read command line arguments
 argParser = argparse.ArgumentParser()
 argParser.add_argument("description", help="File containing the description of the performance model.")
-argParser.add_argument("output_dir", help="Directory to store generated files")
+#argParser.add_argument("output_dir", help="Directory to store generated files")
 argParser.add_argument("-d", "--dump_dir", help="Directory to dump intermediatly generated models.")
 args = argParser.parse_args()
 
@@ -36,8 +36,9 @@ else:
 
 # Import backend
 #import backends.estimator_gen.run as backend
-import backends.graph_printer.run as backend
-    
+#import backends.graph_printer.run as backend
+import backends.monitor_gen.run as backend
+
 # Call frontend
 model = frontend.main(args.description, args.dump_dir)
 

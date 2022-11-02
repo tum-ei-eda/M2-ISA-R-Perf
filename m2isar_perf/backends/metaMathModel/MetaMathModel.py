@@ -144,11 +144,8 @@ class Instruction(MetaMathModel_base):
     def __init__(self, name_):
         self.name = name_
         self.timeFunction = None
+        self.identifier = -1 # TODO: Does it make more sense to handle instruction groups instead of each instruction individually?
 
-        # TODO / FIXME: Temp. workaround! Replace with ID to decouple estimator from CoreDSL2
-        self.opcode = ""
-        self.mask = ""
-        
         super().__init__()
 
     def setTimeFunction(self, timeFunc_):

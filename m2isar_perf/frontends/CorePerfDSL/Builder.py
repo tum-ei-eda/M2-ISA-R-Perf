@@ -30,6 +30,7 @@ class Builder():
         top = MetaModel.TopModel()
         
         # Assign microactions and trace-value-assignments which are defined via the ALL and REST keywords
+        instrId = 0
         for instr_name, instr in self.dictionary.instructions.items():
 
             instr.microactions.extend(self.dictionary.ALL_Instruction.microactions)
@@ -43,161 +44,44 @@ class Builder():
             if instr_name == Defs.KEYWORD_REST:
                 instr.name = Defs.DEFAULT_INSTR_NAME
                 instr_name = instr.name # TODO: Only used for the opcode/mask assignment below. Remove?
-                
-            # TODO / FIXME: Temp workaround! Replace with unique instruction-type-id assignment, to decouple estimator model from CoreDSL2
-            if instr_name == "add":
-                instr.opcode = "0x00000033"
-                instr.mask   = "0xfe00707f"
-            elif instr_name == "sub":
-                instr.opcode = "0x40000033"
-                instr.mask   = "0xfe00707f"
-            elif instr_name == "sll":
-                instr.opcode = "0x00001033"
-                instr.mask   = "0xfe00707f"
-            elif instr_name == "xor":
-                instr.opcode = "0x00004033"
-                instr.mask   = "0xfe00707f"
-            elif instr_name == "or":
-                instr.opcode = "0x00006033"
-                instr.mask   = "0xfe00707f"
-            elif instr_name == "and":
-                instr.opcode = "0x00007033"
-                instr.mask   = "0xfe00707f"
-            elif instr_name == "mul":
-                instr.opcode = "0x02000033"
-                instr.mask   = "0xfe00707f"
-            elif instr_name == "rem":
-                instr.opcode = "0x02006033"
-                instr.mask   = "0xfe00707f"
-            elif instr_name == "addi":
-                instr.opcode = "0x00000013"
-                instr.mask   = "0x0000707f"
-            elif instr_name == "sltiu":
-                instr.opcode = "0x00003013"
-                instr.mask   = "0xfe00707f"
-            elif instr_name == "xori":
-                instr.opcode = "0x00004013"
-                instr.mask   = "0x0000707f"
-            elif instr_name == "ori":
-                instr.opcode = "0x00006013"
-                instr.mask   = "0x0000707f"
-            elif instr_name == "andi":
-                instr.opcode = "0x00007013"
-                instr.mask   = "0x0000707f"
-            elif instr_name == "sb":
-                instr.opcode = "0x00000023"
-                instr.mask   = "0x0000707f"
-            elif instr_name == "sh":
-                instr.opcode = "0x00001023"
-                instr.mask   = "0x0000707f"
-            elif instr_name == "sw":
-                instr.opcode = "0x00002023"
-                instr.mask   = "0x0000707f"
-            elif instr_name == "beq":
-                instr.opcode = "0x00000063"
-                instr.mask   = "0x0000707f"
-            elif instr_name == "bne":
-                instr.opcode = "0x00001063"
-                instr.mask   = "0x0000707f"
-            elif instr_name == "blt":
-                instr.opcode = "0x00004063"
-                instr.mask   = "0x0000707f"
-            elif instr_name == "bge":
-                instr.opcode = "0x00005063"
-                instr.mask   = "0x0000707f"
-            elif instr_name == "bltu":
-                instr.opcode = "0x00006063"
-                instr.mask   = "0x0000707f"
-            elif instr_name == "bgeu":
-                instr.opcode = "0x00007063"
-                instr.mask   = "0x0000707f"
-            elif instr_name == "lh":
-                instr.opcode = "0x00001003"
-                instr.mask   = "0x0000707f"
-            elif instr_name == "lw":
-                instr.opcode = "0x00002003"
-                instr.mask   = "0x0000707f"
-            elif instr_name == "lbu":
-                instr.opcode = "0x00004003"
-                instr.mask   = "0x0000707f"
-            elif instr_name == "lhu":
-                instr.opcode = "0x00005003"
-                instr.mask   = "0x0000707f"
-            elif instr_name == "c_beqz":
-                instr.opcode = "0x0000c001"
-                instr.mask   = "0x0000e003"
-            elif instr_name == "c_bnez":
-                instr.opcode = "0x0000e001"
-                instr.mask   = "0x0000e003"
-            elif instr_name == "c_add":
-                instr.opcode = "0x00009002"
-                instr.mask   = "0x0000f003"
-            elif instr_name == "c_addi":
-                instr.opcode = "0x00000001"
-                instr.mask   = "0x0000e003"
-            elif instr_name == "c_slli":
-                instr.opcode = "0x00000002"
-                instr.mask   = "0x0000f003"
-            elif instr_name == "c_addi16sp":
-                instr.opcode = "0x00006101"
-                instr.mask   = "0x0000ef83"
-            elif instr_name == "c_lw":
-                instr.opcode = "0x00004000"
-                instr.mask   = "0x0000e003"
-            elif instr_name == "c_sw":
-                instr.opcode = "0x0000c000"
-                instr.mask   = "0x0000e003"
-            elif instr_name == "c_mv":
-                instr.opcode = "0x00008002"
-                instr.mask   = "0x0000f003"
-            elif instr_name == "c_li":
-                instr.opcode = "0x00004001"
-                instr.mask   = "0x0000e003"
-            elif instr_name == Defs.DEFAULT_INSTR_NAME:
-                instr.opcode = "0xffffffff"
-                instr.mask   = "0x00000000"
-            else:
-                print("Unknown instruction: " + instr_name)
-                
+
+            # Assign unique identifier to every instruction
+            instr.identifier = instrId
+            instrId += 1
                 
         # Finalize the CorePerfModels and add to TopModel
-        for model_name, model in self.dictionary.corePerfModels.items():
+        for model_name in self.dictionary.corePerfModels.keys():
 
             # Assign all instructions to each corePerfModel
-            for instr_name, instr in self.dictionary.instructions.items():
-                model.instructions.append(instr)
-            
+            for instr_i in self.dictionary.instructions.values():
+                self.dictionary.corePerfModels[model_name].instructions.append(instr_i)
+                
             # Create corePerfModel instance with unique child objects
-            corePerfModel = copy.deepcopy(model)
+            # NOTE: Make deep copy of dictionary, as we also need to copy non-virtual resources/microactions that are assigned to the current model later on
+            dictionary_cpy = copy.deepcopy(self.dictionary)
+            corePerfModel = dictionary_cpy.corePerfModels[model_name]
             
             # Resolve virtual microactions
-            for uActAss in corePerfModel.microactionAssignments:
+            for uActAss in dictionary_cpy.microactionAssignments[corePerfModel.name]:                
                 viruAct = uActAss[0]
                 uAct = uActAss[1]
-
-                viruAct.name = uAct.name
-                viruAct.inConnector = uAct.inConnector
-                viruAct.resource = uAct.resource
-                viruAct.outConnector = uAct.outConnector
+                viruAct.assign(uAct)
 
             # Resolve virtual resources
-            for resAss in corePerfModel.resourceAssignments:
+            for resAss in dictionary_cpy.resourceAssignments[corePerfModel.name]:
                 virRes = resAss[0]
                 res = resAss[1]
-
-                virRes.name = res.name
-                virRes.delay = res.delay
-                virRes.resourceModel = res.resourceModel
+                virRes.assign(res)
 
             # Check that all virtual components of CorePerfModel have been resolved and link resource models to corePerfModel
             for uA in corePerfModel.getAllMicroactions():
                 if uA.name == "":
-                    print("ERROR: CorePerfModel %s does not assign a microaction to virtual microaction %s" % (corePerfModel.name, uA.virtualAlias)) # Add proper error handling
+                    print("ERROR: CorePerfModel %s does not assign a microaction to virtual microaction %s" % (corePerfModel.name, uA.virtualAlias)) # TODO: Add proper error handling
                 else:
                     res = uA.resource
                     if res is not None:
                         if res.name == "":
-                            print("ERROR: CorePerfModel %s does not assign a microaction to virtual microaction %s" % (corePerfModel.name, res.virtualAlias)) # Add proper error handling
+                            print("ERROR: CorePerfModel %s does not assign a resource to virtual resource %s" % (corePerfModel.name, res.virtualAlias)) # TODO: Add proper error handling
                         else:
                             resModel = res.resourceModel
                             if resModel is not None:

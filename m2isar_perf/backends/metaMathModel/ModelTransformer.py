@@ -93,10 +93,7 @@ class ModelTransformer:
             pipelineUsageDict = corePerfModel_front.getPipelineUsageDict()
             for instr_front in corePerfModel_front.getAllInstructions():
                 instr_math = MetaMathModel.Instruction(instr_front.name)
-
-                # TODO / FIXME: Temp workaround! Replace with unique instruction-type-id assignment, to decouple estimator model from CoreDSL2
-                instr_math.opcode = instr_front.opcode
-                instr_math.mask = instr_front.mask
+                instr_math.identifier = instr_front.identifier
                 
                 # Deepcopy the microaction dictionary. Otherwise linking of nodes for this instruction will affect other instructions
                 microactionMathModelDict_cpy = copy.deepcopy(microactionMathModelDict)

@@ -58,6 +58,9 @@ class Dictionary():
 
         self.REST_Instruction = MetaModel.Instruction()
         self.REST_Instruction.name = Defs.KEYWORD_REST
+
+        self.microactionAssignments = {}
+        self.resourceAssignments = {}
         
     ## Interface functions
         
@@ -151,9 +154,10 @@ class Dictionary():
         model.name = name_
         model.pipeline = pipe_
         model.connectorModels = conModels_
-        model.resourceAssignments = resAssigns_
-        model.microactionAssignments = uActionAssigns_
         self.__addInstance(model, "CorePerfModel")
+        
+        self.resourceAssignments[name_] = resAssigns_
+        self.microactionAssignments[name_] = uActionAssigns_
 
     def addInstructionGroup(self, name_, instructions_):
         gr = InstructionGroup()
@@ -268,6 +272,13 @@ class Dictionary():
 
 
     def __addTraceValuesToInstruction(self, instr_, traceValueAssigns_):
-        instr_.traceValueAssignments.extend(traceValueAssigns_)
+
+        for trValAss_i in traceValueAssigns_:
+            assignment = MetaModel.TraceValueAssignment()
+            assignment.traceValue = trValAss_i[0]
+            assignment.description = trValAss_i[1]
+            instr_.traceValueAssignments.append(assignment)
+        
+        #instr_.traceValueAssignments.extend(traceValueAssigns_)
         if (instr_.name != Defs.KEYWORD_ALL) and (instr_.name != Defs.KEYWORD_REST):
             self.instrTraceValueMapped.append(instr_.name)

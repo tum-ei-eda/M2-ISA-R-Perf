@@ -2,6 +2,7 @@
 *~
 *#
 **venv
+/m2isar_perf/temp
 /m2isar_perf/backends/graph_printer/temp
 /m2isar_perf/backends/graph_printer/out
 /m2isar_perf/backends/estimator_gen/out

@@ -1,4 +1,4 @@
-# Generated from CorePerfDSL.g4 by ANTLR 4.9
+# Generated from CorePerfDSL.g4 by ANTLR 4.9.3
 from antlr4 import *
 if __name__ is not None and "." in __name__:
     from .CorePerfDSLParser import CorePerfDSLParser
@@ -8,12 +8,12 @@ else:
 # This class defines a complete listener for a parse tree produced by CorePerfDSLParser.
 class CorePerfDSLListener(ParseTreeListener):
 
-    # Enter a parse tree produced by CorePerfDSLParser#description_context.
-    def enterDescription_context(self, ctx:CorePerfDSLParser.Description_contextContext):
+    # Enter a parse tree produced by CorePerfDSLParser#top.
+    def enterTop(self, ctx:CorePerfDSLParser.TopContext):
         pass
 
-    # Exit a parse tree produced by CorePerfDSLParser#description_context.
-    def exitDescription_context(self, ctx:CorePerfDSLParser.Description_contextContext):
+    # Exit a parse tree produced by CorePerfDSLParser#top.
+    def exitTop(self, ctx:CorePerfDSLParser.TopContext):
         pass
 
 

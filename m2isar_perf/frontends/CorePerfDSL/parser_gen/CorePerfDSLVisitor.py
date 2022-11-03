@@ -1,4 +1,4 @@
-# Generated from CorePerfDSL.g4 by ANTLR 4.9
+# Generated from CorePerfDSL.g4 by ANTLR 4.9.3
 from antlr4 import *
 if __name__ is not None and "." in __name__:
     from .CorePerfDSLParser import CorePerfDSLParser
@@ -9,8 +9,8 @@ else:
 
 class CorePerfDSLVisitor(ParseTreeVisitor):
 
-    # Visit a parse tree produced by CorePerfDSLParser#description_context.
-    def visitDescription_context(self, ctx:CorePerfDSLParser.Description_contextContext):
+    # Visit a parse tree produced by CorePerfDSLParser#top.
+    def visitTop(self, ctx:CorePerfDSLParser.TopContext):
         return self.visitChildren(ctx)
 
 

@@ -120,11 +120,11 @@ MicroactionMapping {
 
 TraceValueMapping {
     [ALL] : {
-        rs1 = "XXX",
-        rs2 = "XXX",
-        rd = "XXX",
-        pc = "XXX",
-        brTarget = "XXX"
+        rs1 = "$[BITFIELD rs1 {(0:19,15)}]",
+        rs2 = "$[BITFIELD rs2 {(0:24,20)}]",
+        rd = "instr.printASM(ba).substr(0, instr.printASM(ba).find(\" #\"))",
+        pc = "ic.current_address_",
+        brTarget = "$[BITFIELD imm {(12:31,31)|(11:7,7)|(5:30,25)|(1:11,8)}]"
     }
 }
 

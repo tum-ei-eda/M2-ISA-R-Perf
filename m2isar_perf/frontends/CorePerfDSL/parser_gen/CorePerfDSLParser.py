@@ -1,4 +1,4 @@
-# Generated from CorePerfDSL.g4 by ANTLR 4.9
+# Generated from CorePerfDSL.g4 by ANTLR 4.9.3
 # encoding: utf-8
 from antlr4 import *
 from io import StringIO
@@ -12,7 +12,7 @@ else:
 def serializedATN():
     with StringIO() as buf:
         buf.write("\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3&")
-        buf.write("\u0259\4\2\t\2\4\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7")
+        buf.write("\u0257\4\2\t\2\4\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7")
         buf.write("\4\b\t\b\4\t\t\t\4\n\t\n\4\13\t\13\4\f\t\f\4\r\t\r\4\16")
         buf.write("\t\16\4\17\t\17\4\20\t\20\4\21\t\21\4\22\t\22\4\23\t\23")
         buf.write("\4\24\t\24\4\25\t\25\4\26\t\26\4\27\t\27\4\30\t\30\4\31")
@@ -70,12 +70,12 @@ def serializedATN():
         buf.write("\35\3\35\3\35\5\35\u0223\n\35\3\36\3\36\3\36\5\36\u0228")
         buf.write("\n\36\3\36\3\36\3\36\3\36\3\36\7\36\u022f\n\36\f\36\16")
         buf.write("\36\u0232\13\36\3\36\5\36\u0235\n\36\3\37\3\37\3\37\3")
-        buf.write("\37\3 \3 \3 \3 \3!\3!\3!\3!\3!\3!\3\"\3\"\3#\3#\3$\3$")
-        buf.write("\3%\3%\3&\3&\3\'\3\'\3(\3(\3)\3)\3*\3*\3+\3+\3+\2\2,\2")
-        buf.write("\4\6\b\n\f\16\20\22\24\26\30\32\34\36 \"$&(*,.\60\62\64")
-        buf.write("\668:<>@BDFHJLNPRT\2\4\4\2\37\37##\4\2\37\37\"\"\2\u0279")
-        buf.write("\2[\3\2\2\2\4g\3\2\2\2\6l\3\2\2\2\bq\3\2\2\2\ns\3\2\2")
-        buf.write("\2\f\u0082\3\2\2\2\16\u00be\3\2\2\2\20\u00cd\3\2\2\2\22")
+        buf.write("\37\3 \3 \3 \3 \3!\3!\3!\3!\3\"\3\"\3#\3#\3$\3$\3%\3%")
+        buf.write("\3&\3&\3\'\3\'\3(\3(\3)\3)\3*\3*\3+\3+\3+\2\2,\2\4\6\b")
+        buf.write("\n\f\16\20\22\24\26\30\32\34\36 \"$&(*,.\60\62\64\668")
+        buf.write(":<>@BDFHJLNPRT\2\4\4\2\36\36##\4\2\36\36\"\"\2\u0277\2")
+        buf.write("[\3\2\2\2\4g\3\2\2\2\6l\3\2\2\2\bq\3\2\2\2\ns\3\2\2\2")
+        buf.write("\f\u0082\3\2\2\2\16\u00be\3\2\2\2\20\u00cd\3\2\2\2\22")
         buf.write("\u00e9\3\2\2\2\24\u00f8\3\2\2\2\26\u0108\3\2\2\2\30\u0117")
         buf.write("\3\2\2\2\32\u0119\3\2\2\2\34\u0128\3\2\2\2\36\u0138\3")
         buf.write("\2\2\2 \u0147\3\2\2\2\"\u0153\3\2\2\2$\u0162\3\2\2\2&")
@@ -83,9 +83,9 @@ def serializedATN():
         buf.write("\2\2\2.\u01d8\3\2\2\2\60\u01e7\3\2\2\2\62\u01f8\3\2\2")
         buf.write("\2\64\u0207\3\2\2\2\66\u0209\3\2\2\28\u0222\3\2\2\2:\u0224")
         buf.write("\3\2\2\2<\u0236\3\2\2\2>\u023a\3\2\2\2@\u023e\3\2\2\2")
-        buf.write("B\u0244\3\2\2\2D\u0246\3\2\2\2F\u0248\3\2\2\2H\u024a\3")
-        buf.write("\2\2\2J\u024c\3\2\2\2L\u024e\3\2\2\2N\u0250\3\2\2\2P\u0252")
-        buf.write("\3\2\2\2R\u0254\3\2\2\2T\u0256\3\2\2\2VZ\5\4\3\2WZ\5\6")
+        buf.write("B\u0242\3\2\2\2D\u0244\3\2\2\2F\u0246\3\2\2\2H\u0248\3")
+        buf.write("\2\2\2J\u024a\3\2\2\2L\u024c\3\2\2\2N\u024e\3\2\2\2P\u0250")
+        buf.write("\3\2\2\2R\u0252\3\2\2\2T\u0254\3\2\2\2VZ\5\4\3\2WZ\5\6")
         buf.write("\4\2XZ\5\b\5\2YV\3\2\2\2YW\3\2\2\2YX\3\2\2\2Z]\3\2\2\2")
         buf.write("[Y\3\2\2\2[\\\3\2\2\2\\^\3\2\2\2][\3\2\2\2^_\7\2\2\3_")
         buf.write("\3\3\2\2\2`h\5:\36\2ah\5\62\32\2bh\5\66\34\2ch\5.\30\2")
@@ -98,14 +98,14 @@ def serializedATN():
         buf.write("xz\5\f\7\2yw\3\2\2\2z}\3\2\2\2{y\3\2\2\2{|\3\2\2\2|~\3")
         buf.write("\2\2\2}{\3\2\2\2~\177\7\6\2\2\177\u0081\3\2\2\2\u0080")
         buf.write("t\3\2\2\2\u0080u\3\2\2\2\u0081\13\3\2\2\2\u0082\u0083")
-        buf.write("\7\37\2\2\u0083\u00b9\7\7\2\2\u0084\u0085\7\b\2\2\u0085")
+        buf.write("\7\36\2\2\u0083\u00b9\7\7\2\2\u0084\u0085\7\b\2\2\u0085")
         buf.write("\u0092\7\t\2\2\u0086\u0093\5D#\2\u0087\u0088\7\4\2\2\u0088")
         buf.write("\u008d\5D#\2\u0089\u008a\7\5\2\2\u008a\u008c\5D#\2\u008b")
         buf.write("\u0089\3\2\2\2\u008c\u008f\3\2\2\2\u008d\u008b\3\2\2\2")
         buf.write("\u008d\u008e\3\2\2\2\u008e\u0090\3\2\2\2\u008f\u008d\3")
         buf.write("\2\2\2\u0090\u0091\7\6\2\2\u0091\u0093\3\2\2\2\u0092\u0086")
         buf.write("\3\2\2\2\u0092\u0087\3\2\2\2\u0093\u00b8\3\2\2\2\u0094")
-        buf.write("\u0095\7\n\2\2\u0095\u0096\7\t\2\2\u0096\u00b8\7\37\2")
+        buf.write("\u0095\7\n\2\2\u0095\u0096\7\t\2\2\u0096\u00b8\7\36\2")
         buf.write("\2\u0097\u0098\7\13\2\2\u0098\u00a5\7\t\2\2\u0099\u00a6")
         buf.write("\5B\"\2\u009a\u009b\7\4\2\2\u009b\u00a0\5B\"\2\u009c\u009d")
         buf.write("\7\5\2\2\u009d\u009f\5B\"\2\u009e\u009c\3\2\2\2\u009f")
@@ -129,7 +129,7 @@ def serializedATN():
         buf.write("\2\u00c6\u00c4\3\2\2\2\u00c6\u00c7\3\2\2\2\u00c7\u00c9")
         buf.write("\3\2\2\2\u00c8\u00c6\3\2\2\2\u00c9\u00ca\7\6\2\2\u00ca")
         buf.write("\u00cc\3\2\2\2\u00cb\u00bf\3\2\2\2\u00cb\u00c0\3\2\2\2")
-        buf.write("\u00cc\17\3\2\2\2\u00cd\u00ce\7\37\2\2\u00ce\u00e4\7\7")
+        buf.write("\u00cc\17\3\2\2\2\u00cd\u00ce\7\36\2\2\u00ce\u00e4\7\7")
         buf.write("\2\2\u00cf\u00d0\7\b\2\2\u00d0\u00dd\7\t\2\2\u00d1\u00de")
         buf.write("\5D#\2\u00d2\u00d3\7\4\2\2\u00d3\u00d8\5D#\2\u00d4\u00d5")
         buf.write("\7\5\2\2\u00d5\u00d7\5D#\2\u00d6\u00d4\3\2\2\2\u00d7\u00da")
@@ -137,7 +137,7 @@ def serializedATN():
         buf.write("\u00db\3\2\2\2\u00da\u00d8\3\2\2\2\u00db\u00dc\7\6\2\2")
         buf.write("\u00dc\u00de\3\2\2\2\u00dd\u00d1\3\2\2\2\u00dd\u00d2\3")
         buf.write("\2\2\2\u00de\u00e3\3\2\2\2\u00df\u00e0\7\n\2\2\u00e0\u00e1")
-        buf.write("\7\t\2\2\u00e1\u00e3\7\37\2\2\u00e2\u00cf\3\2\2\2\u00e2")
+        buf.write("\7\t\2\2\u00e1\u00e3\7\36\2\2\u00e2\u00cf\3\2\2\2\u00e2")
         buf.write("\u00df\3\2\2\2\u00e3\u00e6\3\2\2\2\u00e4\u00e2\3\2\2\2")
         buf.write("\u00e4\u00e5\3\2\2\2\u00e5\u00e7\3\2\2\2\u00e6\u00e4\3")
         buf.write("\2\2\2\u00e7\u00e8\7\r\2\2\u00e8\21\3\2\2\2\u00e9\u00f6")
@@ -159,7 +159,7 @@ def serializedATN():
         buf.write("\2\u010f\u0112\3\2\2\2\u0110\u010e\3\2\2\2\u0110\u0111")
         buf.write("\3\2\2\2\u0111\u0113\3\2\2\2\u0112\u0110\3\2\2\2\u0113")
         buf.write("\u0114\7\6\2\2\u0114\u0116\3\2\2\2\u0115\u0109\3\2\2\2")
-        buf.write("\u0115\u010a\3\2\2\2\u0116\27\3\2\2\2\u0117\u0118\7\37")
+        buf.write("\u0115\u010a\3\2\2\2\u0116\27\3\2\2\2\u0117\u0118\7\36")
         buf.write("\2\2\u0118\31\3\2\2\2\u0119\u0126\7\21\2\2\u011a\u0127")
         buf.write("\5\34\17\2\u011b\u011c\7\4\2\2\u011c\u0121\5\34\17\2\u011d")
         buf.write("\u011e\7\5\2\2\u011e\u0120\5\34\17\2\u011f\u011d\3\2\2")
@@ -179,7 +179,7 @@ def serializedATN():
         buf.write("\u0140\u013e\3\2\2\2\u0140\u0141\3\2\2\2\u0141\u0143\3")
         buf.write("\2\2\2\u0142\u0140\3\2\2\2\u0143\u0144\7\6\2\2\u0144\u0146")
         buf.write("\3\2\2\2\u0145\u0139\3\2\2\2\u0145\u013a\3\2\2\2\u0146")
-        buf.write("\37\3\2\2\2\u0147\u0148\7\37\2\2\u0148\u0149\7\7\2\2\u0149")
+        buf.write("\37\3\2\2\2\u0147\u0148\7\36\2\2\u0148\u0149\7\7\2\2\u0149")
         buf.write("\u014e\t\2\2\2\u014a\u014b\7\5\2\2\u014b\u014d\t\2\2\2")
         buf.write("\u014c\u014a\3\2\2\2\u014d\u0150\3\2\2\2\u014e\u014c\3")
         buf.write("\2\2\2\u014e\u014f\3\2\2\2\u014f\u0151\3\2\2\2\u0150\u014e")
@@ -190,7 +190,7 @@ def serializedATN():
         buf.write("\2\2\2\u015b\u015c\3\2\2\2\u015c\u015e\3\2\2\2\u015d\u015b")
         buf.write("\3\2\2\2\u015e\u015f\7\6\2\2\u015f\u0161\3\2\2\2\u0160")
         buf.write("\u0154\3\2\2\2\u0160\u0155\3\2\2\2\u0161#\3\2\2\2\u0162")
-        buf.write("\u0163\7\37\2\2\u0163\u019d\7\7\2\2\u0164\u0165\7\24\2")
+        buf.write("\u0163\7\36\2\2\u0163\u019d\7\7\2\2\u0164\u0165\7\24\2")
         buf.write("\2\u0165\u0166\7\25\2\2\u0166\u0167\7\t\2\2\u0167\u019c")
         buf.write("\5T+\2\u0168\u0169\7\24\2\2\u0169\u016a\7\3\2\2\u016a")
         buf.write("\u0177\7\t\2\2\u016b\u0178\5H%\2\u016c\u016d\7\4\2\2\u016d")
@@ -223,7 +223,7 @@ def serializedATN():
         buf.write("\2\2\2\u01aa\u01ab\3\2\2\2\u01ab\u01ad\3\2\2\2\u01ac\u01aa")
         buf.write("\3\2\2\2\u01ad\u01ae\7\6\2\2\u01ae\u01b0\3\2\2\2\u01af")
         buf.write("\u01a3\3\2\2\2\u01af\u01a4\3\2\2\2\u01b0\'\3\2\2\2\u01b1")
-        buf.write("\u01b2\7\37\2\2\u01b2\u01b3\7\7\2\2\u01b3\u01b8\5R*\2")
+        buf.write("\u01b2\7\36\2\2\u01b2\u01b3\7\7\2\2\u01b3\u01b8\5R*\2")
         buf.write("\u01b4\u01b5\7\31\2\2\u01b5\u01b7\5R*\2\u01b6\u01b4\3")
         buf.write("\2\2\2\u01b7\u01ba\3\2\2\2\u01b8\u01b6\3\2\2\2\u01b8\u01b9")
         buf.write("\3\2\2\2\u01b9\u01bb\3\2\2\2\u01ba\u01b8\3\2\2\2\u01bb")
@@ -233,7 +233,7 @@ def serializedATN():
         buf.write("\2\2\2\u01c4\u01c7\3\2\2\2\u01c5\u01c3\3\2\2\2\u01c5\u01c6")
         buf.write("\3\2\2\2\u01c6\u01c8\3\2\2\2\u01c7\u01c5\3\2\2\2\u01c8")
         buf.write("\u01c9\7\6\2\2\u01c9\u01cb\3\2\2\2\u01ca\u01be\3\2\2\2")
-        buf.write("\u01ca\u01bf\3\2\2\2\u01cb+\3\2\2\2\u01cc\u01cd\7\37\2")
+        buf.write("\u01ca\u01bf\3\2\2\2\u01cb+\3\2\2\2\u01cc\u01cd\7\36\2")
         buf.write("\2\u01cd\u01ce\7\7\2\2\u01ce\u01d3\5N(\2\u01cf\u01d0\7")
         buf.write("\5\2\2\u01d0\u01d2\5N(\2\u01d1\u01cf\3\2\2\2\u01d2\u01d5")
         buf.write("\3\2\2\2\u01d3\u01d1\3\2\2\2\u01d3\u01d4\3\2\2\2\u01d4")
@@ -244,7 +244,7 @@ def serializedATN():
         buf.write("\2\u01df\u01e2\3\2\2\2\u01e0\u01de\3\2\2\2\u01e0\u01e1")
         buf.write("\3\2\2\2\u01e1\u01e3\3\2\2\2\u01e2\u01e0\3\2\2\2\u01e3")
         buf.write("\u01e4\7\6\2\2\u01e4\u01e6\3\2\2\2\u01e5\u01d9\3\2\2\2")
-        buf.write("\u01e5\u01da\3\2\2\2\u01e6/\3\2\2\2\u01e7\u01e8\7\37\2")
+        buf.write("\u01e5\u01da\3\2\2\2\u01e6/\3\2\2\2\u01e7\u01e8\7\36\2")
         buf.write("\2\u01e8\u01f4\7\7\2\2\u01e9\u01f5\5L\'\2\u01ea\u01eb")
         buf.write("\5L\'\2\u01eb\u01ec\7\31\2\2\u01ec\u01ed\5L\'\2\u01ed")
         buf.write("\u01f5\3\2\2\2\u01ee\u01ef\5L\'\2\u01ef\u01f0\7\31\2\2")
@@ -258,22 +258,22 @@ def serializedATN():
         buf.write("\u0200\u0201\3\2\2\2\u0201\u0203\3\2\2\2\u0202\u0200\3")
         buf.write("\2\2\2\u0203\u0204\7\6\2\2\u0204\u0206\3\2\2\2\u0205\u01f9")
         buf.write("\3\2\2\2\u0205\u01fa\3\2\2\2\u0206\63\3\2\2\2\u0207\u0208")
-        buf.write("\7\37\2\2\u0208\65\3\2\2\2\u0209\u0216\7\27\2\2\u020a")
+        buf.write("\7\36\2\2\u0208\65\3\2\2\2\u0209\u0216\7\27\2\2\u020a")
         buf.write("\u0217\58\35\2\u020b\u020c\7\4\2\2\u020c\u0211\58\35\2")
         buf.write("\u020d\u020e\7\5\2\2\u020e\u0210\58\35\2\u020f\u020d\3")
         buf.write("\2\2\2\u0210\u0213\3\2\2\2\u0211\u020f\3\2\2\2\u0211\u0212")
         buf.write("\3\2\2\2\u0212\u0214\3\2\2\2\u0213\u0211\3\2\2\2\u0214")
         buf.write("\u0215\7\6\2\2\u0215\u0217\3\2\2\2\u0216\u020a\3\2\2\2")
-        buf.write("\u0216\u020b\3\2\2\2\u0217\67\3\2\2\2\u0218\u0219\7\37")
+        buf.write("\u0216\u020b\3\2\2\2\u0217\67\3\2\2\2\u0218\u0219\7\36")
         buf.write("\2\2\u0219\u021a\7\7\2\2\u021a\u021b\5F$\2\u021b\u021c")
-        buf.write("\7\r\2\2\u021c\u0223\3\2\2\2\u021d\u021e\7\37\2\2\u021e")
-        buf.write("\u021f\7\7\2\2\u021f\u0220\7 \2\2\u0220\u0223\7\r\2\2")
-        buf.write("\u0221\u0223\7\37\2\2\u0222\u0218\3\2\2\2\u0222\u021d")
+        buf.write("\7\r\2\2\u021c\u0223\3\2\2\2\u021d\u021e\7\36\2\2\u021e")
+        buf.write("\u021f\7\7\2\2\u021f\u0220\7\37\2\2\u0220\u0223\7\r\2")
+        buf.write("\2\u0221\u0223\7\36\2\2\u0222\u0218\3\2\2\2\u0222\u021d")
         buf.write("\3\2\2\2\u0222\u0221\3\2\2\2\u02239\3\2\2\2\u0224\u0227")
         buf.write("\7\34\2\2\u0225\u0228\7\27\2\2\u0226\u0228\7\30\2\2\u0227")
         buf.write("\u0225\3\2\2\2\u0227\u0226\3\2\2\2\u0228\u0234\3\2\2\2")
-        buf.write("\u0229\u0235\7\37\2\2\u022a\u022b\7\4\2\2\u022b\u0230")
-        buf.write("\7\37\2\2\u022c\u022d\7\5\2\2\u022d\u022f\7\37\2\2\u022e")
+        buf.write("\u0229\u0235\7\36\2\2\u022a\u022b\7\4\2\2\u022b\u0230")
+        buf.write("\7\36\2\2\u022c\u022d\7\5\2\2\u022d\u022f\7\36\2\2\u022e")
         buf.write("\u022c\3\2\2\2\u022f\u0232\3\2\2\2\u0230\u022e\3\2\2\2")
         buf.write("\u0230\u0231\3\2\2\2\u0231\u0233\3\2\2\2\u0232\u0230\3")
         buf.write("\2\2\2\u0233\u0235\7\6\2\2\u0234\u0229\3\2\2\2\u0234\u022a")
@@ -281,20 +281,20 @@ def serializedATN():
         buf.write("\7\35\2\2\u0238\u0239\5J&\2\u0239=\3\2\2\2\u023a\u023b")
         buf.write("\5N(\2\u023b\u023c\7\35\2\2\u023c\u023d\5N(\2\u023d?\3")
         buf.write("\2\2\2\u023e\u023f\5D#\2\u023f\u0240\7\35\2\2\u0240\u0241")
-        buf.write("\7\36\2\2\u0241\u0242\7\37\2\2\u0242\u0243\7\36\2\2\u0243")
-        buf.write("A\3\2\2\2\u0244\u0245\7\37\2\2\u0245C\3\2\2\2\u0246\u0247")
-        buf.write("\7\37\2\2\u0247E\3\2\2\2\u0248\u0249\7\37\2\2\u0249G\3")
-        buf.write("\2\2\2\u024a\u024b\7\37\2\2\u024bI\3\2\2\2\u024c\u024d")
-        buf.write("\7\37\2\2\u024dK\3\2\2\2\u024e\u024f\7\37\2\2\u024fM\3")
-        buf.write("\2\2\2\u0250\u0251\7\37\2\2\u0251O\3\2\2\2\u0252\u0253")
-        buf.write("\t\3\2\2\u0253Q\3\2\2\2\u0254\u0255\7\37\2\2\u0255S\3")
-        buf.write("\2\2\2\u0256\u0257\7\37\2\2\u0257U\3\2\2\2?Y[glq{\u0080")
-        buf.write("\u008d\u0092\u00a0\u00a5\u00b0\u00b5\u00b7\u00b9\u00c6")
-        buf.write("\u00cb\u00d8\u00dd\u00e2\u00e4\u00f1\u00f6\u0101\u0106")
-        buf.write("\u0110\u0115\u0121\u0126\u0131\u0136\u0140\u0145\u014e")
-        buf.write("\u015b\u0160\u0172\u0177\u0183\u0188\u0194\u0199\u019b")
-        buf.write("\u019d\u01aa\u01af\u01b8\u01c5\u01ca\u01d3\u01e0\u01e5")
-        buf.write("\u01f4\u0200\u0205\u0211\u0216\u0222\u0227\u0230\u0234")
+        buf.write("\7!\2\2\u0241A\3\2\2\2\u0242\u0243\7\36\2\2\u0243C\3\2")
+        buf.write("\2\2\u0244\u0245\7\36\2\2\u0245E\3\2\2\2\u0246\u0247\7")
+        buf.write("\36\2\2\u0247G\3\2\2\2\u0248\u0249\7\36\2\2\u0249I\3\2")
+        buf.write("\2\2\u024a\u024b\7\36\2\2\u024bK\3\2\2\2\u024c\u024d\7")
+        buf.write("\36\2\2\u024dM\3\2\2\2\u024e\u024f\7\36\2\2\u024fO\3\2")
+        buf.write("\2\2\u0250\u0251\t\3\2\2\u0251Q\3\2\2\2\u0252\u0253\7")
+        buf.write("\36\2\2\u0253S\3\2\2\2\u0254\u0255\7\36\2\2\u0255U\3\2")
+        buf.write("\2\2?Y[glq{\u0080\u008d\u0092\u00a0\u00a5\u00b0\u00b5")
+        buf.write("\u00b7\u00b9\u00c6\u00cb\u00d8\u00dd\u00e2\u00e4\u00f1")
+        buf.write("\u00f6\u0101\u0106\u0110\u0115\u0121\u0126\u0131\u0136")
+        buf.write("\u0140\u0145\u014e\u015b\u0160\u0172\u0177\u0183\u0188")
+        buf.write("\u0194\u0199\u019b\u019d\u01aa\u01af\u01b8\u01c5\u01ca")
+        buf.write("\u01d3\u01e0\u01e5\u01f4\u0200\u0205\u0211\u0216\u0222")
+        buf.write("\u0227\u0230\u0234")
         return buf.getvalue()
 
 
@@ -314,7 +314,7 @@ class CorePerfDSLParser ( Parser ):
                      "'TraceValue'", "'MicroactionMapping'", "'InstrGroup'", 
                      "'CorePerfModel'", "'use'", "'Pipeline'", "'assign'", 
                      "'Resource'", "'Microaction'", "'->'", "'Stage'", "'Connector'", 
-                     "'virtual'", "'='", "'\"'", "<INVALID>", "<INVALID>", 
+                     "'virtual'", "'='", "<INVALID>", "<INVALID>", "<INVALID>", 
                      "<INVALID>", "'[ALL]'", "'[?]'" ]
 
     symbolicNames = [ "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
@@ -324,10 +324,10 @@ class CorePerfDSLParser ( Parser ):
                       "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
                       "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
                       "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
-                      "<INVALID>", "ID", "INT", "FILE", "KEYWORD_ALL", "KEYWORD_REST", 
+                      "ID", "INT", "FILE", "STRING", "KEYWORD_ALL", "KEYWORD_REST", 
                       "ML_COMMENT", "SL_COMMENT", "WS" ]
 
-    RULE_description_context = 0
+    RULE_top = 0
     RULE_corePerfModel_sec = 1
     RULE_externModel_sec = 2
     RULE_instruction_sec = 3
@@ -370,12 +370,12 @@ class CorePerfDSLParser ( Parser ):
     RULE_stage_ref = 40
     RULE_pipeline_ref = 41
 
-    ruleNames =  [ "description_context", "corePerfModel_sec", "externModel_sec", 
-                   "instruction_sec", "connectorModel_def", "connectorModel", 
-                   "resourceModel_def", "resourceModel", "traceValueMapping_def", 
-                   "traceValueMapping", "traceValue_def", "traceValue", 
-                   "microactionMapping_def", "microactionMapping", "instrGroup_def", 
-                   "instrGroup", "corePerfModel_def", "corePerfModel", "pipeline_def", 
+    ruleNames =  [ "top", "corePerfModel_sec", "externModel_sec", "instruction_sec", 
+                   "connectorModel_def", "connectorModel", "resourceModel_def", 
+                   "resourceModel", "traceValueMapping_def", "traceValueMapping", 
+                   "traceValue_def", "traceValue", "microactionMapping_def", 
+                   "microactionMapping", "instrGroup_def", "instrGroup", 
+                   "corePerfModel_def", "corePerfModel", "pipeline_def", 
                    "pipeline", "stage_def", "stage", "microaction_def", 
                    "microaction", "connector_def", "connector", "resource_def", 
                    "resource", "virtual_def", "resource_assign", "microaction_assign", 
@@ -412,10 +412,10 @@ class CorePerfDSLParser ( Parser ):
     T__24=25
     T__25=26
     T__26=27
-    T__27=28
-    ID=29
-    INT=30
-    FILE=31
+    ID=28
+    INT=29
+    FILE=30
+    STRING=31
     KEYWORD_ALL=32
     KEYWORD_REST=33
     ML_COMMENT=34
@@ -424,14 +424,15 @@ class CorePerfDSLParser ( Parser ):
 
     def __init__(self, input:TokenStream, output:TextIO = sys.stdout):
         super().__init__(input, output)
-        self.checkVersion("4.9")
+        self.checkVersion("4.9.3")
         self._interp = ParserATNSimulator(self, self.atn, self.decisionsToDFA, self.sharedContextCache)
         self._predicates = None
 
 
 
 
-    class Description_contextContext(ParserRuleContext):
+    class TopContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -462,29 +463,29 @@ class CorePerfDSLParser ( Parser ):
 
 
         def getRuleIndex(self):
-            return CorePerfDSLParser.RULE_description_context
+            return CorePerfDSLParser.RULE_top
 
         def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterDescription_context" ):
-                listener.enterDescription_context(self)
+            if hasattr( listener, "enterTop" ):
+                listener.enterTop(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitDescription_context" ):
-                listener.exitDescription_context(self)
+            if hasattr( listener, "exitTop" ):
+                listener.exitTop(self)
 
         def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitDescription_context" ):
-                return visitor.visitDescription_context(self)
+            if hasattr( visitor, "visitTop" ):
+                return visitor.visitTop(self)
             else:
                 return visitor.visitChildren(self)
 
 
 
 
-    def description_context(self):
+    def top(self):
 
-        localctx = CorePerfDSLParser.Description_contextContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 0, self.RULE_description_context)
+        localctx = CorePerfDSLParser.TopContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 0, self.RULE_top)
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
@@ -526,6 +527,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class CorePerfModel_secContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -635,6 +637,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class ExternModel_secContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -708,6 +711,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class Instruction_secContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -781,6 +785,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class ConnectorModel_defContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -862,6 +867,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class ConnectorModelContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -1076,6 +1082,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class ResourceModel_defContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -1157,6 +1164,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class ResourceModelContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -1283,6 +1291,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class TraceValueMapping_defContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -1364,6 +1373,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class TraceValueMappingContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -1457,6 +1467,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class TraceValue_defContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -1538,6 +1549,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class TraceValueContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -1585,6 +1597,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class MicroactionMapping_defContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -1666,6 +1679,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class MicroactionMappingContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -1759,6 +1773,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class InstrGroup_defContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -1840,6 +1855,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class InstrGroupContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -1934,6 +1950,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class CorePerfModel_defContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -2015,6 +2032,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class CorePerfModelContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -2251,6 +2269,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class Pipeline_defContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -2332,6 +2351,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class PipelineContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -2409,6 +2429,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class Stage_defContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -2490,6 +2511,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class StageContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -2567,6 +2589,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class Microaction_defContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -2648,6 +2671,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class MicroactionContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -2745,6 +2769,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class Connector_defContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -2826,6 +2851,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class ConnectorContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -2873,6 +2899,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class Resource_defContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -2954,6 +2981,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class ResourceContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -3104,6 +3132,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class Virtual_defContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -3204,6 +3233,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class Resource_assignContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -3260,6 +3290,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class Microaction_assignContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -3316,6 +3347,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class TraceValue_assignContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -3327,8 +3359,8 @@ class CorePerfDSLParser ( Parser ):
             return self.getTypedRuleContext(CorePerfDSLParser.TraceValue_refContext,0)
 
 
-        def ID(self):
-            return self.getToken(CorePerfDSLParser.ID, 0)
+        def STRING(self):
+            return self.getToken(CorePerfDSLParser.STRING, 0)
 
         def getRuleIndex(self):
             return CorePerfDSLParser.RULE_traceValue_assign
@@ -3361,11 +3393,7 @@ class CorePerfDSLParser ( Parser ):
             self.state = 573
             self.match(CorePerfDSLParser.T__26)
             self.state = 574
-            self.match(CorePerfDSLParser.T__27)
-            self.state = 575
-            localctx.description = self.match(CorePerfDSLParser.ID)
-            self.state = 576
-            self.match(CorePerfDSLParser.T__27)
+            localctx.description = self.match(CorePerfDSLParser.STRING)
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -3376,6 +3404,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class Connector_refContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -3411,7 +3440,7 @@ class CorePerfDSLParser ( Parser ):
         self.enterRule(localctx, 64, self.RULE_connector_ref)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 578
+            self.state = 576
             localctx.name = self.match(CorePerfDSLParser.ID)
         except RecognitionException as re:
             localctx.exception = re
@@ -3423,6 +3452,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class TraceValue_refContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -3458,7 +3488,7 @@ class CorePerfDSLParser ( Parser ):
         self.enterRule(localctx, 66, self.RULE_traceValue_ref)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 580
+            self.state = 578
             localctx.name = self.match(CorePerfDSLParser.ID)
         except RecognitionException as re:
             localctx.exception = re
@@ -3470,6 +3500,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class ResourceModel_refContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -3505,7 +3536,7 @@ class CorePerfDSLParser ( Parser ):
         self.enterRule(localctx, 68, self.RULE_resourceModel_ref)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 582
+            self.state = 580
             localctx.name = self.match(CorePerfDSLParser.ID)
         except RecognitionException as re:
             localctx.exception = re
@@ -3517,6 +3548,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class ConnectorModel_refContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -3552,7 +3584,7 @@ class CorePerfDSLParser ( Parser ):
         self.enterRule(localctx, 70, self.RULE_connectorModel_ref)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 584
+            self.state = 582
             localctx.name = self.match(CorePerfDSLParser.ID)
         except RecognitionException as re:
             localctx.exception = re
@@ -3564,6 +3596,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class Resource_refContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -3599,7 +3632,7 @@ class CorePerfDSLParser ( Parser ):
         self.enterRule(localctx, 72, self.RULE_resource_ref)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 586
+            self.state = 584
             localctx.name = self.match(CorePerfDSLParser.ID)
         except RecognitionException as re:
             localctx.exception = re
@@ -3611,6 +3644,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class ResourceOrConnector_refContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -3646,7 +3680,7 @@ class CorePerfDSLParser ( Parser ):
         self.enterRule(localctx, 74, self.RULE_resourceOrConnector_ref)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 588
+            self.state = 586
             localctx.name = self.match(CorePerfDSLParser.ID)
         except RecognitionException as re:
             localctx.exception = re
@@ -3658,6 +3692,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class Microaction_refContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -3693,7 +3728,7 @@ class CorePerfDSLParser ( Parser ):
         self.enterRule(localctx, 76, self.RULE_microaction_ref)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 590
+            self.state = 588
             localctx.name = self.match(CorePerfDSLParser.ID)
         except RecognitionException as re:
             localctx.exception = re
@@ -3705,6 +3740,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class InstructionOrInstrGroup_refContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -3744,7 +3780,7 @@ class CorePerfDSLParser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 592
+            self.state = 590
             localctx.name = self._input.LT(1)
             _la = self._input.LA(1)
             if not(_la==CorePerfDSLParser.ID or _la==CorePerfDSLParser.KEYWORD_ALL):
@@ -3762,6 +3798,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class Stage_refContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -3797,7 +3834,7 @@ class CorePerfDSLParser ( Parser ):
         self.enterRule(localctx, 80, self.RULE_stage_ref)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 594
+            self.state = 592
             localctx.name = self.match(CorePerfDSLParser.ID)
         except RecognitionException as re:
             localctx.exception = re
@@ -3809,6 +3846,7 @@ class CorePerfDSLParser ( Parser ):
 
 
     class Pipeline_refContext(ParserRuleContext):
+        __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
             super().__init__(parent, invokingState)
@@ -3844,7 +3882,7 @@ class CorePerfDSLParser ( Parser ):
         self.enterRule(localctx, 82, self.RULE_pipeline_ref)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 596
+            self.state = 594
             localctx.name = self.match(CorePerfDSLParser.ID)
         except RecognitionException as re:
             localctx.exception = re

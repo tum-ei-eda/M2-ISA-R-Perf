@@ -42,7 +42,7 @@ def main(description_, outdir_=None):
     lexer = CorePerfDSLLexer(antlr4.FileStream(description))
     stream = antlr4.CommonTokenStream(lexer)
     parser = CorePerfDSLParser(stream)
-    tree = parser.description_context()
+    tree = parser.top()
 
     # Use parse tree for model-2-model transformation according to meta-model
     print("")

@@ -79,7 +79,7 @@ class Extractor(CorePerfDSLVisitor):
                 self.level.increase()
          
     # Top Node 
-    def visitDescription_context(self, ctx):
+    def visitTop(self, ctx):
         self.visitChildren(ctx)
  
     # Level:BASE_COMPONENTS Definitions
@@ -213,7 +213,7 @@ class Extractor(CorePerfDSLVisitor):
 
     def visitTraceValue_assign(self, ctx):
         trVal = self.visit(ctx.trVal)
-        desc = ctx.description.text
+        desc = self.__processStrObj(ctx.description.text)
         return (trVal, desc)
 
     # References
@@ -271,3 +271,12 @@ class Extractor(CorePerfDSLVisitor):
         if type(ref) is UnresolvedReference:
             print("ERROR: Could not resolve reference %s of type %s. No such instance." %(name_, type_))
         return ref
+
+    # NOTE: Current CorePerfDSL.g4 setup causes string to be read including quotes (").
+    #       Removing quotes here to be alligned with other reads
+    #       Might be able to do this directly in CorePerfDSL.g4 with action for Lexer rule STRING,
+    #       but so far could not figure out how to do this with created python-Lexer
+    def __processStrObj(self, str_):
+        ret_str = str_[1:len(str_)-1] # Remove start and end quote
+        ret_str = ret_str.replace('\\"', "\"")
+        return ret_str

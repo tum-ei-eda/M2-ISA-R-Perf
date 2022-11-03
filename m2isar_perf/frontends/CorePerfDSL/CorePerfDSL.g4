@@ -1,8 +1,8 @@
 grammar CorePerfDSL;
-description_context : (corePerfModel_sec
-		    | externModel_sec
-		    | instruction_sec
-		    )* EOF
+top : (corePerfModel_sec
+    | externModel_sec
+    | instruction_sec
+    )* EOF
 ;
 
 corePerfModel_sec : virtual_def | connector_def | resource_def | microaction_def | stage_def | pipeline_def | corePerfModel_def ;
@@ -117,7 +117,7 @@ resource_assign: vir_res=resource_ref '=' nvir_res=resource_ref;
 
 microaction_assign: vir_uA=microaction_ref '=' nvir_uA=microaction_ref;
 
-traceValue_assign: trVal=traceValue_ref '=' '"' description=ID '"';
+traceValue_assign: trVal=traceValue_ref '=' description=STRING;
 
 //////////////////////////// REFERENCES ////////////////////////////
 
@@ -148,6 +148,7 @@ pipeline_ref : name=ID ;
 ID : [a-zA-Z] [a-zA-Z0-9_]*  ;
 INT : [0-9][0-9]* ;
 FILE : [a-zA-Z] [a-zA-Z0-9_./]*  ;
+STRING : '"' (~[\r\n"] | '\\"')* '"';
 
 KEYWORD_ALL  : '[ALL]' ;
 KEYWORD_REST : '[?]' ;

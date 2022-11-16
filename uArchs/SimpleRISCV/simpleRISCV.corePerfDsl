@@ -92,21 +92,36 @@ ResourceModel dMemModel (
 
 /*********************************** Instruction Section ***********************************/
 InstrGroup {
-    Arith_Ra_Rb (add, sub, sll, xor, or, and, c_add),
+    Arith_Ra_Rb (add, sub, sll, xor, or, and, c.add),
     Mul (mul, rem),
-    Arith_Ra (addi, sltiu, xori, ori, andi, c_addi, c_slli, c_addi16sp),
-    Arith_Rb (c_mv),
-    Arith_X (c_li),
-    Store (sb, sh, sw, c_sw),
-    Load (lh, lw, lbu, lhu, c_lw),
+    Arith_Ra (addi, sltiu, xori, ori, andi, c.addi, c.slli, c.addi16sp),
+    Arith_Rb (c.mv),
+    Arith_X (c.li),
+    Store (sb, sh, sw, c.sw),
+    Load (lh, lw, lbu, lhu, c.lw),
     Branch_Ra_Rb (beq, bne, blt, bge, bltu, bgeu),
-    Branch_Ra (c_beqz, c_bnez),
+    Branch_Ra (c.beqz, c.bnez),
     Default ([?])
+}
+
+InstrGroup {
+    Arith_R_Type (add, sub, sll, xor, or, and, mul, rem),
+    Branch_B_Type (beq, bne, blt, bge, bltu, bgeu),
+    Load_I_Type (lb, lh, lw, lbu, lhu),
+    Arith_I_Type (addi, slti, sltiu, xori, ori, andi),
+    Store_S_Type (sb, sh, sw),
+    Branch_CB_Type (c.beqz, c.bnez),
+    Arith_CR_Type (c.add),
+    Arith_CI_Type (c.addi, c.slli),
+    Load_CL_Type (c.lw),
+    Store_CS_Type (c.sw),
+    Move_CR_Type (c.mv),
+    Load_CI_Type (c.li),
+    Addi16sp_CI_Type (c.addi16sp)
 }
 
 MicroactionMapping {
     [ALL] : {uA_IF, uA_PC_GEN, uA_ID},
-    //Default : {},
     Arith_Ra_Rb : {uA_OF_A, uA_OF_B, vuA_ALU_arith, vuA_WB},
     Arith_Ra : {uA_OF_A, vuA_ALU_arith, vuA_WB},
     Arith_Rb : {uA_OF_B, vuA_ALU_arith, vuA_WB},
@@ -120,12 +135,62 @@ MicroactionMapping {
 
 TraceValueMapping {
     [ALL] : {
+        pc = "ic.current_address_"
+    },
+    Arith_R_Type : {
         rs1 = "$[BITFIELD rs1 {(0:19,15)}]",
         rs2 = "$[BITFIELD rs2 {(0:24,20)}]",
-        rd = "instr.printASM(ba).substr(0, instr.printASM(ba).find(\" #\"))",
-        pc = "ic.current_address_",
-        brTarget = "$[BITFIELD imm {(12:31,31)|(11:7,7)|(5:30,25)|(1:11,8)}]"
-    }
+        rd = "$[BITFIELD rd {(0:11,7)}]"
+    },
+    Branch_B_Type : {
+        rs1 = "$[BITFIELD rs1 {(0:19,15)}]",
+	rs2 = "$[BITFIELD rs2 {(0:24,20)}]",
+	brTarget = "std::to_string(ic.current_address_ + (((etiss_int16)($[BITFIELD imm {(12:31,31)|(11:7,7)|(5:30,25)|(1:11,8)}] << 3)) >> 3))"
+    },
+    Load_I_Type : {
+        rs1 = "$[BITFIELD rs1 {(0:19,15)}]",
+	rd = "$[BITFIELD rd {(0:11,7)}]"
+    },
+    Arith_I_Type : {
+        rs1 = "$[BITFIELD rs1 {(0:19,15)}]",
+	rd = "$[BITFIELD rd {(0:11,7)}]"
+    },
+    Store_S_Type : {
+        rs1 = "$[BITFIELD rs1 {(0:19,15)}]",
+	rs2 = "$[BITFIELD rs2 {(0:24,20)}]"
+   },
+   Branch_CB_Type : {
+        rs1 = "$[BITFIELD rs1 {(0:9,7)}]",
+	brTarget = "std::to_string(ic.current_address_ + (((etiss_int16)($[BITFIELD imm {(8:12,12)|(6:6,5)|(5:2,2)|(3:11,10)|(1:4,3)}] << 7)) >> 7))"
+   },
+   Arith_CR_Type : {
+        rs1 = "$[BITFIELD rs1 {(0:11,7)}]",
+	rs2 = "$[BITFIELD rs2 {(0:6,2)}]",
+	rd = "$[BITFIELD rd {(0:11,7)}]"
+   },
+   Arith_CI_Type : {
+        rs1 = "$[BITFIELD rs1 {(0:11,7)}]",
+	rd = "$[BITFIELD rd {(0:11,7)}]"
+   },
+   Load_CL_Type	: {
+        rs1 = "$[BITFIELD rs1 {(0:9,7)}]",
+	rd = "$[BITFIELD rd {(0:4,2)}]"
+   },
+   Store_CS_Type : {
+        rs1 = "$[BITFIELD rs1 {(0:9,7)}]",
+	rs2 = "$[BITFIELD rs2 {(0:4,2)}]"
+   },
+   Move_CR_Type : {
+        rs2 = "$[BITFIELD rs2 {(0:6,2)}]",
+	rd = "$[BITFIELD rd {(0:11,7)}]"
+   },
+   Load_CI_Type : {
+	rd = "$[BITFIELD rd {(0:11,7)}]"
+   },
+   Addi16sp_CI_Type : {
+	rs1 = "2",
+	rd = "2"
+   }
 }
 
 /*********************************** Variants ***********************************/

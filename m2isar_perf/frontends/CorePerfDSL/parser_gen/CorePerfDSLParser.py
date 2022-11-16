@@ -11,7 +11,7 @@ else:
 
 def serializedATN():
     with StringIO() as buf:
-        buf.write("\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3&")
+        buf.write("\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3%")
         buf.write("\u0257\4\2\t\2\4\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7")
         buf.write("\4\b\t\b\4\t\t\t\4\n\t\n\4\13\t\13\4\f\t\f\4\r\t\r\4\16")
         buf.write("\t\16\4\17\t\17\4\20\t\20\4\21\t\21\4\22\t\22\4\23\t\23")
@@ -73,7 +73,7 @@ def serializedATN():
         buf.write("\37\3 \3 \3 \3 \3!\3!\3!\3!\3\"\3\"\3#\3#\3$\3$\3%\3%")
         buf.write("\3&\3&\3\'\3\'\3(\3(\3)\3)\3*\3*\3+\3+\3+\2\2,\2\4\6\b")
         buf.write("\n\f\16\20\22\24\26\30\32\34\36 \"$&(*,.\60\62\64\668")
-        buf.write(":<>@BDFHJLNPRT\2\4\4\2\36\36##\4\2\36\36\"\"\2\u0277\2")
+        buf.write(":<>@BDFHJLNPRT\2\4\4\2\36\36\"\"\4\2\36\36!!\2\u0277\2")
         buf.write("[\3\2\2\2\4g\3\2\2\2\6l\3\2\2\2\bq\3\2\2\2\ns\3\2\2\2")
         buf.write("\f\u0082\3\2\2\2\16\u00be\3\2\2\2\20\u00cd\3\2\2\2\22")
         buf.write("\u00e9\3\2\2\2\24\u00f8\3\2\2\2\26\u0108\3\2\2\2\30\u0117")
@@ -281,7 +281,7 @@ def serializedATN():
         buf.write("\7\35\2\2\u0238\u0239\5J&\2\u0239=\3\2\2\2\u023a\u023b")
         buf.write("\5N(\2\u023b\u023c\7\35\2\2\u023c\u023d\5N(\2\u023d?\3")
         buf.write("\2\2\2\u023e\u023f\5D#\2\u023f\u0240\7\35\2\2\u0240\u0241")
-        buf.write("\7!\2\2\u0241A\3\2\2\2\u0242\u0243\7\36\2\2\u0243C\3\2")
+        buf.write("\7 \2\2\u0241A\3\2\2\2\u0242\u0243\7\36\2\2\u0243C\3\2")
         buf.write("\2\2\u0244\u0245\7\36\2\2\u0245E\3\2\2\2\u0246\u0247\7")
         buf.write("\36\2\2\u0247G\3\2\2\2\u0248\u0249\7\36\2\2\u0249I\3\2")
         buf.write("\2\2\u024a\u024b\7\36\2\2\u024bK\3\2\2\2\u024c\u024d\7")
@@ -315,7 +315,7 @@ class CorePerfDSLParser ( Parser ):
                      "'CorePerfModel'", "'use'", "'Pipeline'", "'assign'", 
                      "'Resource'", "'Microaction'", "'->'", "'Stage'", "'Connector'", 
                      "'virtual'", "'='", "<INVALID>", "<INVALID>", "<INVALID>", 
-                     "<INVALID>", "'[ALL]'", "'[?]'" ]
+                     "'[ALL]'", "'[?]'" ]
 
     symbolicNames = [ "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
                       "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
@@ -324,7 +324,7 @@ class CorePerfDSLParser ( Parser ):
                       "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
                       "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
                       "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
-                      "ID", "INT", "FILE", "STRING", "KEYWORD_ALL", "KEYWORD_REST", 
+                      "ID", "INT", "STRING", "KEYWORD_ALL", "KEYWORD_REST", 
                       "ML_COMMENT", "SL_COMMENT", "WS" ]
 
     RULE_top = 0
@@ -414,13 +414,12 @@ class CorePerfDSLParser ( Parser ):
     T__26=27
     ID=28
     INT=29
-    FILE=30
-    STRING=31
-    KEYWORD_ALL=32
-    KEYWORD_REST=33
-    ML_COMMENT=34
-    SL_COMMENT=35
-    WS=36
+    STRING=30
+    KEYWORD_ALL=31
+    KEYWORD_REST=32
+    ML_COMMENT=33
+    SL_COMMENT=34
+    WS=35
 
     def __init__(self, input:TokenStream, output:TextIO = sys.stdout):
         super().__init__(input, output)

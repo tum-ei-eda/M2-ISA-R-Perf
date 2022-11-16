@@ -53,7 +53,6 @@ microactionMapping : instr=instructionOrInstrGroup_ref ':' (microactions+=microa
 
 instrGroup_def : 'InstrGroup' (instrGroup | '{' instrGroup (',' instrGroup)* '}');
 
-//instrGroup : name=ID '(' instructions+=ID (',' instructions+=ID)* ')';
 instrGroup : name=ID '(' instructions+=(ID|KEYWORD_REST) (',' instructions+=(ID|KEYWORD_REST))* ')';
 
 //////////////////////////// CORE_PERFORMANCE_MODEL ////////////////////////////
@@ -145,9 +144,8 @@ pipeline_ref : name=ID ;
 
 //////////////////////////// LEXER RULES ////////////////////////////
 
-ID : [a-zA-Z] [a-zA-Z0-9_]*  ;
+ID : [a-zA-Z] [a-zA-Z0-9_.]*  ;
 INT : [0-9][0-9]* ;
-FILE : [a-zA-Z] [a-zA-Z0-9_./]*  ;
 STRING : '"' (~[\r\n"] | '\\"')* '"';
 
 KEYWORD_ALL  : '[ALL]' ;

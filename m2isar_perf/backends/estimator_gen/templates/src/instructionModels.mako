@@ -18,23 +18,14 @@
 
 #include <algorithm>
 
-#include "ArchInterface/Model.h"
+#include "Components/Model.h"
 
 #include "${corePerfModel_.name}_Model.h"
-
-namespace etiss // TODO: Revisit namespace organization: Estimator is not an ETISS plugin
-{
-
-namespace plugin
-{
-
-namespace PerformanceEstimator
-{
 
 InstructionModelSet* ${corePerfModel_.name}_InstrModelSet = new InstructionModelSet("${corePerfModel_.name}_InstrModelSet");
 
 % for instr_i in corePerfModel_.getInstructionDict().values():
-static InstructionModel *instrModel_${instr_i.name} = new InstructionModel(
+static InstructionModel *instrModel_${instr_i.name.replace('.','_')} = new InstructionModel(
   ${corePerfModel_.name}_InstrModelSet,
   "${instr_i.name}",
   ${instr_i.identifier},
@@ -47,7 +38,3 @@ static InstructionModel *instrModel_${instr_i.name} = new InstructionModel(
 );
 
 %endfor
-
-} // PerformanceEstimator
-} // namespace plugin
-} // namespace etiss

@@ -16,14 +16,14 @@
 
 /********************* AUTO GENERATE FILE (create by M2-ISA-R-Perf) *********************/
 
-#ifndef PERFORMANCE_ESTIMATOR_${corePerfModel_.name.upper()}_MODEL_H
-#define PERFORMANCE_ESTIMATOR_${corePerfModel_.name.upper()}_MODEL_H
+#ifndef ${corePerfModel_.name.upper()}_MODEL_H
+#define ${corePerfModel_.name.upper()}_MODEL_H
 
 #include <stdbool.h>
 #include <string>
 
-#include "ArchInterface/Model.h"
-#include "ArchInterface/TraceChannel.h"
+#include "Components/Model.h"
+#include "Components/Channel.h"
 
 % for resM_i in corePerfModel_.getAllResourceModels():
 #include "${resM_i.link}.h"
@@ -31,15 +31,6 @@
 % for conM_i in corePerfModel_.getAllConnectorModels():
 #include "${conM_i.link}.h"
 %endfor
-
-namespace etiss // TODO: Rethink namespace organization
-{
-
-namespace plugin
-{
-
-namespace PerformanceEstimator
-{
 
 class ${corePerfModel_.getPipeline().name}_Model
 {
@@ -94,13 +85,9 @@ public:
   ${conM_i.link} ${conM_i.name};
   %endfor
 
-  virtual bool connectChannel(TraceChannel*);
+  virtual void connectChannel(Channel*);
   virtual int getCycleCount(void){ return ${corePerfModel_.getPipeline().name}.getCycleCount(); };
 
 };
 
-} // namespace PerformanceEstimator
-} // namespace plugin
-} // namespace etiss
-
-#endif // PERFORMANCE_ESTIMATOR_${corePerfModel_.name.upper()}_MODEL_H
+#endif // ${corePerfModel_.name.upper()}_MODEL_H

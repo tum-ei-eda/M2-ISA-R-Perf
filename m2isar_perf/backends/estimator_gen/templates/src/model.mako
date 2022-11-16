@@ -20,9 +20,9 @@
 
 #include <stdbool.h>
 
-#include "ArchInterface/TraceChannel.h"
+#include "Components/Channel.h"
 
-#include "${corePerfModel_.name}_TraceChannel.h"
+#include "${corePerfModel_.name}_Channel.h"
 
 % for resM_i in corePerfModel_.getAllResourceModels():
 #include "${resM_i.link}.h"
@@ -31,24 +31,9 @@
 #include "${conM_i.link}.h"
 %endfor
 
-namespace etiss // TODO: Rethink namespace organization
+void ${corePerfModel_.name}_Model::connectChannel(Channel* channel_)
 {
-
-namespace plugin
-{
-
-namespace PerformanceEstimator
-{
-
-bool ${corePerfModel_.name}_Model::connectChannel(TraceChannel* channel_)
-{
-  SubChannel* subCh = channel_->getSubChannel("${corePerfModel_.name}_SubChannel");
-  if(subCh == nullptr)
-  {
-    return false;
-  }
-
-  ${corePerfModel_.name}_SubChannel* channel = static_cast<${corePerfModel_.name}_SubChannel*>(subCh);
+  ${corePerfModel_.name}_Channel* channel = static_cast<${corePerfModel_.name}_Channel*>(channel_);	
 
   % for resM_i in corePerfModel_.getAllResourceModels():
   % for trV_i in resM_i.traceValues:
@@ -56,7 +41,6 @@ bool ${corePerfModel_.name}_Model::connectChannel(TraceChannel* channel_)
   % endfor
   
   % endfor
-
   % for conM_i in corePerfModel_.getAllConnectorModels():
   % for trV_i in conM_i.traceValues:
   ${conM_i.name}.${trV_i}_ptr = channel->${trV_i};
@@ -64,7 +48,3 @@ bool ${corePerfModel_.name}_Model::connectChannel(TraceChannel* channel_)
   
   % endfor
 }
-
-} // namespace PerformanceEstimator
-} // namespace plugin
-} // namespace etiss

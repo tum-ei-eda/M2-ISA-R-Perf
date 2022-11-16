@@ -17,7 +17,7 @@
 KEYWORD_ALL = "[ALL]"
 KEYWORD_REST = "[?]"
 
-DEFAULT_INSTR_NAME = "__def"
+DEFAULT_INSTR_NAME = "_def"
 
 CON_TYPE_OUT = "out"
 CON_TYPE_IN = "in"

@@ -25,6 +25,8 @@ import sys
 argParser = argparse.ArgumentParser()
 argParser.add_argument("description", help="File containing the description of the performance model.")
 #argParser.add_argument("output_dir", help="Directory to store generated files")
+argParser.add_argument("-c", "--code_gen", action="store_true", help="Generate estimator and monitor code")
+argParser.add_argument("-i", "--info_print", action="store_true", help="Generate info/debug/doc prints")
 argParser.add_argument("-d", "--dump_dir", help="Directory to dump intermediatly generated models.")
 args = argParser.parse_args()
 
@@ -34,12 +36,20 @@ if args.description.endswith('.corePerfDsl'):
 else:
     sys.exit("FATAL: Description format is not supported. Currently only supporting files of type .corePerfDsl")
 
-# Import backend
-#import backends.estimator_gen.run as backend
-#import backends.graph_printer.run as backend
-import backends.monitor_gen.run as backend
+# Import backends
+backends = []
+if args.code_gen:
+    import backends.estimator_gen.run as backend_estimator_gen
+    backends.append(backend_estimator_gen)
+    import backends.monitor_gen.run as backend_monitor_gen
+    backends.append(backend_monitor_gen)
+if args.info_print:
+    import backends.graph_printer.run as backend_graph_printer
+    backends.append(backend_graph_printer)
 
 # Call frontend
 model = frontend.main(args.description, args.dump_dir)
 
-backend.main(model)
+# Call all selected backends
+for backend_i in backends:
+    backend_i.main(model)

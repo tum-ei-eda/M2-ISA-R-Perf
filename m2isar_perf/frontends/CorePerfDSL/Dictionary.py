@@ -162,14 +162,18 @@ class Dictionary():
     def addInstructionGroup(self, name_, instructions_):
         gr = InstructionGroup()
         gr.name = name_
-        for instr_name in instructions_:
-            instr = MetaModel.Instruction() # TODO: Use addInstruction function to reduce redundancy
-            instr.name = instr_name
-            instr.group = gr.name
-            gr.addInstruction(instr)
-            self.__addInstance(instr, "Instruction")
-        self.__addInstance(gr, "InstructionGroup")
 
+        for instr_name in instructions_:
+            if type(self.getInstance(instr_name, "Instruction")) is not UnresolvedReference:
+                instr = self.getInstance(instr_name, "Instruction")
+            else:
+                self.addInstruction(instr_name)
+                instr = self.getInstance(instr_name, "Instruction")
+            instr.addGroupName(gr.name)
+            gr.addInstruction(instr)
+
+        self.__addInstance(gr, "InstructionGroup")
+                
     def addInstruction(self, name_):
         instr = MetaModel.Instruction()
         instr.name = name_

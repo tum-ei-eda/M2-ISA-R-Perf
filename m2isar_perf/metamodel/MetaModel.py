@@ -228,7 +228,7 @@ class Instruction(MetaModel_base):
     def __init__(self):
         self.name = ""
         self.identifier = -1 # TODO: Does it make more sense to handle instruction groups instead of each instruction individually?
-        self.group = ""
+        self.group = []
         self.microactions = []
         self.traceValueAssignments = []
                 
@@ -239,6 +239,9 @@ class Instruction(MetaModel_base):
 
     def getTraceValueAssignments(self):
         return self.traceValueAssignments
+
+    def addGroupName(self, name_):
+        self.group.append(name_)
     
 class TraceValueAssignment(MetaModel_base):
 

@@ -92,15 +92,15 @@ ResourceModel dMemModel (
 
 /*********************************** Instruction Section ***********************************/
 InstrGroup {
-    Arith_Ra_Rb (add, sub, sll, xor, or, and, c.add),
+    Arith_Ra_Rb (add, sub, sll, xor, or, and, cadd),
     Mul (mul, rem),
-    Arith_Ra (addi, sltiu, xori, ori, andi, c.addi, c.slli, c.addi16sp),
-    Arith_Rb (c.mv),
-    Arith_X (c.li),
-    Store (sb, sh, sw, c.sw),
-    Load (lh, lw, lbu, lhu, c.lw),
+    Arith_Ra (addi, sltiu, xori, ori, andi, caddi, cslli, caddi16sp),
+    Arith_Rb (cmv),
+    Arith_X (cli),
+    Store (sb, sh, sw, csw),
+    Load (lh, lw, lbu, lhu, clw),
     Branch_Ra_Rb (beq, bne, blt, bge, bltu, bgeu),
-    Branch_Ra (c.beqz, c.bnez),
+    Branch_Ra (cbeqz, cbnez),
     Default ([?])
 }
 
@@ -110,14 +110,14 @@ InstrGroup {
     Load_I_Type (lb, lh, lw, lbu, lhu),
     Arith_I_Type (addi, slti, sltiu, xori, ori, andi),
     Store_S_Type (sb, sh, sw),
-    Branch_CB_Type (c.beqz, c.bnez),
-    Arith_CR_Type (c.add),
-    Arith_CI_Type (c.addi, c.slli),
-    Load_CL_Type (c.lw),
-    Store_CS_Type (c.sw),
-    Move_CR_Type (c.mv),
-    Load_CI_Type (c.li),
-    Addi16sp_CI_Type (c.addi16sp)
+    Branch_CB_Type (cbeqz, cbnez),
+    Arith_CR_Type (cadd),
+    Arith_CI_Type (caddi, cslli),
+    Load_CL_Type (clw),
+    Store_CS_Type (csw),
+    Move_CR_Type (cmv),
+    Load_CI_Type (cli),
+    Addi16sp_CI_Type (caddi16sp)
 }
 
 MicroactionMapping {

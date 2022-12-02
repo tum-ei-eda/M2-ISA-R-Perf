@@ -135,57 +135,57 @@ MicroactionMapping {
 
 TraceValueMapping {
     [ALL] : {
-        pc = "ic.current_address_"
+        pc = "${ic.current_address_}"
     },
     Arith_R_Type : {
-        rs1 = "$[BITFIELD rs1 {(0:19,15)}]",
-        rs2 = "$[BITFIELD rs2 {(0:24,20)}]",
-        rd = "$[BITFIELD rd {(0:11,7)}]"
+        rs1 = "${${BITFIELD rs1 [(0:19,15)]}}",
+        rs2 = "${${BITFIELD rs2 [(0:24,20)]}}",
+        rd  = "${${BITFIELD rd [(0:11,7)]}}"
     },
     Branch_B_Type : {
-        rs1 = "$[BITFIELD rs1 {(0:19,15)}]",
-	rs2 = "$[BITFIELD rs2 {(0:24,20)}]",
-	brTarget = "std::to_string(ic.current_address_ + (((etiss_int16)($[BITFIELD imm {(12:31,31)|(11:7,7)|(5:30,25)|(1:11,8)}] << 3)) >> 3))"
+        rs1 = "${${BITFIELD rs1 [(0:19,15)]}}",
+	rs2 = "${${BITFIELD rs2 [(0:24,20)]}}",
+	brTarget = "${std::to_string(ic.current_address_ + (((etiss_int16)(${BITFIELD imm [(12:31,31)|(11:7,7)|(5:30,25)|(1:11,8)]} << 3)) >> 3))}"
     },
     Load_I_Type : {
-        rs1 = "$[BITFIELD rs1 {(0:19,15)}]",
-	rd = "$[BITFIELD rd {(0:11,7)}]"
+        rs1 = "${${BITFIELD rs1 [(0:19,15)]}}",
+	rd  = "${${BITFIELD rd [(0:11,7)]}}"
     },
     Arith_I_Type : {
-        rs1 = "$[BITFIELD rs1 {(0:19,15)}]",
-	rd = "$[BITFIELD rd {(0:11,7)}]"
+        rs1 = "${${BITFIELD rs1 [(0:19,15)]}}",
+	rd  = "${${BITFIELD rd [(0:11,7)]}}"
     },
     Store_S_Type : {
-        rs1 = "$[BITFIELD rs1 {(0:19,15)}]",
-	rs2 = "$[BITFIELD rs2 {(0:24,20)}]"
+        rs1 = "${${BITFIELD rs1 [(0:19,15)]}}",
+	rs2 = "${${BITFIELD rs2 [(0:24,20)]}}"
    },
    Branch_CB_Type : {
-        rs1 = "$[BITFIELD rs1 {(0:9,7)}]",
-	brTarget = "std::to_string(ic.current_address_ + (((etiss_int16)($[BITFIELD imm {(8:12,12)|(6:6,5)|(5:2,2)|(3:11,10)|(1:4,3)}] << 7)) >> 7))"
+        rs1 = "${${BITFIELD rs1 [(0:9,7)]}}",
+	brTarget = "${std::to_string(ic.current_address_ + (((etiss_int16)(${BITFIELD imm [(8:12,12)|(6:6,5)|(5:2,2)|(3:11,10)|(1:4,3)]} << 7)) >> 7))}"
    },
    Arith_CR_Type : {
-        rs1 = "$[BITFIELD rs1 {(0:11,7)}]",
-	rs2 = "$[BITFIELD rs2 {(0:6,2)}]",
-	rd = "$[BITFIELD rd {(0:11,7)}]"
+        rs1 = "${${BITFIELD rs1 [(0:11,7)]}}",
+	rs2 = "${${BITFIELD rs2 [(0:6,2)]}}",
+	rd = "${${BITFIELD rd [(0:11,7)]}}"
    },
    Arith_CI_Type : {
-        rs1 = "$[BITFIELD rs1 {(0:11,7)}]",
-	rd = "$[BITFIELD rd {(0:11,7)}]"
+        rs1 = "${${BITFIELD rs1 [(0:11,7)]}}",
+	rd = "${${BITFIELD rd [(0:11,7)]}}"
    },
    Load_CL_Type	: {
-        rs1 = "$[BITFIELD rs1 {(0:9,7)}]",
-	rd = "$[BITFIELD rd {(0:4,2)}]"
+        rs1 = "${${BITFIELD rs1 [(0:9,7)]}}",
+	rd = "${${BITFIELD rd [(0:4,2)]}}"
    },
    Store_CS_Type : {
-        rs1 = "$[BITFIELD rs1 {(0:9,7)}]",
-	rs2 = "$[BITFIELD rs2 {(0:4,2)}]"
+        rs1 = "${${BITFIELD rs1 [(0:9,7)]}}",
+	rs2 = "${${BITFIELD rs2 [(0:4,2)]}}"
    },
    Move_CR_Type : {
-        rs2 = "$[BITFIELD rs2 {(0:6,2)}]",
-	rd = "$[BITFIELD rd {(0:11,7)}]"
+        rs2 = "${${BITFIELD rs2 [(0:6,2)]}}",
+	rd = "${${BITFIELD rd [(0:11,7)]}}"
    },
    Load_CI_Type : {
-	rd = "$[BITFIELD rd {(0:11,7)}]"
+	rd = "${${BITFIELD rd [(0:11,7)]}}"
    },
    Addi16sp_CI_Type : {
 	rs1 = "2",

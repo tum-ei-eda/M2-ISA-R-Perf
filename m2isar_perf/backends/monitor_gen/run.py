@@ -46,37 +46,9 @@ def main(model_):
     traceGenRun = curDir / "trace_generator/trace_gen/run.py"
     for corePerfModel_i in model_.getAllCorePerfModels():
         traceFile = tempDir / corePerfModel_i.name / "trace.json"
-        os.system ("python3 %s %s" % (str(traceGenRun), str(traceFile)))
+        os.system ("python3 %s %s -p" % (str(traceGenRun), str(traceFile)))
 
         
-    #curDir = pathlib.Path(__file__).parents[0]
-    #print("Current dir: " + str(curDir))
-    #
-    #os.system("python3 %s/trace_generator/trace_gen/run.py %s/trace_generator/traces/InstructionTrace.json" %(str(curDir), str(curDir)))
-
-#def main(model_):
-#
-#    print(">> HELLO FROM THE BACKEND <<")
-#    print()
-#
-#    print("Creating output directories")
-#    curDir = pathlib.Path(__file__).parents[0]
-#    outDir = backendUtils.createOrReplaceDir(curDir / "out")
-#    for corePerfModel_i in model_.getAllCorePerfModels():
-#        backendUtils.createOrReplaceDir(outDir / corePerfModel_i.name / "src")
-#        backendUtils.createOrReplaceDir(outDir / corePerfModel_i.name / "include")
-#    
-#    print("Generating Math-Model")
-#    transformer = ModelTransformer()
-#    mathModel = transformer.transform(model_)
-#    print()
-#    
-#    print("Generating code for estimator")
-#    CodeGenerator(curDir / "templates", outDir).generateEstimator(mathModel)
-
-        
-        
-    
 # Run this if backend is called stand-alone (i.e. this file is directly called)
 if __name__ == '__main__':
     

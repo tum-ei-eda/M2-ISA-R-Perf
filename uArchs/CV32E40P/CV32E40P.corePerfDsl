@@ -1,0 +1,118 @@
+/*********************************** Microaction Section ***********************************/
+Connector {Pc, Pc_np, Pc_p}
+Connector {Xa, Xb, Xd}
+
+Resource {PCGen, Decoder, JumpDecoder(2), ALU, LSU}
+Resource {MUL, MULH(5), DIV(10)} // Replace with external models?
+Resource {IPort_R, DPort_R, DPort_W}
+
+Microaction {
+  uA_IFetch        (Pc -> IPort_R),
+  uA_PCGen         (Pc -> PCGen -> Pc_p),
+  uA_Decode        (Decoder),
+  uA_JumpDecode    (JumpDecoder -> Pc_np),
+  uA_JumpDecodeReg (Xa -> JumpDecoder -> Pc_np), // Maybe subpipelined?
+  uA_OF_A          (Xa),
+  uA_OF_B          (Xb),
+  uA_ALU_RegUpdate (ALU -> Xd),
+  uA_ALU_Branch    (ALU -> Pc_np),
+  uA_LSU           (LSU),
+  uA_MUL           (MUL -> Xd),
+  uA_MULH          (MULH -> Xd),
+  uA_DIV           (DIV -> Xd),
+  uA_Memory_R      (DPort_R -> Xd),
+  uA_Memory_W      (DPort_W)
+}
+
+/************************************ Stages & Pipeline ************************************/
+
+Stage {
+  IF_stage (uA_IFetch, uA_PCGen),
+  ID_stage (uA_Decode, uA_JumpDecode, uA_JumpDecodeReg, uA_OF_A, uA_OF_B),
+  EX_stage (uA_ALU_RegUpdate, uA_ALU_Branch, uA_LSU, uA_MUL, uA_MULH, uA_DIV),
+  WB_stage (uA_Memory_R, uA_Memory_W)
+}
+
+Pipeline CV32E40P_pipeline (IF_stage -> ID_stage -> EX_stage -> WB_stage)
+
+/************************************* External Models *************************************/
+TraceValue {rs1, rs2, rd, pc, brTarget}
+
+ConnectorModel regModel (
+  link : StandardRegisterModel
+  trace : {rs1, rs2, rd}
+  connectorIn : Xd
+  connectorOut : {Xa, Xb}
+)
+
+ConnectorModel staBranchPredModel (
+  link : StaticBranchPredictModel
+  trace : {pc, brTarget}
+  connectorIn : {Pc_np, Pc_p}
+  connectorOut : Pc
+)
+
+/*********************************** Instruction Section ***********************************/
+InstrGroup {
+  Arith_Ra_Rb (add, sub, xor, or, and),
+  Arith_Ra (addi, xori, ori, andi),
+  Store (sb, sh, sw),
+  Load (lh, lw, lbu, lhu),
+  Branch_Ra_Rb (beq, bne, blt, bge, bltu, bgeu),
+  Default ([?])
+}
+
+MicroactionMapping {
+  [ALL] :        {uA_IFetch, uA_PCGen},
+  Arith_Ra_Rb :  {uA_Decode, uA_OF_A, uA_OF_B, uA_ALU_RegUpdate},
+  Arith_Ra :     {uA_Decode, uA_OF_A, uA_ALU_RegUpdate},
+  Store :        {uA_Decode, uA_OF_A, uA_OF_B, uA_LSU, uA_Memory_W},
+  Load :         {uA_Decode, uA_OF_A, uA_LSU, uA_Memory_R},
+  Branch_Ra_Rb : {uA_Decode, uA_OF_A, uA_OF_B, uA_ALU_Branch},
+  jal :          {uA_JumpDecode, uA_ALU_RegUpdate},
+  jalr :         {uA_JumpDecodeReg, uA_ALU_RegUpdate}
+}
+
+
+TraceValueMapping {
+  [ALL] : {
+      pc = "${ic.current_address_}"
+  },
+  Arith_Ra_Rb : {
+    rs1 = "${${BITFIELD rs1 [(0:19,15)]}}",
+    rs2 = "${${BITFIELD rs2 [(0:24,20)]}}",
+    rd  = "${${BITFIELD rd [(0:11,7)]}}"
+  },
+  Branch_Ra_Rb : {
+    rs1 = "${${BITFIELD rs1 [(0:19,15)]}}",
+    rs2 = "${${BITFIELD rs2 [(0:24,20)]}}",
+    brTarget = "${std::to_string(ic.current_address_ + (((etiss_int16)(${BITFIELD imm [(12:31,31)|(11:7,7)|(5:30,25)|(1:11,8)]} << 3)) >> 3))}"
+  },
+  Load : {
+    rs1 = "${${BITFIELD rs1 [(0:19,15)]}}",
+    rd  = "${${BITFIELD rd [(0:11,7)]}}"
+  },
+  Arith_Ra : {
+    rs1 = "${${BITFIELD rs1 [(0:19,15)]}}",
+    rd  = "${${BITFIELD rd [(0:11,7)]}}"
+  },
+  Store : {
+    rs1 = "${${BITFIELD rs1 [(0:19,15)]}}",
+    rs2 = "${${BITFIELD rs2 [(0:24,20)]}}"
+  },
+  jal : {
+    rd = "${${BITFIELD rd [(0:11,7)]}}",
+    brTarget = "${std::to_string(ic.current_address_ + (((etiss_int32)(${BITFIELD imm [(20:31,31)|(12:19,12)|(11:20,20)|(1:30,21)]} << 11)) >> 11))}"
+  },
+  jalr : {
+    rs1 = "${${BITFIELD rs1_addr [(0:19,15)]}}",
+    rd = "${${BITFIELD rd [(0:11,7)]}}",
+    brTarget = "(*((RV32IMACFD*)cpu)->X[${${BITFIELD rs1_data [(0:19,15)]}}] + ${std::to_string((((etiss_int16)(${BITFIELD imm [(0:11,0)]} << 4)) >> 4))}) & -2U"
+  }
+}
+
+/**************************************** Variants *****************************************/
+CorePerfModel CV32E40P (
+  use Pipeline : CV32E40P_pipeline
+  use ConnectorModel : {regModel, staBranchPredModel}
+)

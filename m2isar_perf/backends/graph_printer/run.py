@@ -30,12 +30,15 @@ def main(model_):
     # Create temp and out directory
     print("Creating temp and output directories")
     curDir = pathlib.Path(__file__).parents[0]
-    tempDir = backendUtils.createOrReplaceDir(curDir / "temp")
-    outDir = backendUtils.createOrReplaceDir(curDir / "out")
+    #tempDir = backendUtils.createOrReplaceDir(curDir / "temp")
+    #outDir = backendUtils.createOrReplaceDir(curDir / "out")
+    tempDir = curDir / "temp"
+    outDir = curDir / "out"
     for corePerfModel in model_.getAllCorePerfModels():
-        backendUtils.createOrReplaceDir(curDir / "out" / corePerfModel.name / Defs.OVERVIEW_FOLDER)
+        backendUtils.createOrReplaceDir(tempDir / corePerfModel.name)
+        backendUtils.createOrReplaceDir(outDir / corePerfModel.name / Defs.OVERVIEW_FOLDER)
         for instr in corePerfModel.getAllInstructions():
-            backendUtils.createOrReplaceDir(curDir / "out" / corePerfModel.name / instr.name )
+            backendUtils.createOrReplaceDir(outDir / corePerfModel.name / instr.name )
     
     # Create printer instances
     modelPrinter = ModelPrinter(tempDir, curDir / "templates", outDir)

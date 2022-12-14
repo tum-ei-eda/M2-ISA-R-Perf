@@ -25,7 +25,9 @@ from . import Defs
 class ModelPrinter:
 
     def __init__(self, tempDir_, templateDir_, outDir_):
-        self.tempDirBase = tempDir_ / "model"
+        #self.tempDirBase = tempDir_ / "model"
+        #self.templateDir = templateDir_ / "model"
+        self.tempDirBase = tempDir_
         self.templateDir = templateDir_ / "model"
         self.outDirBase = outDir_
 
@@ -38,7 +40,7 @@ class ModelPrinter:
         
         self.corePerfModel = corePerfModel_
 
-        self.curTempDir = self.tempDirBase / self.corePerfModel.name
+        self.curTempDir = self.tempDirBase / self.corePerfModel.name / "model"
         self.curOutDir = self.outDirBase / self.corePerfModel.name
         
         self.totalNumConModels = 0

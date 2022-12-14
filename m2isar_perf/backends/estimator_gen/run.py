@@ -32,7 +32,7 @@ def main(model_):
 
     print("Creating output directories")
     curDir = pathlib.Path(__file__).parents[0]
-    outDir = backendUtils.createOrReplaceDir(curDir / "out")
+    outDir = curDir / "out"
     for corePerfModel_i in model_.getAllCorePerfModels():
         backendUtils.createOrReplaceDir(outDir / corePerfModel_i.name / "src")
         backendUtils.createOrReplaceDir(outDir / corePerfModel_i.name / "include")

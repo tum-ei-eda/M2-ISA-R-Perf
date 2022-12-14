@@ -27,6 +27,7 @@ def createOrReplaceDir(dir_):
             # TODO: Better handling here? Wait for user input?
             print("WARNING: %s folder exists and is replaced" %(os.path.basename(os.path.normpath(str(dir_))))) 
             shutil.rmtree(dir_)
+            pathlib.Path(dir_).mkdir(parents=True)
         else:
             raise
     return dir_

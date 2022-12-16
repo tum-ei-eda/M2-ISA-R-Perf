@@ -19,6 +19,8 @@
 #include "${corePerfModel_.name}_Model.h"
 
 #include <stdbool.h>
+#include <string>
+#include <sstream>
 
 #include "Components/Channel.h"
 
@@ -47,4 +49,18 @@ void ${corePerfModel_.name}_Model::connectChannel(Channel* channel_)
   % endfor
   
   % endfor
+}
+
+std::string ${corePerfModel_.name}_Model::getPipelineStream(void)
+{
+  std::stringstream ret_strs;
+  <% firstIt = True %>
+  %for st_i in corePerfModel_.getAllStages():
+  %if firstIt:
+  ret_strs << ${corePerfModel_.getPipeline().name}.get${st_i.name}(); <% firstIt = False %>
+  %else:
+  ret_strs << "," << ${corePerfModel_.getPipeline().name}.get${st_i.name}();
+  %endif
+  %endfor
+  return ret_strs.str();
 }

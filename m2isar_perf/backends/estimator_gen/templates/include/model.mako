@@ -45,7 +45,7 @@ public:
     ,stage("${st_i.name}")
     %endif
   %endfor
-};
+  };
 
   % for i, st_i in enumerate(corePerfModel_.getAllStages()):
   void set${st_i.name}(int c) { stages[${i}].cnt = c; };
@@ -87,6 +87,7 @@ public:
 
   virtual void connectChannel(Channel*);
   virtual int getCycleCount(void){ return ${corePerfModel_.getPipeline().name}.getCycleCount(); };
+  virtual std::string getPipelineStream(void);
 
 };
 

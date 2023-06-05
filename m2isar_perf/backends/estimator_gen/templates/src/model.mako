@@ -27,10 +27,10 @@
 #include "${corePerfModel_.name}_Channel.h"
 
 % for resM_i in corePerfModel_.getAllResourceModels():
-#include "${resM_i.link}.h"
+#include "${resM_i.link}"
 %endfor
 % for conM_i in corePerfModel_.getAllConnectorModels():
-#include "${conM_i.link}.h"
+#include "${conM_i.link}"
 %endfor
 
 void ${corePerfModel_.name}_Model::connectChannel(Channel* channel_)

@@ -2,8 +2,8 @@
 Connector {Pc, Pc_np, Pc_p}
 Connector {Xa, Xb, Xd}
 
-Resource {PCGen, Decoder, JumpDecoder(2), ALU, LSU}
-Resource {MUL, MULH(5), DIV(10)} // Replace with external models?
+Resource {PCGen, Decoder, JumpDecoder(2), ALU, LSU, CSR}
+Resource {MUL, MULH(5), DIV(10)} // Approximated delay. Replace with external models?
 Resource {IPort_R, DPort_R, DPort_W}
 
 Microaction {
@@ -16,6 +16,7 @@ Microaction {
   uA_OF_B          (Xb),
   uA_ALU_RegUpdate (ALU -> Xd),
   uA_ALU_Branch    (ALU -> Pc_np),
+  uA_CSR           (CSR -> Xd),
   uA_LSU           (LSU),
   uA_MUL           (MUL -> Xd),
   uA_MULH          (MULH -> Xd),
@@ -29,7 +30,7 @@ Microaction {
 Stage {
   IF_stage (uA_IFetch, uA_PCGen),
   ID_stage (uA_Decode, uA_JumpDecode, uA_JumpDecodeReg, uA_OF_A, uA_OF_B),
-  EX_stage (uA_ALU_RegUpdate, uA_ALU_Branch, uA_LSU, uA_MUL, uA_MULH, uA_DIV),
+  EX_stage (uA_ALU_RegUpdate, uA_ALU_Branch, uA_CSR, uA_LSU, uA_MUL, uA_MULH, uA_DIV),
   WB_stage (uA_Memory_R, uA_Memory_W)
 }
 
@@ -39,14 +40,14 @@ Pipeline CV32E40P_pipeline (IF_stage -> ID_stage -> EX_stage -> WB_stage)
 TraceValue {rs1, rs2, rd, pc, brTarget}
 
 ConnectorModel regModel (
-  link : StandardRegisterModel
+  link : "Models/general/StandardRegisterModel.h"
   trace : {rs1, rs2, rd}
   connectorIn : Xd
   connectorOut : {Xa, Xb}
 )
 
 ConnectorModel staBranchPredModel (
-  link : StaticBranchPredictModel
+  link : "Models/general/StaticBranchPredictModel.h"
   trace : {pc, brTarget}
   connectorIn : {Pc_np, Pc_p}
   connectorOut : Pc
@@ -54,10 +55,16 @@ ConnectorModel staBranchPredModel (
 
 /*********************************** Instruction Section ***********************************/
 InstrGroup {
-  Arith_Ra_Rb (add, sub, xor, or, and),
-  Arith_Ra (addi, xori, ori, andi),
+  Arith_Ra_Rb (add, sub, xor, or, and, slt, sltu, sll, srl, sra),
+  Arith_Ra (addi, xori, ori, andi, slti, sltiu, slli, srli, srai),
+  Arith_X (auipc, lui),
+  Mul_Ra_Rb (mul),
+  MulH_Ra_Rb (mulh, mulhu, mulhsu),
+  Div_Ra_Rb (div, divu, rem, remu),
+  Csr_Ra (csrrw, csrrs, csrrc),
+  Csr_X (csrrwi, csrrsi, csrrci),
   Store (sb, sh, sw),
-  Load (lh, lw, lbu, lhu),
+  Load (lw, lh, lhu, lb, lbu),
   Branch_Ra_Rb (beq, bne, blt, bge, bltu, bgeu),
   Default ([?])
 }
@@ -66,6 +73,12 @@ MicroactionMapping {
   [ALL] :        {uA_IFetch, uA_PCGen},
   Arith_Ra_Rb :  {uA_Decode, uA_OF_A, uA_OF_B, uA_ALU_RegUpdate},
   Arith_Ra :     {uA_Decode, uA_OF_A, uA_ALU_RegUpdate},
+  Arith_X :      {uA_Decode, uA_ALU_RegUpdate},
+  Mul_Ra_Rb :    {uA_Decode, uA_OF_A, uA_OF_B, uA_MUL},
+  MulH_Ra_Rb :   {uA_Decode, uA_OF_A, uA_OF_B, uA_MULH},
+  Div_Ra_Rb :    {uA_Decode, uA_OF_A, uA_OF_B, uA_DIV},
+  Csr_Ra :       {uA_Decode, uA_OF_A, uA_CSR},
+  Csr_X :        {uA_Decode, uA_CSR},
   Store :        {uA_Decode, uA_OF_A, uA_OF_B, uA_LSU, uA_Memory_W},
   Load :         {uA_Decode, uA_OF_A, uA_LSU, uA_Memory_R},
   Branch_Ra_Rb : {uA_Decode, uA_OF_A, uA_OF_B, uA_ALU_Branch},
@@ -83,22 +96,47 @@ TraceValueMapping {
     rs2 = "${${BITFIELD rs2 [(0:24,20)]}}",
     rd  = "${${BITFIELD rd [(0:11,7)]}}"
   },
-  Branch_Ra_Rb : {
-    rs1 = "${${BITFIELD rs1 [(0:19,15)]}}",
-    rs2 = "${${BITFIELD rs2 [(0:24,20)]}}",
-    brTarget = "${std::to_string(ic.current_address_ + (((etiss_int16)(${BITFIELD imm [(12:31,31)|(11:7,7)|(5:30,25)|(1:11,8)]} << 3)) >> 3))}"
-  },
-  Load : {
+  Arith_Ra : {
     rs1 = "${${BITFIELD rs1 [(0:19,15)]}}",
     rd  = "${${BITFIELD rd [(0:11,7)]}}"
   },
-  Arith_Ra : {
+  Arith_X : {
+    rd  = "${${BITFIELD rd [(0:11,7)]}}"
+  },
+  Mul_Ra_Rb : {
     rs1 = "${${BITFIELD rs1 [(0:19,15)]}}",
+    rs2 = "${${BITFIELD rs2 [(0:24,20)]}}",
+    rd  = "${${BITFIELD rd [(0:11,7)]}}"
+  },
+  MulH_Ra_Rb : {
+    rs1 = "${${BITFIELD rs1 [(0:19,15)]}}",
+    rs2 = "${${BITFIELD rs2 [(0:24,20)]}}",
+    rd  = "${${BITFIELD rd [(0:11,7)]}}"
+  },
+  Div_Ra_Rb : {
+    rs1 = "${${BITFIELD rs1 [(0:19,15)]}}",
+    rs2 = "${${BITFIELD rs2 [(0:24,20)]}}",
+    rd  = "${${BITFIELD rd [(0:11,7)]}}"
+  },
+  Csr_Ra : {
+    rs1 = "${${BITFIELD rs1 [(0:19,15)]}}",
+    rd  = "${${BITFIELD rd [(0:11,7)]}}"
+  },
+  Csr_X : {
     rd  = "${${BITFIELD rd [(0:11,7)]}}"
   },
   Store : {
     rs1 = "${${BITFIELD rs1 [(0:19,15)]}}",
     rs2 = "${${BITFIELD rs2 [(0:24,20)]}}"
+  },
+  Load : {
+    rs1 = "${${BITFIELD rs1 [(0:19,15)]}}",
+    rd  = "${${BITFIELD rd [(0:11,7)]}}"
+  },
+  Branch_Ra_Rb : {
+    rs1 = "${${BITFIELD rs1 [(0:19,15)]}}",
+    rs2 = "${${BITFIELD rs2 [(0:24,20)]}}",
+    brTarget = "${std::to_string(ic.current_address_ + (((etiss_int16)(${BITFIELD imm [(12:31,31)|(11:7,7)|(5:30,25)|(1:11,8)]} << 3)) >> 3))}"
   },
   jal : {
     rd = "${${BITFIELD rd [(0:11,7)]}}",

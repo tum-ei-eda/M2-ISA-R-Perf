@@ -26,10 +26,10 @@
 #include "Components/Channel.h"
 
 % for resM_i in corePerfModel_.getAllResourceModels():
-#include "${resM_i.link}.h"
+#include "${resM_i.link}"
 %endfor
 % for conM_i in corePerfModel_.getAllConnectorModels():
-#include "${conM_i.link}.h"
+#include "${conM_i.link}"
 %endfor
 
 class ${corePerfModel_.getPipeline().name}_Model
@@ -78,11 +78,11 @@ public:
   ${corePerfModel_.getPipeline().name}_Model ${corePerfModel_.getPipeline().name};
 
   %for resM_i in corePerfModel_.getAllResourceModels():
-  ${resM_i.link} ${resM_i.name};
+  ${builder_.getModelType(resM_i.link)} ${resM_i.name};
   %endfor
 
   %for conM_i in corePerfModel_.getAllConnectorModels():
-  ${conM_i.link} ${conM_i.name};
+  ${builder_.getModelType(conM_i.link)} ${conM_i.name};
   %endfor
 
   virtual void connectChannel(Channel*);

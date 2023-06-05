@@ -20,6 +20,8 @@ from mako.template import Template
 
 from backends.metaMathModel import MetaMathModel
 
+from .CodeBuilder import CodeBuilder as Builder
+
 class CodeGenerator:
 
     def __init__(self, templateDir_, outDir_):
@@ -49,7 +51,7 @@ class CodeGenerator:
     def __printModel(self, corePerfModel_):
 
         template_header = Template(filename = str(self.templateDir) + "/include/model.mako")
-        code_header = template_header.render(**{"corePerfModel_" : corePerfModel_})
+        code_header = template_header.render(**{"corePerfModel_" : corePerfModel_, "builder_": Builder()})
 
         outFile_header = self.outDirBase / corePerfModel_.name / "include" / (corePerfModel_.name + "_Model.h")
         with outFile_header.open('w') as f:

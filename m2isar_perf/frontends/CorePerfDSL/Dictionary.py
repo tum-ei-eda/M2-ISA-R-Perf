@@ -77,7 +77,7 @@ class Dictionary():
     def addConnectorModel(self, name_, link_, inCons_, outCons_, trVals_):
         conModel = MetaModel.ConnectorModel()
         conModel.name = name_
-        conModel.link = link_
+        conModel.link = self.__convertString(link_)
         conModel.inConnectors = inCons_
         conModel.outConnectors = outCons_
         conModel.traceValues = trVals_
@@ -86,7 +86,7 @@ class Dictionary():
     def addResourceModel(self, name_, link_, trVals_):
         resModel = MetaModel.ResourceModel()
         resModel.name = name_
-        resModel.link = link_
+        resModel.link = self.__convertString(link_)
         resModel.traceValues = trVals_
         self.__addInstance(resModel, "ResourceModel")
 
@@ -280,9 +280,13 @@ class Dictionary():
         for trValAss_i in traceValueAssigns_:
             assignment = MetaModel.TraceValueAssignment()
             assignment.traceValue = trValAss_i[0]
-            assignment.description = trValAss_i[1]
+            assignment.description = self.__convertString(trValAss_i[1])
             instr_.traceValueAssignments.append(assignment)
         
         #instr_.traceValueAssignments.extend(traceValueAssigns_)
         if (instr_.name != Defs.KEYWORD_ALL) and (instr_.name != Defs.KEYWORD_REST):
             self.instrTraceValueMapped.append(instr_.name)
+
+    def __convertString(self, str_):
+        return str_.strip('\"')
+            

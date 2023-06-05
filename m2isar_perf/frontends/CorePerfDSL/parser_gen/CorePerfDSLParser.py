@@ -105,8 +105,8 @@ def serializedATN():
         buf.write("\u008d\u008e\3\2\2\2\u008e\u0090\3\2\2\2\u008f\u008d\3")
         buf.write("\2\2\2\u0090\u0091\7\6\2\2\u0091\u0093\3\2\2\2\u0092\u0086")
         buf.write("\3\2\2\2\u0092\u0087\3\2\2\2\u0093\u00b8\3\2\2\2\u0094")
-        buf.write("\u0095\7\n\2\2\u0095\u0096\7\t\2\2\u0096\u00b8\7\36\2")
-        buf.write("\2\u0097\u0098\7\13\2\2\u0098\u00a5\7\t\2\2\u0099\u00a6")
+        buf.write("\u0095\7\n\2\2\u0095\u0096\7\t\2\2\u0096\u00b8\7 \2\2")
+        buf.write("\u0097\u0098\7\13\2\2\u0098\u00a5\7\t\2\2\u0099\u00a6")
         buf.write("\5B\"\2\u009a\u009b\7\4\2\2\u009b\u00a0\5B\"\2\u009c\u009d")
         buf.write("\7\5\2\2\u009d\u009f\5B\"\2\u009e\u009c\3\2\2\2\u009f")
         buf.write("\u00a2\3\2\2\2\u00a0\u009e\3\2\2\2\u00a0\u00a1\3\2\2\2")
@@ -879,11 +879,14 @@ class CorePerfDSLParser ( Parser ):
             self.inCons = list() # of Connector_refContexts
             self.outCons = list() # of Connector_refContexts
 
-        def ID(self, i:int=None):
+        def ID(self):
+            return self.getToken(CorePerfDSLParser.ID, 0)
+
+        def STRING(self, i:int=None):
             if i is None:
-                return self.getTokens(CorePerfDSLParser.ID)
+                return self.getTokens(CorePerfDSLParser.STRING)
             else:
-                return self.getToken(CorePerfDSLParser.ID, i)
+                return self.getToken(CorePerfDSLParser.STRING, i)
 
         def traceValue_ref(self, i:int=None):
             if i is None:
@@ -982,7 +985,7 @@ class CorePerfDSLParser ( Parser ):
                     self.state = 147
                     self.match(CorePerfDSLParser.T__6)
                     self.state = 148
-                    localctx.link = self.match(CorePerfDSLParser.ID)
+                    localctx.link = self.match(CorePerfDSLParser.STRING)
                     pass
                 elif token in [CorePerfDSLParser.T__8]:
                     self.state = 149
@@ -1863,8 +1866,8 @@ class CorePerfDSLParser ( Parser ):
             self._ID = None # Token
             self.instructions = list() # of Tokens
             self._KEYWORD_REST = None # Token
-            self._tset538 = None # Token
-            self._tset549 = None # Token
+            self._tset536 = None # Token
+            self._tset547 = None # Token
 
         def ID(self, i:int=None):
             if i is None:
@@ -1910,14 +1913,14 @@ class CorePerfDSLParser ( Parser ):
             self.state = 326
             self.match(CorePerfDSLParser.T__4)
             self.state = 327
-            localctx._tset538 = self._input.LT(1)
+            localctx._tset536 = self._input.LT(1)
             _la = self._input.LA(1)
             if not(_la==CorePerfDSLParser.ID or _la==CorePerfDSLParser.KEYWORD_REST):
-                localctx._tset538 = self._errHandler.recoverInline(self)
+                localctx._tset536 = self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
                 self.consume()
-            localctx.instructions.append(localctx._tset538)
+            localctx.instructions.append(localctx._tset536)
             self.state = 332
             self._errHandler.sync(self)
             _la = self._input.LA(1)
@@ -1925,14 +1928,14 @@ class CorePerfDSLParser ( Parser ):
                 self.state = 328
                 self.match(CorePerfDSLParser.T__2)
                 self.state = 329
-                localctx._tset549 = self._input.LT(1)
+                localctx._tset547 = self._input.LT(1)
                 _la = self._input.LA(1)
                 if not(_la==CorePerfDSLParser.ID or _la==CorePerfDSLParser.KEYWORD_REST):
-                    localctx._tset549 = self._errHandler.recoverInline(self)
+                    localctx._tset547 = self._errHandler.recoverInline(self)
                 else:
                     self._errHandler.reportMatch(self)
                     self.consume()
-                localctx.instructions.append(localctx._tset549)
+                localctx.instructions.append(localctx._tset547)
                 self.state = 334
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)

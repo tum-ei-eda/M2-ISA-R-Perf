@@ -53,14 +53,14 @@ class CodeGenerator:
         template_header = Template(filename = str(self.templateDir) + "/include/model.mako")
         code_header = template_header.render(**{"corePerfModel_" : corePerfModel_, "builder_": Builder()})
 
-        outFile_header = self.outDirBase / corePerfModel_.name / "include" / (corePerfModel_.name + "_Model.h")
+        outFile_header = self.outDirBase / corePerfModel_.name / "include" / (corePerfModel_.name + "_PerformanceModel.h")
         with outFile_header.open('w') as f:
             f.write(code_header)
         
         template_src = Template(filename = str(self.templateDir) + "/src/model.mako")
         code_src = template_src.render(**{"corePerfModel_" : corePerfModel_})
 
-        outFile_src = self.outDirBase / corePerfModel_.name / "src" / (corePerfModel_.name + "_Model.cpp")
+        outFile_src = self.outDirBase / corePerfModel_.name / "src" / (corePerfModel_.name + "_PerformanceModel.cpp")
         with outFile_src.open('w') as f:
             f.write(code_src)
             

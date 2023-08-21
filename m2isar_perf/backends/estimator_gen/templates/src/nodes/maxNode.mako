@@ -1,4 +1,4 @@
-int ${node_.getIdStr()};
+uint64_t ${node_.getIdStr()};
 ${node_.getIdStr()} = std::max({\
 <% firstIt = True %>\
 % for prev in node_.getPrev():

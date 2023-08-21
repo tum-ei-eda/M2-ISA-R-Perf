@@ -20,3 +20,6 @@ class CodeBuilder:
         # Assumption: model type has same name as header-file. E.g.: Models/Register.h -> Register
         fileName = link_.split('/').pop()
         return fileName.split('.h')[0]
+
+    def getHeaderDefinePrefix(self, model_):
+        return ("SWEVAL_BACKENDS_" + model_.name.upper())

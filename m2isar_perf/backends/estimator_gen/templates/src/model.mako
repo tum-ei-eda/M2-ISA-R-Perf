@@ -16,13 +16,13 @@
 
 /********************* AUTO GENERATE FILE (create by M2-ISA-R-Perf) *********************/
 
-#include "${corePerfModel_.name}_Model.h"
+#include "${corePerfModel_.name}_PerformanceModel.h"
 
 #include <stdbool.h>
 #include <string>
 #include <sstream>
 
-#include "Components/Channel.h"
+#include "Channel.h"
 
 #include "${corePerfModel_.name}_Channel.h"
 
@@ -33,7 +33,7 @@
 #include "${conM_i.link}"
 %endfor
 
-void ${corePerfModel_.name}_Model::connectChannel(Channel* channel_)
+void ${corePerfModel_.name}_PerformanceModel::connectChannel(Channel* channel_)
 {
   ${corePerfModel_.name}_Channel* channel = static_cast<${corePerfModel_.name}_Channel*>(channel_);	
 
@@ -51,7 +51,7 @@ void ${corePerfModel_.name}_Model::connectChannel(Channel* channel_)
   % endfor
 }
 
-std::string ${corePerfModel_.name}_Model::getPipelineStream(void)
+std::string ${corePerfModel_.name}_PerformanceModel::getPipelineStream(void)
 {
   std::stringstream ret_strs;
   <% firstIt = True %>
@@ -60,6 +60,20 @@ std::string ${corePerfModel_.name}_Model::getPipelineStream(void)
   ret_strs << ${corePerfModel_.getPipeline().name}.get${st_i.name}(); <% firstIt = False %>
   %else:
   ret_strs << "," << ${corePerfModel_.getPipeline().name}.get${st_i.name}();
+  %endif
+  %endfor
+  return ret_strs.str();
+}
+
+std::string ${corePerfModel_.name}_PerformanceModel::getPrintHeader(void)
+{
+  std::stringstream ret_strs;
+  <% firstIt = True%>
+  %for st_i in corePerfModel_.getAllStages():
+  %if firstIt:
+  ret_strs << "${st_i.name}"; <% firstIt = False %>
+  %else:
+  ret_strs << "," << "${st_i.name}";
   %endif
   %endfor
   return ret_strs.str();

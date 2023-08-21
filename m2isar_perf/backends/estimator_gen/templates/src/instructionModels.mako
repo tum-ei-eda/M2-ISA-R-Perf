@@ -17,10 +17,11 @@
 /********************* AUTO GENERATE FILE (create by M2-ISA-R-Perf) *********************/
 
 #include <algorithm>
+#include <cstdint>
 
-#include "Components/Model.h"
+#include "PerformanceModel.h"
 
-#include "${corePerfModel_.name}_Model.h"
+#include "${corePerfModel_.name}_PerformanceModel.h"
 
 InstructionModelSet* ${corePerfModel_.name}_InstrModelSet = new InstructionModelSet("${corePerfModel_.name}_InstrModelSet");
 
@@ -30,7 +31,7 @@ static InstructionModel *instrModel_${instr_i.name.replace('.','_')} = new Instr
   "${instr_i.name}",
   ${instr_i.identifier},
   [](PerformanceModel* perfModel_){
-  ${corePerfModel_.name}_Model* perfModel = static_cast<${corePerfModel_.name}_Model*>(perfModel_);
+  ${corePerfModel_.name}_PerformanceModel* perfModel = static_cast<${corePerfModel_.name}_PerformanceModel*>(perfModel_);
   % for line_i in codeArrayDict_[instr_i.name]:
   ${line_i}
   % endfor

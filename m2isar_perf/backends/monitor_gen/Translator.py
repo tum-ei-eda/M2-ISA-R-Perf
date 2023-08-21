@@ -46,7 +46,7 @@ class Translator:
     def __getTraceValues(self, corePerfModel_):
         traceValues = []
         for trVal_i in corePerfModel_.getAllUsedTraceValues():
-            traceValues.append({"name": trVal_i.name})
+            traceValues.append({"name": trVal_i.name, "type": "uint64_t"})
         return traceValues
 
     def __getInstructions(self, corePerfModel_):

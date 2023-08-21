@@ -16,14 +16,15 @@
 
 /********************* AUTO GENERATE FILE (create by M2-ISA-R-Perf) *********************/
 
-#ifndef ${corePerfModel_.name.upper()}_MODEL_H
-#define ${corePerfModel_.name.upper()}_MODEL_H
+#ifndef ${builder_.getHeaderDefinePrefix(corePerfModel_)}_PERFORMANCE_MODEL_H
+#define ${builder_.getHeaderDefinePrefix(corePerfModel_)}_PERFORMANCE_MODEL_H
 
 #include <stdbool.h>
 #include <string>
+#include <cstdint>
 
-#include "Components/Model.h"
-#include "Components/Channel.h"
+#include "PerformanceModel.h"
+#include "Channel.h"
 
 % for resM_i in corePerfModel_.getAllResourceModels():
 #include "${resM_i.link}"
@@ -48,11 +49,11 @@ public:
   };
 
   % for i, st_i in enumerate(corePerfModel_.getAllStages()):
-  void set${st_i.name}(int c) { stages[${i}].cnt = c; };
-  int get${st_i.name}(void) { return stages[${i}].cnt; };
+  void set${st_i.name}(uint64_t c) { stages[${i}].cnt = c; };
+  uint64_t get${st_i.name}(void) { return stages[${i}].cnt; };
   %if i == len(corePerfModel_.getAllStages()) - 1:
 
-  int getCycleCount(void) { return stages[${i}].cnt; };
+  uint64_t getCycleCount(void) { return stages[${i}].cnt; };
   %endif
   
   % endfor 
@@ -61,11 +62,11 @@ public:
 
 extern InstructionModelSet* ${corePerfModel_.name}_InstrModelSet;
 
-class ${corePerfModel_.name}_Model : public PerformanceModel
+class ${corePerfModel_.name}_PerformanceModel : public PerformanceModel
 {
 public:
 
-  ${corePerfModel_.name}_Model() : PerformanceModel("${corePerfModel_.name}", ${corePerfModel_.name}_InstrModelSet)
+  ${corePerfModel_.name}_PerformanceModel() : PerformanceModel("${corePerfModel_.name}", ${corePerfModel_.name}_InstrModelSet)
     ,${corePerfModel_.getPipeline().name}()
     % for resM_i in corePerfModel_.getAllResourceModels():
     ,${resM_i.name}(this)
@@ -86,9 +87,10 @@ public:
   %endfor
 
   virtual void connectChannel(Channel*);
-  virtual int getCycleCount(void){ return ${corePerfModel_.getPipeline().name}.getCycleCount(); };
+  virtual uint64_t getCycleCount(void){ return ${corePerfModel_.getPipeline().name}.getCycleCount(); };
   virtual std::string getPipelineStream(void);
+  virtual std::string getPrintHeader(void);
 
 };
 
-#endif // ${corePerfModel_.name.upper()}_MODEL_H
+#endif // ${builder_.getHeaderDefinePrefix(corePerfModel_)}_PERFORMANCE_MODEL_H

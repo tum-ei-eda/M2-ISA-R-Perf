@@ -40,14 +40,14 @@ Pipeline CV32E40P_pipeline (IF_stage -> ID_stage -> EX_stage -> WB_stage)
 TraceValue {rs1, rs2, rd, pc, brTarget}
 
 ConnectorModel regModel (
-  link : "Models/general/StandardRegisterModel.h"
+  link : "models/common/StandardRegisterModel.h"
   trace : {rs1, rs2, rd}
   connectorIn : Xd
   connectorOut : {Xa, Xb}
 )
 
 ConnectorModel staBranchPredModel (
-  link : "Models/general/StaticBranchPredictModel.h"
+  link : "models/common/StaticBranchPredictModel.h"
   trace : {pc, brTarget}
   connectorIn : {Pc_np, Pc_p}
   connectorOut : Pc
@@ -145,7 +145,7 @@ TraceValueMapping {
   jalr : {
     rs1 = "${${BITFIELD rs1_addr [(0:19,15)]}}",
     rd = "${${BITFIELD rd [(0:11,7)]}}",
-    brTarget = "(*((RV32IMACFD*)cpu)->X[${${BITFIELD rs1_data [(0:19,15)]}}] + ${std::to_string((((etiss_int16)(${BITFIELD imm [(0:11,0)]} << 4)) >> 4))}) & -2U"
+    brTarget = "(*((RV32IMACFD*)cpu)->X[${${BITFIELD rs1_data [(0:19,15)]}}] + ${std::to_string((((etiss_int16)(${BITFIELD imm [(0:20,31)]} << 4)) >> 4))}) & -2U"
   }
 }
 

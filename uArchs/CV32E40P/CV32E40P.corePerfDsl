@@ -2,8 +2,9 @@
 Connector {Pc, Pc_np, Pc_p}
 Connector {Xa, Xb, Xd}
 
-Resource {PCGen, Decoder, JumpDecoder(2), ALU, LSU, CSR}
-Resource {MUL, MULH(5), DIV(10)} // Approximated delay. Replace with external models?
+Resource {PCGen, Decoder, JumpDecoder, ALU, LSU, CSR}
+Resource {MUL, MULH(5)} // Approximated delay. Replace with external models?
+Resource {DIV(divider), DIVU(divider_u)}
 Resource {IPort_R, DPort_R, DPort_W}
 
 Microaction {
@@ -21,6 +22,7 @@ Microaction {
   uA_MUL           (MUL -> Xd),
   uA_MULH          (MULH -> Xd),
   uA_DIV           (DIV -> Xd),
+  uA_DIVU          (DIVU -> Xd),
   uA_Memory_R      (DPort_R -> Xd),
   uA_Memory_W      (DPort_W)
 }
@@ -30,14 +32,14 @@ Microaction {
 Stage {
   IF_stage (uA_IFetch, uA_PCGen),
   ID_stage (uA_Decode, uA_JumpDecode, uA_JumpDecodeReg, uA_OF_A, uA_OF_B),
-  EX_stage (uA_ALU_RegUpdate, uA_ALU_Branch, uA_CSR, uA_LSU, uA_MUL, uA_MULH, uA_DIV),
+  EX_stage (uA_ALU_RegUpdate, uA_ALU_Branch, uA_CSR, uA_LSU, uA_MUL, uA_MULH, uA_DIV, uA_DIVU),
   WB_stage (uA_Memory_R, uA_Memory_W)
 }
 
 Pipeline CV32E40P_pipeline (IF_stage -> ID_stage -> EX_stage -> WB_stage)
 
 /************************************* External Models *************************************/
-TraceValue {rs1, rs2, rd, pc, brTarget}
+TraceValue {rs1, rs2, rd, pc, brTarget, rs2_data}
 
 ConnectorModel regModel (
   link : "models/common/StandardRegisterModel.h"
@@ -53,6 +55,16 @@ ConnectorModel staBranchPredModel (
   connectorOut : Pc
 )
 
+ResourceModel divider (
+  link: "models/cv32e40p/DividerModel.h"
+  trace: rs2_data
+)
+
+ResourceModel divider_u (
+  link: "models/cv32e40p/DividerUnsignedModel.h"
+  trace: rs2_data
+)
+
 /*********************************** Instruction Section ***********************************/
 InstrGroup {
   Arith_Ra_Rb (add, sub, xor, or, and, slt, sltu, sll, srl, sra),
@@ -60,7 +72,8 @@ InstrGroup {
   Arith_X (auipc, lui),
   Mul_Ra_Rb (mul),
   MulH_Ra_Rb (mulh, mulhu, mulhsu),
-  Div_Ra_Rb (div, divu, rem, remu),
+  Div_Ra_Rb (div, rem),
+  DivU_Ra_Rb (divu, remu),
   Csr_Ra (csrrw, csrrs, csrrc),
   Csr_X (csrrwi, csrrsi, csrrci),
   Store (sb, sh, sw),
@@ -77,6 +90,7 @@ MicroactionMapping {
   Mul_Ra_Rb :    {uA_Decode, uA_OF_A, uA_OF_B, uA_MUL},
   MulH_Ra_Rb :   {uA_Decode, uA_OF_A, uA_OF_B, uA_MULH},
   Div_Ra_Rb :    {uA_Decode, uA_OF_A, uA_OF_B, uA_DIV},
+  DivU_Ra_Rb :   {uA_Decode, uA_OF_A, uA_OF_B, uA_DIVU},
   Csr_Ra :       {uA_Decode, uA_OF_A, uA_CSR},
   Csr_X :        {uA_Decode, uA_CSR},
   Store :        {uA_Decode, uA_OF_A, uA_OF_B, uA_LSU, uA_Memory_W},
@@ -116,7 +130,14 @@ TraceValueMapping {
   Div_Ra_Rb : {
     rs1 = "${${BITFIELD rs1 [(0:19,15)]}}",
     rs2 = "${${BITFIELD rs2 [(0:24,20)]}}",
-    rd  = "${${BITFIELD rd [(0:11,7)]}}"
+    rd  = "${${BITFIELD rd [(0:11,7)]}}",
+    rs2_data = "*((RV32IMACFD*)cpu)->X[${ ${BITFIELD rs2_data [(0:24,20)]} }]"
+  },
+  DivU_Ra_Rb : {
+    rs1 = "${${BITFIELD rs1 [(0:19,15)]}}",
+    rs2 = "${${BITFIELD rs2 [(0:24,20)]}}",
+    rd  = "${${BITFIELD rd [(0:11,7)]}}",
+    rs2_data = "*((RV32IMACFD*)cpu)->X[${ ${BITFIELD rs2_data [(0:24,20)]} }]"
   },
   Csr_Ra : {
     rs1 = "${${BITFIELD rs1 [(0:19,15)]}}",

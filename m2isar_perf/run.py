@@ -21,14 +21,19 @@ import pathlib
 import pickle
 import sys
 
+from common import common as cf
+
 # Read command line arguments
 argParser = argparse.ArgumentParser()
 argParser.add_argument("description", help="File containing the description of the performance model.")
-#argParser.add_argument("output_dir", help="Directory to store generated files")
+argParser.add_argument("-o", "--output_dir", help="Directory to store generated files")
 argParser.add_argument("-c", "--code_gen", action="store_true", help="Generate estimator and monitor code")
 argParser.add_argument("-i", "--info_print", action="store_true", help="Generate info/debug/doc prints")
 argParser.add_argument("-d", "--dump_dir", help="Directory to dump intermediatly generated models.")
 args = argParser.parse_args()
+
+# Resolve outDir
+outDir = cf.resolveOutDir(args.output_dir, __file__, 1)
 
 # Import appropriate frontend
 if args.description.endswith('.corePerfDsl'):
@@ -52,4 +57,4 @@ model = frontend.main(args.description, args.dump_dir)
 
 # Call all selected backends
 for backend_i in backends:
-    backend_i.main(model)
+    backend_i.main(model, outDir)

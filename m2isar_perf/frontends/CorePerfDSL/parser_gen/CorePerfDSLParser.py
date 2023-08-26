@@ -137,7 +137,7 @@ def serializedATN():
         buf.write("\u00db\3\2\2\2\u00da\u00d8\3\2\2\2\u00db\u00dc\7\6\2\2")
         buf.write("\u00dc\u00de\3\2\2\2\u00dd\u00d1\3\2\2\2\u00dd\u00d2\3")
         buf.write("\2\2\2\u00de\u00e3\3\2\2\2\u00df\u00e0\7\n\2\2\u00e0\u00e1")
-        buf.write("\7\t\2\2\u00e1\u00e3\7\36\2\2\u00e2\u00cf\3\2\2\2\u00e2")
+        buf.write("\7\t\2\2\u00e1\u00e3\7 \2\2\u00e2\u00cf\3\2\2\2\u00e2")
         buf.write("\u00df\3\2\2\2\u00e3\u00e6\3\2\2\2\u00e4\u00e2\3\2\2\2")
         buf.write("\u00e4\u00e5\3\2\2\2\u00e5\u00e7\3\2\2\2\u00e6\u00e4\3")
         buf.write("\2\2\2\u00e7\u00e8\7\r\2\2\u00e8\21\3\2\2\2\u00e9\u00f6")
@@ -1176,11 +1176,14 @@ class CorePerfDSLParser ( Parser ):
             self.traceVals = list() # of TraceValue_refContexts
             self.link = None # Token
 
-        def ID(self, i:int=None):
+        def ID(self):
+            return self.getToken(CorePerfDSLParser.ID, 0)
+
+        def STRING(self, i:int=None):
             if i is None:
-                return self.getTokens(CorePerfDSLParser.ID)
+                return self.getTokens(CorePerfDSLParser.STRING)
             else:
-                return self.getToken(CorePerfDSLParser.ID, i)
+                return self.getToken(CorePerfDSLParser.STRING, i)
 
         def traceValue_ref(self, i:int=None):
             if i is None:
@@ -1272,7 +1275,7 @@ class CorePerfDSLParser ( Parser ):
                     self.state = 222
                     self.match(CorePerfDSLParser.T__6)
                     self.state = 223
-                    localctx.link = self.match(CorePerfDSLParser.ID)
+                    localctx.link = self.match(CorePerfDSLParser.STRING)
                     pass
                 else:
                     raise NoViableAltException(self)

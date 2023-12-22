@@ -166,7 +166,7 @@ TraceValueMapping {
   jalr : {
     rs1 = "${${BITFIELD rs1_addr [(0:19,15)]}}",
     rd = "${${BITFIELD rd [(0:11,7)]}}",
-    brTarget = "(*((RV32IMACFD*)cpu)->X[${${BITFIELD rs1_data [(0:19,15)]}}] + ${std::to_string((((etiss_int16)(${BITFIELD imm [(0:20,31)]} << 4)) >> 4))}) & -2U"
+    brTarget = "(*((RV32IMACFD*)cpu)->X[${${BITFIELD rs1_data [(0:19,15)]}}] + ${std::to_string((((etiss_int16)(${BITFIELD imm [(0:31,20)]} << 4)) >> 4))}) & -2U"
   }
 }
 

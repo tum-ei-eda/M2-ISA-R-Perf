@@ -25,18 +25,23 @@ Initialize required git-submodules:
 
 ### Install Python requirements
 Create a virtual Python evnironment and activate it:
+
        $ python3 -m venv venv
        $ source venv/bin/activate
 
 Install Python dependencies:
+
 	$ pip install -r requirements.txt
 
 ## Usage
 Always make sure to run M2-ISA-R-Perf from within the virtual Python environment:
+
        $ source venv/bin/activate
 
 Run the entire tool chain like this (e.g.):
+
     $ python m2isar_perf/run.py uArchs/SimpleRISCV/simpleRISCV.corePerfDSL -c [-i]
 
 Use the help option to get an overview of supported input arguments:
+
     $ python m2isar_perf/run.py --help

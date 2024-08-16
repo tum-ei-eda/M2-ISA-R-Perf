@@ -10,5 +10,10 @@
 - Run the entire tool-chain:
   ```
   cd m2isar_perf/
-  python3 run.py ../uArchs/SimpleRISCV/simpleRISCV.corePerfDSL ./SimpleRISCV
+  python3 run.py ../uArchs/SimpleRISCV/simpleRISCV.corePerfDSL ./SimpleRISCV -c -i
+  ```
+- Run help to get overview of supported input arguments:
+  ```
+  cd m2isar_perf/
+  python3 run.py --help
   ```

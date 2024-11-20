@@ -55,39 +55,39 @@ Pipeline SimplePipeline (IF_stage -> ID_stage -> EX_stage -> MEM_stage -> WB_sta
 TraceValue {rs1, rs2, rd, pc, brTarget}
 
 ConnectorModel regModel (
-    link : StandardRegisterModel
+    link : "models/common/StandardRegisterModel.h"
     trace : {rs1, rs2, rd}
     connectorIn : Xd
     connectorOut : {Xa, Xb}
 )
 
 ConnectorModel dynBranchPredModel (
-    link : DynamicBranchPredictModel
+    link : "models/common/DynamicBranchPredictModel.h"
     trace : {pc, brTarget}
     connectorIn : {Pc_p, Pc_np}
     connectorOut : Pc
 )
 
 ConnectorModel staBranchPredModel (
-    link : StaticBranchPredictModel
+    link : "models/common/StaticBranchPredictModel.h"
     trace : {pc, brTarget}
     connectorIn : {Pc_p, Pc_np}
     connectorOut : Pc
 )
 
 ConnectorModel noBranchPredModel (
-    link : NoBranchPredictModel
+    link : "models/common/NoBranchPredictModel.h"
     trace : {pc, brTarget}
     connectorIn : {Pc_p, Pc_np}
     connectorOut : Pc
 )
 
 ResourceModel iMemModel (
-    link : DummyMemoryModel
+    link : "models/common/DummyMemoryModel.h"
 )
 
 ResourceModel dMemModel (
-    link : DummyMemoryModel
+    link : "models/common/DummyMemoryModel.h"
 )
 
 /*********************************** Instruction Section ***********************************/

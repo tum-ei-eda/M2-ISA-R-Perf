@@ -31,3 +31,9 @@ def createOrReplaceDir(dir_):
         else:
             raise
     return dir_
+
+def getCodeDirPath(basePath_, modelName_):
+    return basePath_ / modelName_ / "code"
+
+def getDocDirPath(basePath_, modelName_):
+    return basePath_ / modelName_ / "doc"

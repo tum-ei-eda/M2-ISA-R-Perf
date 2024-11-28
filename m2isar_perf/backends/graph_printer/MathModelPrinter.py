@@ -24,9 +24,9 @@ from backends.metaMathModel import MetaMathModel
 
 class MathModelPrinter:
 
-    def __init__(self, tempDir_, outDir_):
+    def __init__(self, tempDir_, outDirDict_):
         self.tempDirBase = tempDir_
-        self.outDirBase = outDir_
+        self.outDirDict = outDirDict_
 
 
     def printMathModel(self, mathModel_):
@@ -34,7 +34,7 @@ class MathModelPrinter:
         for corePerfModel in mathModel_.getAllCorePerfModels():
 
             self.curTempDir = self.tempDirBase / corePerfModel.name / "mathModel"
-            self.curOutDir = self.outDirBase / corePerfModel.name
+            self.curOutDir = self.outDirDict[corePerfModel.name]
             
             print()
             print("Creating math-model graphs for " + corePerfModel.name)

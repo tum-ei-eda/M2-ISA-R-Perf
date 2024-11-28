@@ -32,9 +32,12 @@ def main(model_, outDir_):
     print()
 
     print("Creating output directories")
+    outDirDict = {}
     for corePerfModel_i in model_.getAllCorePerfModels():
-        backendUtils.createOrReplaceDir(outDir_ / corePerfModel_i.name / "model/src")
-        backendUtils.createOrReplaceDir(outDir_ / corePerfModel_i.name / "model/include")
+        dirPath = backendUtils.getCodeDirPath(outDir_, corePerfModel_i.name) / "perf_model"
+        outDirDict[corePerfModel_i.name] = dirPath
+        backendUtils.createOrReplaceDir(dirPath / "src")
+        backendUtils.createOrReplaceDir(dirPath / "include")
     
     print("Generating Math-Model")
     transformer = ModelTransformer()
@@ -43,7 +46,7 @@ def main(model_, outDir_):
     
     print("Generating code for estimator")
     curDir = pathlib.Path(__file__).parents[0]
-    CodeGenerator(curDir / "templates", outDir_).generateEstimator(mathModel)
+    CodeGenerator(curDir / "templates", outDirDict).generateEstimator(mathModel)
         
     
 # Run this if backend is called stand-alone (i.e. this file is directly called)

@@ -35,15 +35,20 @@ def main(model_, outDir_):
     #outDir = backendUtils.createOrReplaceDir(curDir / "out")
     tempDir = curDir / "temp"
     outDir = outDir_
-    for corePerfModel in model_.getAllCorePerfModels():
-        backendUtils.createOrReplaceDir(tempDir / corePerfModel.name)
-        backendUtils.createOrReplaceDir(outDir / corePerfModel.name / Defs.OVERVIEW_FOLDER)
-        for instr in corePerfModel.getAllInstructions():
-            backendUtils.createOrReplaceDir(outDir / corePerfModel.name / instr.name )
+
+    outDirDict = {}
+    for corePerfModel_i in model_.getAllCorePerfModels():
+        backendUtils.createOrReplaceDir(tempDir / corePerfModel_i.name)
+
+        dirPath = backendUtils.getDocDirPath(outDir, corePerfModel_i.name)
+        outDirDict[corePerfModel_i.name] = dirPath
+        backendUtils.createOrReplaceDir(dirPath / Defs.OVERVIEW_FOLDER)
+        for instr_i in corePerfModel_i.getAllInstructions():
+            backendUtils.createOrReplaceDir(dirPath / instr_i.name )
     
     # Create printer instances
-    modelPrinter = ModelPrinter(tempDir, curDir / "templates", outDir)
-    mathModelPrinter = MathModelPrinter(tempDir, outDir)
+    modelPrinter = ModelPrinter(tempDir, curDir / "templates", outDirDict)
+    mathModelPrinter = MathModelPrinter(tempDir, outDirDict)
 
     # Print (top) model
     print()

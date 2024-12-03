@@ -1,3 +1,0 @@
-[submodule "m2isar_perf/backends/monitor_gen/trace_generator"]
-	path = m2isar_perf/backends/monitor_gen/trace_generator
-	url = git@github.com:tum-ei-eda/Trace-Generator.git

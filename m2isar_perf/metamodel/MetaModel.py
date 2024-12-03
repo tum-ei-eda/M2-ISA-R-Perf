@@ -40,6 +40,7 @@ class CorePerfModel(MetaModel_base):
     def __init__(self):
         self.name = ""
         self.pipeline = None
+        self.core = ""
         self.connectorModels = []
         self.resourceModels = []
         self.instructions = []

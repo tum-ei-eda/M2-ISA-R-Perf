@@ -31,9 +31,12 @@ def main(model_, outDir_):
     
     for corePerfModel_i in model_.getAllCorePerfModels():
 
+        print(corePerfModel_i.name + " | " + corePerfModel_i.core)
+        
         # Create trace dictionary
         trace = {}
         trace["name"] = corePerfModel_i.name
+        trace["core"] = corePerfModel_i.core
         trace["setId"] = "Manual"
         trace["traceValues"] = getTraceValues(corePerfModel_i)
         trace["instructions"] = getInstructions(corePerfModel_i)

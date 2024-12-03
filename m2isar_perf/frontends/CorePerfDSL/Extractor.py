@@ -184,12 +184,23 @@ class Extractor(CorePerfDSLVisitor):
             resAssigns = [self.visit(resAss) for resAss in ctx.resAssigns]
             uActionAssigns = [self.visit(uAAss) for uAAss in ctx.uActionAssigns]
             
-            if ctx.use_pipeline is None:
-                print("ERROR: CorePerfModel %s does not specify a pipeline" % ctx.name.text)
-            else:
-                pipeRef = self.visit(ctx.use_pipeline)
-                self.dictionary.addCorePerfModel(ctx.name.text, pipeRef, conModelRefs, resAssigns, uActionAssigns)
+            #if ctx.use_pipeline is None:
+            #    print("ERROR: CorePerfModel %s does not specify a pipeline" % ctx.name.text)
+            #else:
+            #    pipeRef = self.visit(ctx.use_pipeline)
+            #    self.dictionary.addCorePerfModel(ctx.name.text, pipeRef, conModelRefs, resAssigns, uActionAssigns)
 
+            # Check that required arguments are present
+            if ctx.use_pipeline is None:
+                raise RuntimeError("CorePerfModel %s does not specify a pipeline" % ctx.name.text)
+            pipeRef = self.visit(ctx.use_pipeline)
+
+            if ctx.core is None:
+                raise RuntimeError("CorePerfModel %s does not specify a core" % ctx.name.text)
+
+            # Add model to dictionary
+            self.dictionary.addCorePerfModel(ctx.name.text, pipeRef, ctx.core.text, conModelRefs, resAssigns, uActionAssigns)
+            
                 
     # Assignments
 

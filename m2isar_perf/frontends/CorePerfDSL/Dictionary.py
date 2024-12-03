@@ -149,10 +149,11 @@ class Dictionary():
         pipe.stages = stages_
         self.__addInstance(pipe, "Pipeline")
 
-    def addCorePerfModel(self, name_, pipe_, conModels_, resAssigns_, uActionAssigns_):
+    def addCorePerfModel(self, name_, pipe_, core_, conModels_, resAssigns_, uActionAssigns_):
         model = MetaModel.CorePerfModel()
         model.name = name_
         model.pipeline = pipe_
+        model.core = self.__convertString(core_)
         model.connectorModels = conModels_
         self.__addInstance(model, "CorePerfModel")
         

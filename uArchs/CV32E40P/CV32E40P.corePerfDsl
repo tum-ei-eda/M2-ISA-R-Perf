@@ -172,6 +172,7 @@ TraceValueMapping {
 
 /**************************************** Variants *****************************************/
 CorePerfModel CV32E40P (
+  core : "RV32IMACFD"
   use Pipeline : CV32E40P_pipeline
   use ConnectorModel : {regModel, staBranchPredModel}
 )

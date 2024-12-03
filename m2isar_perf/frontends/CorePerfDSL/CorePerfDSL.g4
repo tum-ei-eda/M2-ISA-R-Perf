@@ -60,7 +60,8 @@ instrGroup : name=ID '(' instructions+=(ID|KEYWORD_REST) (',' instructions+=(ID|
 corePerfModel_def : 'CorePerfModel' (corePerfModel | '{' corePerfModel (',' corePerfModel)* '}');
 
 corePerfModel : name=ID '(' (
-	      'use' 'Pipeline' ':' use_pipeline=pipeline_ref
+	      'core' ':' core=STRING
+	      | 'use' 'Pipeline' ':' use_pipeline=pipeline_ref
 	      | 'use' 'ConnectorModel' ':' (conModels+=connectorModel_ref | '{' conModels+=connectorModel_ref (',' conModels+=connectorModel_ref)* '}')
 	      | 'assign' 'Resource' ':' (resAssigns+=resource_assign | '{' resAssigns+=resource_assign (',' resAssigns+=resource_assign)* '}')
 	      | 'assign' 'Microaction' ':' (uActionAssigns+=microaction_assign | '{' uActionAssigns+=microaction_assign (',' uActionAssigns+=microaction_assign)* '}')

@@ -71,7 +71,7 @@ def main(description_, outdir_=None):
         # Dump model to file
         with outfile.open('wb') as f:
             pickle.dump(top, f)
-        
+
     return top
 
 # Run this if frontend is called stand-alone (i.e. this file is directly called)

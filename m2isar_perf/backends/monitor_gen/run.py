@@ -16,40 +16,61 @@
 
 #!/usr/bin/env python3
 
-#from backends.metaMathModel.ModelTransformer import ModelTransformer
-#from .CodeGenerator import CodeGenerator
-#from backends import utils as backendUtils
-
 import argparse
 import pathlib
-import os
 import pickle
 import sys
+import json
 
-from .Translator import Translator
 from backends import utils as backendUtils
 from common import common as cf # common functions
 
+##### MAIN #####
+
 def main(model_, outDir_):
-
-    print(">> HELLO FROM THE MONITOR GEN <<")
-
-    print("Creating temp directories")
-    curDir = pathlib.Path(__file__).parents[0]
-    tempDir = backendUtils.createOrReplaceDir(curDir / "temp")
+    
     for corePerfModel_i in model_.getAllCorePerfModels():
-        backendUtils.createOrReplaceDir(tempDir / corePerfModel_i.name)
 
-    print("Creating json description of desired trace")
-    Translator(tempDir).createTraceDescriptions(model_)
+        # Create trace dictionary
+        trace = {}
+        trace["name"] = corePerfModel_i.name
+        trace["setId"] = "Manual"
+        trace["traceValues"] = getTraceValues(corePerfModel_i)
+        trace["instructions"] = getInstructions(corePerfModel_i)
 
-    print("Calling Trace-Generator to create monitors")
-    traceGenRun = curDir / "trace_generator/trace_gen/run.py"
-    for corePerfModel_i in model_.getAllCorePerfModels():
-        traceFile = tempDir / corePerfModel_i.name / "trace.json"
-        os.system ("python3 %s %s --outDir=%s" % (str(traceGenRun), str(traceFile), str(outDir_)))
+        # Create a "root" dictionary for json
+        json_dict = {}
+        json_dict["trace"] = trace
 
+        # Dump root dictionary to file
+        outFile = backendUtils.getMonitorDirPath(outDir_, corePerfModel_i.name) / (corePerfModel_i.name + "_trace.json")
+        outFile.parent.mkdir(parents=True, exist_ok=True) # Make sure that output directory exists
+        with outFile.open('w') as f:
+            json.dump(json_dict, f, indent=2)
+
+##### SUPPORT FUNCTIONS #####
+            
+def getTraceValues(corePerfModel_):
+    traceValues = []
+    for trVal_i in corePerfModel_.getAllUsedTraceValues():
+        traceValues.append({"name": trVal_i.name, "type": "uint64_t"})
+    return traceValues
+
+def getInstructions(corePerfModel_):
+    usedTraceValues = corePerfModel_.getAllUsedTraceValues()
         
+    instructions = []
+    for instr_i in corePerfModel_.getAllInstructions():
+        mappings = []
+        for map_i in instr_i.getTraceValueAssignments():
+            if map_i.getTraceValue() in usedTraceValues:
+                mappings.append({"traceValue": map_i.getTraceValue().name, "description": map_i.getDescription()})
+        instructions.append({"name": instr_i.name, "id": instr_i.identifier, "mappings": mappings}) 
+
+    return instructions
+
+##### STAND-ALONE #####
+
 # Run this if backend is called stand-alone (i.e. this file is directly called)
 if __name__ == '__main__':
     

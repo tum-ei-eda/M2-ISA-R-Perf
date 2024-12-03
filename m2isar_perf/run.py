@@ -27,7 +27,8 @@ from common import common as cf
 argParser = argparse.ArgumentParser()
 argParser.add_argument("description", help="File containing the description of the performance model.")
 argParser.add_argument("-o", "--output_dir", help="Directory to store generated files")
-argParser.add_argument("-c", "--code_gen", action="store_true", help="Generate estimator and monitor code")
+argParser.add_argument("-c", "--code_gen", action="store_true", help="Generate estimator code")
+argParser.add_argument("-m", "--monitor_description", action="store_true", help="Generate monitor description")
 argParser.add_argument("-i", "--info_print", action="store_true", help="Generate info/debug/doc prints")
 argParser.add_argument("-d", "--dump_dir", help="Directory to dump intermediatly generated models.")
 args = argParser.parse_args()
@@ -46,6 +47,7 @@ backends = []
 if args.code_gen:
     import backends.estimator_gen.run as backend_estimator_gen
     backends.append(backend_estimator_gen)
+if args.monitor_description:
     import backends.monitor_gen.run as backend_monitor_gen
     backends.append(backend_monitor_gen)
 if args.info_print:

@@ -37,3 +37,6 @@ def getCodeDirPath(basePath_, modelName_):
 
 def getDocDirPath(basePath_, modelName_):
     return basePath_ / modelName_ / "doc"
+
+def getMonitorDirPath(basePath_, modelName_):
+    return basePath_ / modelName_

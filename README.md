@@ -6,7 +6,7 @@ M2-ISA-R-Perf is a code generator for the SWEvalLib plugin library of ETISS. It 
 M2-ISA-R-Perf uses the CorePerfDSL description language as an input format. You can find example versions in the [CorePerfDSL-Examples](https://github.com/tum-ei-eda/CorePerfDSL-Examples) repository.
 
 ## Requirements
-M2-ISA-R-Perf is developted for python3. It uses the Trace-Generator tool as a git-submodule.
+M2-ISA-R-Perf is developted for python3.
 
 ## First Time Setup
 
@@ -16,10 +16,7 @@ Clone this repository and navigate to its top folder. (The given example uses an
       $ git clone git@github.com:tum-ei-eda/M2-ISA-R-Perf.git <YOUR_WORKSPACE_NAME>
       $ cd <YOUR_WORKSPACE_NAME>
 
-The current release version of M2-ISA-R-Perf is v1.0. Please switch to this tag:
-
-      $ git fetch --tags
-      $ git checkout tags/v1.0
+NOTE: You are currenlty using the main branch, which might be under development. For a stable version of the tool, use one of the provided tags.
 
 Initialize required git-submodules:
 

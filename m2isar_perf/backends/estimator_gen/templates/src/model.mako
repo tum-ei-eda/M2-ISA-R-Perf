@@ -33,6 +33,8 @@
 #include "${conM_i.link}"
 %endfor
 
+namespace ${corePerfModel_.name}{
+
 void ${corePerfModel_.name}_PerformanceModel::connectChannel(Channel* channel_)
 {
   ${corePerfModel_.name}_Channel* channel = static_cast<${corePerfModel_.name}_Channel*>(channel_);	
@@ -78,3 +80,5 @@ std::string ${corePerfModel_.name}_PerformanceModel::getPrintHeader(void)
   %endfor
   return ret_strs.str();
 }
+
+}// namespace ${corePerfModel_.name}

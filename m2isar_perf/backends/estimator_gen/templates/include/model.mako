@@ -33,6 +33,8 @@
 #include "${conM_i.link}"
 %endfor
 
+namespace ${corePerfModel_.name}{
+
 class ${corePerfModel_.getPipeline().name}_Model
 {
 public:
@@ -92,5 +94,7 @@ public:
   virtual std::string getPrintHeader(void);
 
 };
+
+} // namespace ${corePerfModel_.name}
 
 #endif // ${builder_.getHeaderDefinePrefix(corePerfModel_)}_PERFORMANCE_MODEL_H

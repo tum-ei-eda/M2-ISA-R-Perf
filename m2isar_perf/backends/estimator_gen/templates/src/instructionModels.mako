@@ -23,6 +23,8 @@
 
 #include "${corePerfModel_.name}_PerformanceModel.h"
 
+namespace ${corePerfModel_.name}{
+
 InstructionModelSet* ${corePerfModel_.name}_InstrModelSet = new InstructionModelSet("${corePerfModel_.name}_InstrModelSet");
 
 % for instr_i in corePerfModel_.getInstructionDict().values():
@@ -39,3 +41,5 @@ static InstructionModel *instrModel_${instr_i.name.replace('.','_')} = new Instr
 );
 
 %endfor
+
+} // namespace ${corePerfModel_.name}

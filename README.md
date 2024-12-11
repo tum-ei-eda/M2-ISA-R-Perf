@@ -13,7 +13,10 @@ Clone this repository and navigate to its top folder. (The given example uses an
       $ git clone git@github.com:tum-ei-eda/M2-ISA-R-Perf.git <YOUR_WORKSPACE_NAME>
       $ cd <YOUR_WORKSPACE_NAME>
 
-NOTE: You are currenlty using the main branch, which might be under development. For a stable version of the tool, use one of the provided tags.
+Switch to the latest release version:
+
+      $ git fetch --tags
+      $ git checkout tags/v1.1
 
 Initialize required git-submodules:
 
@@ -48,11 +51,11 @@ Use the help option to get an overview of supported input arguments:
 
 ## Version
 
-This is version v1.1.
+The latest release version of this repository is v1.1.
 
 This repository does not contain any submodules.
 
-This version is compatible with the following external repositories:
+Version v1.1 is compatible with the following external repositories:
 
 | Repository | Version |
 | ---------- | ------- |

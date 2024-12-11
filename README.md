@@ -5,9 +5,6 @@ M2-ISA-R-Perf is a code generator for the SWEvalLib plugin library of ETISS. It 
 
 M2-ISA-R-Perf uses the CorePerfDSL description language as an input format. You can find example versions in the [CorePerfDSL-Examples](https://github.com/tum-ei-eda/CorePerfDSL-Examples) repository.
 
-## Requirements
-M2-ISA-R-Perf is developted for python3.
-
 ## First Time Setup
 
 ### Create Workspace
@@ -48,3 +45,17 @@ Run the entire tool chain like this:
 Use the help option to get an overview of supported input arguments:
 
     $ python m2isar_perf/run.py --help
+
+## Version
+
+This is version v1.1.
+
+This repository does not contain any submodules.
+
+This version is compatible with the following external repositories:
+
+| Repository | Version |
+| ---------- | ------- |
+| CorePerfDSL-Exampley | v1.0 |
+| SoftwareEvalLib | v1.0 |
+| SoftwareEval-Backends | v1.0 |

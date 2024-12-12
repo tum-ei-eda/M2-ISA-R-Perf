@@ -22,7 +22,7 @@ import pickle
 import sys
 import json
 
-from backends import utils as backendUtils
+from backends.common import dirUtils
 from common import common as cf # common functions
 
 ##### API-FUNCTIONS (called by m2isar_perf/run.py) #####
@@ -47,7 +47,7 @@ def execute(model_, outDir_):
         json_dict["trace"] = trace
 
         # Dump root dictionary to file
-        outFile = backendUtils.getMonitorDirPath(outDir_, corePerfModel_i.name) / (corePerfModel_i.name + "_trace.json")
+        outFile = dirUtils.getMonitorDirPath(outDir_, corePerfModel_i.name) / (corePerfModel_i.name + "_trace.json")
         outFile.parent.mkdir(parents=True, exist_ok=True) # Make sure that output directory exists
         with outFile.open('w') as f:
             json.dump(json_dict, f, indent=2)

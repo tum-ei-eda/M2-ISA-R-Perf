@@ -8,3 +8,4 @@
 /m2isar_perf/backends/graph_printer/out
 /m2isar_perf/backends/estimator_gen/out
 /m2isar_perf/backends/monitor_gen/temp
+/m2isar_perf/backends/structure_viewer/temp

@@ -52,9 +52,9 @@ if args.monitor_description:
     import backends.monitor_extractor.api as backend_monitor_extractor
     backends.append(backend_monitor_extractor)
 if args.info_print:
-    #import backends.graph_printer.run as backend_graph_printer
-    #backends.append(backend_graph_printer)
-    print("\nNOTE: Backend currently not supported! Try again later...")
+    import backends.structure_viewer.api as backend_structure_viewer
+    backends.append(backend_structure_viewer)
+    #print("\nNOTE: Backend currently not supported! Try again later...")
     
 # Call frontend
 model = frontend.execute(args.description, args.dump_dir)

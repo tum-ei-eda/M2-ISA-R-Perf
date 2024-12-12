@@ -16,7 +16,7 @@
 
 import copy
 
-from metamodel import MetaModel
+from meta_models.structural_model import StructuralModel
 from . import Defs
 
 class Builder():
@@ -27,7 +27,7 @@ class Builder():
         
     def buildTopModel(self):
 
-        top = MetaModel.TopModel()
+        top = StructuralModel.TopModel()
         
         # Assign microactions and trace-value-assignments which are defined via the ALL and REST keywords
         instrId = 0

@@ -71,7 +71,6 @@ class Extractor(CorePerfDSLVisitor):
     def extract(self, tree_):
 
         while True:
-            print("Level: %s" % self.level.getLevel())
             self.visit(tree_)
             if self.level.isMax():
                 break

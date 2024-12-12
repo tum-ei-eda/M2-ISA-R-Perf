@@ -25,13 +25,14 @@ import json
 from backends import utils as backendUtils
 from common import common as cf # common functions
 
-##### MAIN #####
+##### API-FUNCTIONS (called by m2isar_perf/run.py) #####
 
-def main(model_, outDir_):
+def execute(model_, outDir_):
+
+    print()
+    print("-- BACKEND: MONITOR_EXTRACTOR --")
     
     for corePerfModel_i in model_.getAllCorePerfModels():
-
-        print(corePerfModel_i.name + " | " + corePerfModel_i.core)
         
         # Create trace dictionary
         trace = {}
@@ -93,4 +94,4 @@ if __name__ == '__main__':
     outDir = cf.resolveOutDir(args.output_dir, __file__)
         
     # Call main routine of estimator_gen backend
-    main(model, outDir)
+    execute(model, outDir)

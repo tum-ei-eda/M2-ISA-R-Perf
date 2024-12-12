@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-from metamodel import MetaModel
+from meta_models.structural_model import StructuralModel
 from . import Defs
 
 class UnresolvedReference:
@@ -53,10 +53,10 @@ class Dictionary():
         self.instrMicroactionMapped = []
         self.instrTraceValueMapped = []
 
-        self.ALL_Instruction = MetaModel.Instruction()
+        self.ALL_Instruction = StructuralModel.Instruction()
         self.ALL_Instruction.name = Defs.KEYWORD_ALL
 
-        self.REST_Instruction = MetaModel.Instruction()
+        self.REST_Instruction = StructuralModel.Instruction()
         self.REST_Instruction.name = Defs.KEYWORD_REST
 
         self.microactionAssignments = {}
@@ -65,17 +65,17 @@ class Dictionary():
     ## Interface functions
         
     def addConnector(self, name_):
-        con = MetaModel.Connector()
+        con = StructuralModel.Connector()
         con.name = name_
         self.__addInstance(con, "Connector")
 
     def addTraceValue(self, name_):
-        trVal = MetaModel.TraceValue()
+        trVal = StructuralModel.TraceValue()
         trVal.name = name_
         self.__addInstance(trVal, "TraceValue")
         
     def addConnectorModel(self, name_, link_, inCons_, outCons_, trVals_):
-        conModel = MetaModel.ConnectorModel()
+        conModel = StructuralModel.ConnectorModel()
         conModel.name = name_
         conModel.link = self.__convertString(link_)
         conModel.inConnectors = inCons_
@@ -84,14 +84,14 @@ class Dictionary():
         self.__addInstance(conModel, "ConnectorModel")
 
     def addResourceModel(self, name_, link_, trVals_):
-        resModel = MetaModel.ResourceModel()
+        resModel = StructuralModel.ResourceModel()
         resModel.name = name_
         resModel.link = self.__convertString(link_)
         resModel.traceValues = trVals_
         self.__addInstance(resModel, "ResourceModel")
 
     def addResource(self, name_, delay_=0, model_=None):
-        res = MetaModel.Resource()
+        res = StructuralModel.Resource()
         res.name = name_
         if((delay_ != 0) and (model_ != None)):
             raise TypeError("Cannot add resource %s with both static (%d) and dynamic (%s) delay" %(name_, delay_, model_.name))
@@ -101,12 +101,12 @@ class Dictionary():
         self.__addInstance(res, "Resource")
 
     def addVirtualResource(self, virAlias_):
-        vRes = MetaModel.Resource()
+        vRes = StructuralModel.Resource()
         vRes.virtualAlias = virAlias_
         self.__addInstance(vRes, "Resource")
         
     def addMicroaction(self, name_, refs_):
-        uAction = MetaModel.Microaction()
+        uAction = StructuralModel.Microaction()
         uAction.name = name_
         
         # Evaluate references (inCon -> Res -> outCon)
@@ -114,15 +114,15 @@ class Dictionary():
             nextType = "inCon_or_res"
             for ref in refs_:
                 # Input connector
-                if((type(ref) is MetaModel.Connector) and nextType == "inCon_or_res"):
+                if((type(ref) is StructuralModel.Connector) and nextType == "inCon_or_res"):
                     uAction.inConnector = ref
                     nextType = "res"
                 # Resource
-                elif((type(ref) is MetaModel.Resource) and (nextType == "inCon_or_res" or nextType == "res")):
+                elif((type(ref) is StructuralModel.Resource) and (nextType == "inCon_or_res" or nextType == "res")):
                     uAction.resource = ref
                     nextType = "outCon"
                 # Output connector
-                elif((type(ref) is MetaModel.Connector) and nextType == "outCon"):
+                elif((type(ref) is StructuralModel.Connector) and nextType == "outCon"):
                     uAction.outConnector = ref
                     nextType = "none"
                 else:
@@ -133,24 +133,24 @@ class Dictionary():
         self.__addInstance(uAction, "Microaction")
 
     def addVirtualMicroaction(self, virAlias_):
-        vuAction = MetaModel.Microaction()
+        vuAction = StructuralModel.Microaction()
         vuAction.virtualAlias = virAlias_
         self.__addInstance(vuAction, "Microaction")        
         
     def addStage(self, name_, uActions_):
-        stage = MetaModel.Stage()
+        stage = StructuralModel.Stage()
         stage.name = name_
         stage.microactions = uActions_
         self.__addInstance(stage, "Stage")
 
     def addPipeline(self, name_, stages_):
-        pipe = MetaModel.Pipeline()
+        pipe = StructuralModel.Pipeline()
         pipe.name = name_
         pipe.stages = stages_
         self.__addInstance(pipe, "Pipeline")
 
     def addCorePerfModel(self, name_, pipe_, core_, conModels_, resAssigns_, uActionAssigns_):
-        model = MetaModel.CorePerfModel()
+        model = StructuralModel.CorePerfModel()
         model.name = name_
         model.pipeline = pipe_
         model.core = self.__convertString(core_)
@@ -176,7 +176,7 @@ class Dictionary():
         self.__addInstance(gr, "InstructionGroup")
                 
     def addInstruction(self, name_):
-        instr = MetaModel.Instruction()
+        instr = StructuralModel.Instruction()
         instr.name = name_
         self.__addInstance(instr, "Instruction")
 
@@ -184,7 +184,7 @@ class Dictionary():
         if type(instrOrGroup_) is InstructionGroup:
             for instr in instrOrGroup_.instructions:
                 self.__addMicroactionsToInstruction(instr, microactions_)
-        elif type(instrOrGroup_) is MetaModel.Instruction:
+        elif type(instrOrGroup_) is StructuralModel.Instruction:
             self.__addMicroactionsToInstruction(instrOrGroup_, microactions_)
         else:
             raise TypeError("Function mapMicroactions called with illegal instance of type %s" % type(instrOrGroup_))
@@ -193,7 +193,7 @@ class Dictionary():
         if type(instrOrGroup_) is InstructionGroup:
             for instr in instrOrGroup_.instructions:
                 self.__addTraceValuesToInstruction(instr, traceValMap_)
-        elif type(instrOrGroup_) is MetaModel.Instruction:
+        elif type(instrOrGroup_) is StructuralModel.Instruction:
             self.__addTraceValuesToInstruction(instrOrGroup_, traceValMap_)
         else:
             raise TypeError("Function mapTraceValues called with illegal instance of type %s" % type(instrOrGroup_))
@@ -279,7 +279,7 @@ class Dictionary():
     def __addTraceValuesToInstruction(self, instr_, traceValueAssigns_):
 
         for trValAss_i in traceValueAssigns_:
-            assignment = MetaModel.TraceValueAssignment()
+            assignment = StructuralModel.TraceValueAssignment()
             assignment.traceValue = trValAss_i[0]
             assignment.description = self.__convertString(trValAss_i[1])
             instr_.traceValueAssignments.append(assignment)

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # 
 # Copyright 2022 Chair of EDA, Technical University of Munich
 # 
@@ -13,8 +15,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
-#!/usr/bin/env python3
 
 import argparse
 import pathlib
@@ -38,25 +38,27 @@ outDir = cf.resolveOutDir(args.output_dir, __file__, 1)
 
 # Import appropriate frontend
 if args.description.endswith('.corePerfDsl'):
-    import frontends.CorePerfDSL.run as frontend
+    import frontends.corePerfDsl.api as frontend
 else:
     sys.exit("FATAL: Description format is not supported. Currently only supporting files of type .corePerfDsl")
 
 # Import backends
 backends = []
 if args.code_gen:
-    import backends.estimator_gen.run as backend_estimator_gen
-    backends.append(backend_estimator_gen)
+    #import backends.estimator_gen.run as backend_estimator_gen
+    #backends.append(backend_estimator_gen)
+    print("\nNOTE: Backend currently not supported! Try again later...")
 if args.monitor_description:
-    import backends.monitor_gen.run as backend_monitor_gen
-    backends.append(backend_monitor_gen)
+    import backends.monitor_extractor.api as backend_monitor_extractor
+    backends.append(backend_monitor_extractor)
 if args.info_print:
-    import backends.graph_printer.run as backend_graph_printer
-    backends.append(backend_graph_printer)
-
+    #import backends.graph_printer.run as backend_graph_printer
+    #backends.append(backend_graph_printer)
+    print("\nNOTE: Backend currently not supported! Try again later...")
+    
 # Call frontend
-model = frontend.main(args.description, args.dump_dir)
+model = frontend.execute(args.description, args.dump_dir)
 
 # Call all selected backends
 for backend_i in backends:
-    backend_i.main(model, outDir)
+    backend_i.execute(model, outDir)

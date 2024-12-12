@@ -27,8 +27,11 @@ from .parser_gen import CorePerfDSLParser
 
 from .ModelGen import ModelGen
 
-def main(description_, outdir_=None):
+def execute(description_, outdir_=None):
 
+    print()
+    print("-- FRONTEND: CORE_PERF_DSL --")
+    
     # Find pathes for description and output-directory
     description = pathlib.Path(description_).resolve()
     if outdir_ is not None:
@@ -37,24 +40,21 @@ def main(description_, outdir_=None):
         outdir = None
         
     # Create parse-tree from description file
-    print("")
-    print("-- Generating parser tree --")
+    print(" > Generating parser tree")
     lexer = CorePerfDSLLexer(antlr4.FileStream(description))
     stream = antlr4.CommonTokenStream(lexer)
     parser = CorePerfDSLParser(stream)
     tree = parser.top()
 
     # Use parse tree for model-2-model transformation according to meta-model
-    print("")
-    print("-- Generating model --")
+    print(" > Generating structural model")
     modelGen = ModelGen()
     modelGen.extractInstances(tree)
     top = modelGen.buildModel()
     
     # If outdir is set, dump top-model to file
     if outdir is not None:
-        print("")
-        print("-- Storing model --")
+        print(" > Storing structural model")
         print("Out-directory: %s" %outdir)
 
         # Creating out-directory
@@ -83,5 +83,5 @@ if __name__ == '__main__':
     argParser.add_argument("-o", "--output_dir", help="Directory to store generated model.")
     args = argParser.parse_args()
     
-    main(args.description, args.output_dir)
+    execute(args.description, args.output_dir)
     

@@ -14,18 +14,9 @@
 # limitations under the License.
 #
 
-class MetaModel_base:
-    __isFrozen = False
+from meta_models.common.FrozenBase import FrozenBase
 
-    def __setattr__(self, key, value):
-        if self.__isFrozen and not hasattr(self, key):
-            raise TypeError("Attempting to add new attribute to frozen class %r" %self)
-        object.__setattr__(self, key, value)
-
-    def __init__(self):
-        self.__isFrozen = True
-
-class TopModel(MetaModel_base):
+class TopModel(FrozenBase):
 
     def __init__(self):
         self.corePerfModels = []
@@ -35,7 +26,7 @@ class TopModel(MetaModel_base):
     def getAllCorePerfModels(self):
         return self.corePerfModels
         
-class CorePerfModel(MetaModel_base):
+class CorePerfModel(FrozenBase):
 
     def __init__(self):
         self.name = ""
@@ -109,15 +100,33 @@ class CorePerfModel(MetaModel_base):
 
         return usedTrVals
     
-class Pipeline(MetaModel_base):
+class Pipeline(FrozenBase):
 
     def __init__(self):
         self.name = ""
         self.stages = []
 
         super().__init__()
-        
-class Stage(MetaModel_base):
+
+    def getFirstStage(self):
+        return self.stages[0]
+
+    def isLastStage(self, stage_):
+        return stage_ == self.stages[-1]
+
+    def getNextStage(self, stage_):
+        retStage = None
+        found = False
+        for st_i in self.stages:
+            if stage_ == st_i: # found current stage
+                found = True
+                continue
+            if found == True:
+                retStage = st_i
+                break
+        return retStage
+    
+class Stage(FrozenBase):
 
     def __init__(self):
         self.name = ""
@@ -128,7 +137,7 @@ class Stage(MetaModel_base):
     def getUsedMicroactions(self):
         return self.microactions
         
-class Microaction(MetaModel_base):
+class Microaction(FrozenBase):
 
     def __init__(self):
         self.name = ""
@@ -139,12 +148,21 @@ class Microaction(MetaModel_base):
          
         super().__init__()
 
+    def hasInConnector(self):
+        return (self.inConnector is not None)
+        
     def getInConnector(self):
         return self.inConnector
 
+    def hasResource(self):
+        return (self.resource is not None)
+    
     def getResource(self):
         return self.resource
 
+    def hasOutConnector(self):
+        return (self.outConnector is not None)
+    
     def getOutConnector(self):
         return self.outConnector
 
@@ -159,7 +177,7 @@ class Microaction(MetaModel_base):
         self.resource = uA_.resource
         self.outConnector = uA_.outConnector
     
-class Resource(MetaModel_base):
+class Resource(FrozenBase):
 
     def __init__(self):
         self.name = ""
@@ -178,8 +196,14 @@ class Resource(MetaModel_base):
         self.name = res_.name
         self.delay = res_.delay
         self.resourceModel = res_.resourceModel
+
+    def hasDynamicDelay(self):
+        return (self.resourceModel is not None)
+
+    def getResourceModelName(self):
+        return self.resourceModel.name
         
-class Connector(MetaModel_base):
+class Connector(FrozenBase):
 
     def __init__(self):
         self.name = ""
@@ -191,7 +215,7 @@ class Connector(MetaModel_base):
     def getConnectorModel(self):
         return self.connectorModel
         
-class ResourceModel(MetaModel_base):
+class ResourceModel(FrozenBase):
 
     def __init__(self):
         self.name = ""
@@ -203,7 +227,7 @@ class ResourceModel(MetaModel_base):
     def getTraceValues(self):
         return self.traceValues
         
-class ConnectorModel(MetaModel_base):
+class ConnectorModel(FrozenBase):
 
     def __init__(self):
         self.name = ""
@@ -217,14 +241,14 @@ class ConnectorModel(MetaModel_base):
     def getTraceValues(self):
         return self.traceValues
         
-class TraceValue(MetaModel_base):
+class TraceValue(FrozenBase):
 
     def __init__(self):
         self.name = ""
 
         super().__init__()
 
-class Instruction(MetaModel_base):
+class Instruction(FrozenBase):
 
     def __init__(self):
         self.name = ""
@@ -244,7 +268,7 @@ class Instruction(MetaModel_base):
     def addGroupName(self, name_):
         self.group.append(name_)
     
-class TraceValueAssignment(MetaModel_base):
+class TraceValueAssignment(FrozenBase):
 
     def __init__(self):
         self.traceValue = None

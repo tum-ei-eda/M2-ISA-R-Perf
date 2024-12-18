@@ -48,27 +48,11 @@ def execute(model_, outDir_):
             (outDir / instr_i.name).mkdir()
         
 
+    print(" > Generating structure diagrams")
     modelPrinter = StructuralModelPrinter(tempDir, curDir / "templates", outDirDict)
     modelPrinter.printModel(model_)
 
     
-    ## Create printer instances
-    #modelPrinter = ModelPrinter(tempDir, curDir / "templates", outDirDict)
-    #mathModelPrinter = MathModelPrinter(tempDir, outDirDict)
-    #
-    ## Print (top) model
-    #print()
-    #print("Print model diagrams")
-    #modelPrinter.printModel(model_)
-    #
-    ## Print math models
-    #print("Print math-model graphs")
-    #print()
-    #print("Transforming top model into math-model")
-    #mathModel = ModelTransformer().transform(model_)
-    #print()
-    #mathModelPrinter.printMathModel(mathModel)
-        
 # Run this if backend is called stand-alone (i.e. this file is directly called)
 if __name__ == '__main__':
 

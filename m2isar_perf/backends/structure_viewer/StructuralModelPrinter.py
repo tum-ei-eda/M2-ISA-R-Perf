@@ -27,7 +27,7 @@ class StructuralModelPrinter:
 
     def __init__(self, tempDir_, templateDir_, outDirDict_):
         self.tempDirBase = tempDir_
-        self.templateDir = templateDir_ #/ "model"
+        self.templateDir = templateDir_
         self.outDirDict = outDirDict_
 
         self.printHelper = PrintHelper()
@@ -41,7 +41,7 @@ class StructuralModelPrinter:
         
         self.corePerfModel = corePerfModel_
 
-        self.curTempDir = self.tempDirBase / self.corePerfModel.name #/ "model"
+        self.curTempDir = self.tempDirBase / self.corePerfModel.name
         self.curOutDir = self.outDirDict[self.corePerfModel.name]
         
         self.totalNumConModels = 0

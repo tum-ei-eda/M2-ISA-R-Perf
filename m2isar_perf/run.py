@@ -23,6 +23,10 @@ import sys
 
 from common import common as cf
 
+from meta_models.scheduling_model.SchedulingTransformer import SchedulingTransformer
+
+from backends.schedule_viewer.SchedulingModelViewer import SchedulingModelViewer
+
 # Read command line arguments
 argParser = argparse.ArgumentParser()
 argParser.add_argument("description", help="File containing the description of the performance model.")
@@ -58,6 +62,14 @@ if args.info_print:
     
 # Call frontend
 model = frontend.execute(args.description, args.dump_dir)
+
+# TEST SchedulingTransformer
+transformer = SchedulingTransformer()
+sModel = transformer.transform(model)
+
+viewer = SchedulingModelViewer()
+viewer.execute(sModel, outDir)
+
 
 # Call all selected backends
 for backend_i in backends:

@@ -40,12 +40,12 @@ def execute(model_, outDir_):
         dirUtils.createOrReplaceDir(tempDir / corePerfModel_i.name, suppress_warning=True) # Create temp dir
     
         outDir = dirUtils.getDocDirPath(outDir_, corePerfModel_i.name) # Create out dir
-        dirUtils.createOrReplaceDir(outDir)
         outDirDict[corePerfModel_i.name] = outDir
 
-        (outDir / dirUtils.getOverviewDirName()).mkdir() # Create subdirs of out dir
+        # Do not over-write directories: could delete output of schedule_viewer
+        (outDir / dirUtils.getOverviewDirName()).mkdir(parents=True, exist_ok=True)
         for instr_i in corePerfModel_i.getAllInstructions():
-            (outDir / instr_i.name).mkdir()
+            (outDir / instr_i.name).mkdir(parents=True, exist_ok=True)
         
 
     print(" > Generating structure diagrams")

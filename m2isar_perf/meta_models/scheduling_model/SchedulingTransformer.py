@@ -95,7 +95,10 @@ class SchedulingTransformer:
     def __generateTimingVariables(self, structVariant_, schedVariant_):
         for st_i in structVariant_.getAllStages():
             schedVariant_.createTimingVariable(st_i.name)
-            
+
+        lastStageName = structVariant_.getPipeline().getLastStage().name
+        schedVariant_.getTimingVariable(lastStageName).setLastStage()
+
     def __generateSchedulingFunction(self, structVariant_, schedVariant_):
         for instr_i in structVariant_.getAllInstructions():
             pipeline = structVariant_.getPipeline()

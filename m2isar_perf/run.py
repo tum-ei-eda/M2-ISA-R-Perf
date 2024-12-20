@@ -26,6 +26,7 @@ from common import common as cf
 from meta_models.scheduling_model.SchedulingTransformer import SchedulingTransformer
 
 from backends.schedule_viewer.SchedulingModelViewer import SchedulingModelViewer
+from backends.estimator_generator.EstimatorGenerator import EstimatorGenerator
 
 # Read command line arguments
 argParser = argparse.ArgumentParser()
@@ -67,9 +68,11 @@ model = frontend.execute(args.description, args.dump_dir)
 transformer = SchedulingTransformer()
 sModel = transformer.transform(model)
 
-viewer = SchedulingModelViewer()
-viewer.execute(sModel, outDir)
+#viewer = SchedulingModelViewer()
+#viewer.execute(sModel, outDir)
 
+generator = EstimatorGenerator()
+generator.execute(sModel, outDir)
 
 # Call all selected backends
 for backend_i in backends:

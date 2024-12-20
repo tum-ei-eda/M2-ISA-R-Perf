@@ -114,6 +114,9 @@ class Pipeline(FrozenBase):
     def isLastStage(self, stage_):
         return stage_ == self.stages[-1]
 
+    def getLastStage(self):
+        return self.stages[-1]
+    
     def getNextStage(self, stage_):
         retStage = None
         found = False

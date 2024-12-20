@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from meta_models.common.FrozenBase import FrozenBase
 
@@ -88,6 +88,17 @@ class Variant(FrozenBase):
         if name_ not in self.timingVariables:
             raise RuntimeError(f"TimingVariable {name_} does not exist!")
         return self.timingVariables[name_]
+
+    def getLastStageTimingVariable(self) -> Optional['TimingVariable']:
+        # TODO: Only returns one stage! How does this work for V-form pipelines?
+        for tVar_i in self.getAllTimingVariables():
+            if tVar_i.isLastStage():
+                return tVar_i
+        raise RuntimeError("No TimingVariable is marked as representing the pipeline's last stage!")
+        return None
+    
+    def getAllResourceModels(self) -> List['ResourceModel']:
+        return list(self.resourceModels.values())
     
     def getAllConnectorModels(self) -> List['ConnectorModel']:
         return list(self.connectorModels.values())
@@ -127,24 +138,27 @@ class SchedulingFunction(FrozenBase):
     def setEndNode(self, node_:Optional['Node']):
         self.endNode = node_
 
+    def getRootNode(self) -> Optional['Node']:
+        return self.rootNode
+
     def getAllNodes(self) -> List['Node']:
         return self.nodes
 
-    #def createStaticInEdge(self, node_:Optional['Node'], variable_:str, depth_:int=1) -> 'StaticEdge':
-    #    edge = StaticEdge(depth_)
-    #    self.inEdges.append(edge)
-    #    node_.setInEdge(edge)
-    #    edge.setTimingVariable(self.parent.getTimingVariable(variable_))
-    #    return edge
-    
 class TimingVariable(FrozenBase):
 
     def __init__(self, name_:str, depth_:int=1):
         self.name = name_
         self.depth = depth_
-
+        self.lastStage = False # TODO: How to handle this for V-form pipelines?
+        
         super().__init__()
 
+    def setLastStage(self):
+        self.lastStage = True
+
+    def isLastStage(self) -> bool:
+        return self.lastStage
+        
 class ExternalModel(FrozenBase):
 
     # "Virtual class"
@@ -156,6 +170,9 @@ class ExternalModel(FrozenBase):
 
     def addTraceValues(self, trVal_:List[str]):
         self.traceValues.extend(trVal_)
+
+    def getAllTraceValues(self) -> List[str]:
+        return self.traceValues
         
 class ResourceModel(ExternalModel):
 
@@ -196,9 +213,15 @@ class Node(FrozenBase):
     def setDelay(self, delay_:int):
         self.delay = delay_
 
+    def getDelay(self) -> int:
+        return self.delay
+        
     def hasDynamicDelay(self) -> bool:
         return (self.resourceModel is not None)
-        
+
+    def hasZeroDelay(self) -> bool:
+        return ((self.delay == 0) and (not self.hasDynamicDelay()))
+    
     def connectNode(self, node_:Optional['Node']):
         self.outNodes.append(node_)
         node_.addInNode(self)
@@ -209,23 +232,15 @@ class Node(FrozenBase):
     def getAllInNodes(self) -> List['Node']:
         return self.inNodes
 
-    #def setInEdge(self, edge_:Optional['Edge']):
-    #    self.inEdges.append(edge_)
+    def getAllOutNodes(self) -> List['Node']:
+        return self.outNodes
 
     def createStaticInEdge(self, variable_:str, depth_:int=1) -> 'StaticEdge':
-        #edge = StaticEdge(depth_)
-        #self.inEdges.append(edge)
-        #edge.setTimingVariable(self.parentVariant.getTimingVariable(variable_))
-        #return edge
         edge = self.__createStaticEdge(variable_, depth_)
         self.inEdges.append(edge)
         return edge
         
     def createStaticOutEdge(self, variable_:str) -> 'StaticEdge':
-        #edge = StaticEdge()
-        #self.outEdges.append(edge)
-        #edge.setTimingVariable(self.parentVariant.getTimingVariable(variable_))
-        #return edge
         edge = self.__createStaticEdge(variable_)
         self.outEdges.append(edge)
         return edge
@@ -240,12 +255,23 @@ class Node(FrozenBase):
         self.outEdges.append(edge)
         return edge
     
-    def getAllInEdges(self) -> List['Edges']:
+    def getAllInEdges(self) -> List['Edge']:
         return self.inEdges
 
-    def getAllOutEdges(self) -> List['Edges']:
+    def getAllOutEdges(self) -> List['Edge']:
         return self.outEdges
 
+    def getAllInElements(self) -> List[Union['Node', 'Edge']]:
+        retList = [x for x in self.getAllInNodes()]
+        retList.extend(self.getAllInEdges())
+        return retList
+
+    def hasSingleInElement(self) -> bool:
+        return (len(self.getAllInElements()) == 1)
+
+    def hasMultipleInElements(self) -> bool:
+        return (len(self.getAllInElements()) > 1)
+    
     def __createStaticEdge(self, variable_:str, depth_:int=1) -> 'StaticEdge':
         edge = StaticEdge(depth_)
         edge.setTimingVariable(self.parentVariant.getTimingVariable(variable_))

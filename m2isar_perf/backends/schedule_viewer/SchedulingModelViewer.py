@@ -15,22 +15,34 @@
 #
 
 import graphviz
+import pathlib
+import os
+
+from backends.common import dirUtils
 
 class SchedulingModelViewer:
 
     def __init__(self):
-        pass
+        self.tempDirBase = pathlib.Path(__file__).parent / "temp"
 
     def execute(self, model_, outDir_):
 
         print()
         print("-- BACKEND: SCHEDULE_VIEWER --")
 
-        
-        for var_i in model_.getAllVariants():
-                
-            for func_i in var_i.getAllSchedulingFunctions():
-                if func_i.name == 'div':
+        for variant_i in model_.getAllVariants():
+
+            # Make sure output directories and temp directory exist
+            print(f" > Creating output directories for {variant_i.name}")
+            tempDir = (self.tempDirBase) / variant_i.name
+            dirUtils.createOrReplaceDir(tempDir, suppress_warning=True)
+            outDir = dirUtils.getDocDirPath(outDir_, variant_i.name)
+            # Generate sub-dirs for each instr/sched.function
+            for schedFunc_i in variant_i.getAllTimingVariables():
+                (outDir / schedFunc_i.name).mkdir(parents=True, exist_ok=True) # Do not over-write: Could delete output for structure_viewer
+            
+            for func_i in variant_i.getAllSchedulingFunctions():
+                if func_i.name:
                     
                     dotGraph = graphviz.Digraph(comment=func_i.name)
                     dotGraph.attr(rankdir='TB')
@@ -39,30 +51,30 @@ class SchedulingModelViewer:
                     with dotGraph.subgraph() as top:
                         top.attr(rank='min')
                         tVar_prev = None
-                        for tVar_i in var_i.getAllTimingVariables():
-                            top.node(self.__timingVariableIn(tVar_i.name), label=tVar_i.name, shape='box')
+                        for tvariant_i in variant_i.getAllTimingVariables():
+                            top.node(self.__timingVariableIn(tvariant_i.name), label=tvariant_i.name, shape='box')
                             # Enforce representation of tVar nodes in order?
                             if tVar_prev is not None:
-                                top.edge(self.__timingVariableIn(tVar_prev.name), self.__timingVariableIn(tVar_i.name), style='invis') 
-                            tVar_prev = tVar_i
+                                top.edge(self.__timingVariableIn(tVar_prev.name), self.__timingVariableIn(tvariant_i.name), style='invis') 
+                            tVar_prev = tvariant_i
 
                         # TODO: Show all connector models, or just the onces used by this scheduling function? 
-                        for conModel_i in var_i.getAllConnectorModels():
+                        for conModel_i in variant_i.getAllConnectorModels():
                             top.node(self.__connectorModelIn(conModel_i.name), label=conModel_i.name, shape='box')
 
                     # Make (out-)nodes for timing variables and connector models
                     with dotGraph.subgraph() as bottom:
                         bottom.attr(rank='max')
                         tVar_prev = None
-                        for tVar_i in var_i.getAllTimingVariables():
-                            bottom.node(self.__timingVariableOut(tVar_i.name), label=tVar_i.name, shape='box')
+                        for tvariant_i in variant_i.getAllTimingVariables():
+                            bottom.node(self.__timingVariableOut(tvariant_i.name), label=tvariant_i.name, shape='box')
                             # Enforce representation of tVar nodes in order?
                             if tVar_prev is not None:
-                                bottom.edge(self.__timingVariableOut(tVar_prev.name), self.__timingVariableOut(tVar_i.name), style='invis') 
-                            tVar_prev = tVar_i
+                                bottom.edge(self.__timingVariableOut(tVar_prev.name), self.__timingVariableOut(tvariant_i.name), style='invis') 
+                            tVar_prev = tvariant_i
 
                         # TODO: Show all connector models, or just the onces used by this scheduling function? 
-                        for conModel_i in var_i.getAllConnectorModels():
+                        for conModel_i in variant_i.getAllConnectorModels():
                             bottom.node(self.__connectorModelOut(conModel_i.name), label=conModel_i.name, shape='box')
                             
                     # Make nodes for scheduling function nodes
@@ -89,8 +101,16 @@ class SchedulingModelViewer:
                             else:
                                 dotGraph.edge(self.__scheduleNode(node_i.name), self.__timingVariableOut(edge_i.getTimingVariable().name))
                                 
-                    dotGraph.render('graph', format='png', view=True)
+                    #dotGraph.render('graph', format='png', view=True)
 
+                    tempFile = tempDir / (func_i.name + ".dot")
+                    with tempFile.open('w') as f:
+                        f.write(dotGraph.source)
+
+                    os.chdir(tempDir)
+                    os.system(f"dot -Tpdf {func_i.name}.dot -o {func_i.name}.pdf")
+                    os.replace(f"{str(tempDir)}/{func_i.name}.pdf", f"{str(outDir / func_i.name)}/{func_i.name}_schedulingFunction.pdf")
+                    
     def __timingVariableIn(self, name_):
         return ("tvi_" + name_)
 

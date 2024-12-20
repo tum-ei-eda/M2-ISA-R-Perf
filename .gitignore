@@ -9,3 +9,4 @@
 /m2isar_perf/backends/estimator_gen/out
 /m2isar_perf/backends/monitor_gen/temp
 /m2isar_perf/backends/structure_viewer/temp
+/m2isar_perf/backends/schedule_viewer/temp

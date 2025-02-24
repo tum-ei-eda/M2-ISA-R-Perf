@@ -19,9 +19,25 @@ from . import Defs
 
 class UnresolvedReference:
 
-    def __init__(self, name_):
-        self.name = "UNRESOLVED_REFERENCE_" + name_
+    def __init__(self, name_, type_, line_=0):
+        #self.name = "UNRESOLVED_REFERENCE_" + name_
+        self.name = name_
+        self.instanceType = type_
+        self.line = line_
 
+    def reportError(self):
+        line = "?" if self.line == 0 else self.line
+        print(f"ERROR [Line: {line}]: Could not resolve reference {self.name} of type {self.instanceType}. No such instance.")
+
+    def getName(self):
+        return self.name
+
+    def getType(self):
+        return self.instanceType
+
+    def getLine(self):
+        return self.line
+    
 class InstructionGroup:
 
     def __init__(self):
@@ -43,7 +59,7 @@ class Dictionary():
         self.microactions = {}
         self.stages = {}
         self.pipelines = {}
-        self.corePerfModels = {}
+        self.variants = {}
         self.resourceModels = {}
         self.connectorModels = {}
 
@@ -90,7 +106,7 @@ class Dictionary():
         resModel.traceValues = trVals_
         self.__addInstance(resModel, "ResourceModel")
 
-    def addResource(self, name_, delay_=0, model_=None):
+    def addResource(self, name_, capacity_, delay_=0, model_=None):
         res = StructuralModel.Resource()
         res.name = name_
         if((delay_ != 0) and (model_ != None)):
@@ -98,6 +114,7 @@ class Dictionary():
         else:
             res.delay = delay_
             res.resourceModel = model_
+            res.capacity = capacity_
         self.__addInstance(res, "Resource")
 
     def addVirtualResource(self, virAlias_):
@@ -137,25 +154,29 @@ class Dictionary():
         vuAction.virtualAlias = virAlias_
         self.__addInstance(vuAction, "Microaction")        
         
-    def addStage(self, name_, uActions_):
+    def addStage(self, name_, paths_, capacity_, hasOutputBuffer_):
         stage = StructuralModel.Stage()
         stage.name = name_
-        stage.microactions = uActions_
+        stage.paths = paths_
+        stage.capacity = capacity_
+        stage.hasOutputBuffer = hasOutputBuffer_
         self.__addInstance(stage, "Stage")
 
-    def addPipeline(self, name_, stages_):
+    def addPipeline(self, name_, components_, isParallel_, blockPipelines_):
         pipe = StructuralModel.Pipeline()
         pipe.name = name_
-        pipe.stages = stages_
+        pipe.components = components_
+        pipe.isParallel = isParallel_
+        pipe.blockPipelines = blockPipelines_
         self.__addInstance(pipe, "Pipeline")
 
-    def addCorePerfModel(self, name_, pipe_, core_, conModels_, resAssigns_, uActionAssigns_):
-        model = StructuralModel.CorePerfModel()
+    def addVariant(self, name_, pipe_, core_, conModels_, resAssigns_, uActionAssigns_):
+        model = StructuralModel.Variant()
         model.name = name_
         model.pipeline = pipe_
         model.core = self.__convertString(core_)
         model.connectorModels = conModels_
-        self.__addInstance(model, "CorePerfModel")
+        self.__addInstance(model, "Variant")
         
         self.resourceAssignments[name_] = resAssigns_
         self.microactionAssignments[name_] = uActionAssigns_
@@ -197,13 +218,17 @@ class Dictionary():
             self.__addTraceValuesToInstruction(instrOrGroup_, traceValMap_)
         else:
             raise TypeError("Function mapTraceValues called with illegal instance of type %s" % type(instrOrGroup_))
-        
-    def getInstance(self, name_, type_):
+
+    def resolveStages(self):
+        for stage_i in self.stages.values():
+            self.__resolveReferenceList(stage_i.getAllPathes())
+
+    def getInstance(self, name_, type_, line_=0):
         subDict = self.__getSubDictionary(type_)
         try:
             inst = subDict[name_]
         except KeyError:
-            return UnresolvedReference(name_)
+            return UnresolvedReference(name_, type_, line_)
         return subDict[name_]
     
     def isVirtual(self, inst_):
@@ -219,6 +244,16 @@ class Dictionary():
         
     ## Helper functions
 
+    def __resolveReferenceList(self, list_):
+        for i in range(len(list_)):
+            ref_i = list_[i]
+            if type(ref_i) is UnresolvedReference:
+                newRef = self.getInstance(ref_i.getName(), ref_i.getType(), ref_i.getLine())
+                if type(newRef) is UnresolvedReference:
+                    ref_i.reportError()
+                else:
+                    list_[i] = newRef
+    
     def __getSubDictionary(self, type_):
 
         if(type_ == "Connector"):
@@ -237,8 +272,8 @@ class Dictionary():
             return self.stages
         elif(type_ == "Pipeline"):
             return self.pipelines
-        elif(type_ == "CorePerfModel"):
-            return self.corePerfModels
+        elif(type_ == "Variant"):
+            return self.variants
         elif(type_ == "Instruction"):
             return self.instructions
         elif(type_ == "InstructionGroup"):

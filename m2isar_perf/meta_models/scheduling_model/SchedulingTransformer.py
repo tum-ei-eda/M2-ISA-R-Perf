@@ -15,18 +15,18 @@
 #
 
 from .SchedulingModel import SchedulingModel
-from meta_models.structural_model.StructuralModel import TopModel
+from meta_models.structural_model.StructuralModel import StructuralModel
 
 class SchedulingTransformer:
 
     def __init__(self):
         pass
 
-    def transform(self, structuralModel_:TopModel) -> SchedulingModel:
+    def transform(self, structuralModel_:StructuralModel) -> SchedulingModel:
 
         schedulingModel = SchedulingModel()
 
-        for var_i in structuralModel_.getAllCorePerfModels():
+        for var_i in structuralModel_.getAllVariants():
 
             variant = schedulingModel.createVariant(var_i.name)
 

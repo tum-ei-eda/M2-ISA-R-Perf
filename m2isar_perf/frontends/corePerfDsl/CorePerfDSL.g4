@@ -70,15 +70,37 @@ corePerfModel : name=ID '(' (
 
 //////////////////////////// PIPELINE ////////////////////////////
 
-pipeline_def : 'Pipeline' (pipeline | '{' pipeline (',' pipeline)* '}');
+pipeline_def : 'Pipeline' (pipeline |  pipeline_list);
 
-pipeline : name=ID '(' stages+=stage_ref ('->' stages+=stage_ref)* ')';
+pipeline_list : '{' pipeline (',' pipeline)* '}';
+
+// pipeline : name=ID // Pipeline name
+// ('[' attribute=pipeline_attr ']')? // Attributes (optional)
+// //'(' components+=stageOrPipeline_ref ('->' components+=stageOrPipeline_ref)* ')'; // Concatination of components (stages and/or (sub-)pipelines)
+// '(' (pipeline_sequential | pipeline_parallel) ')'; // Concatination of components (stages and/or (sub-)pipelines)
+
+pipeline : name=ID // Pipeline name
+('[' attribute=pipeline_attr ']')? // Attributes (optional)
+'(' (sequentialComponentList=pipeline_sequential | parallelComponentList=pipeline_parallel) ')'; // Concatination of components (stages and/or (sub-)pipelines)
+
+pipeline_sequential : components+=stageOrPipeline_ref ('->' components+=stageOrPipeline_ref)* ;
+
+pipeline_parallel : components+=stageOrPipeline_ref '|' components+=stageOrPipeline_ref ('|' components+=stageOrPipeline_ref)* ;
+
+pipeline_attr : 'blocks' ':' (blockPipelines+=pipeline_ref | '{' blockPipelines+=pipeline_ref (',' blockPipelines+=pipeline_ref)* '}');
 
 //////////////////////////// STAGE ////////////////////////////
 
-stage_def : 'Stage' (stage | '{' stage (',' stage)* '}');
+stage_def : 'Stage' (stage | stage_list);
 
-stage : name=ID '(' microactions+=microaction_ref (',' microactions+=microaction_ref)* ')';
+stage_list : '{' stage (',' stage)* '}';
+
+stage : name=ID // Stage name
+('[' attributes+=stage_attr (',' attributes+=stage_attr)* ']')? // Optional list of attributes
+'(' paths+=microactionOrPipeline_ref (',' paths+=microactionOrPipeline_ref)* ')';// List of microactions and/or (sub-)pipelines (required)
+
+stage_attr : 'capacity' ':' capacity=INT
+	   | 'output-buffer' ;
 
 //////////////////////////// MICROACTION ////////////////////////////
 
@@ -99,13 +121,15 @@ connector : name=ID;
 
 //////////////////////////// RESOURCE ////////////////////////////
 
-resource_def : 'Resource' (resource | '{' resource (',' resource)* '}');
+resource_def : 'Resource' (resource | '{' resource_list '}');
 
-resource : 
-    name=ID '(' res_model=resourceModel_ref ')' # resource_model
-    | name=ID '(' delay=INT ')' # resource_delay
-    | name=ID # resource_default
-;
+resource_list : resource (',' resource)*;
+
+resource : name=ID // Resource name
+('[' attribute=resource_attr ']')? // Attributes (optional)
+('(' (res_model=resourceModel_ref | delay=INT) ')')? ; // Delay specification (optional)
+
+resource_attr : 'capacity' ':' capacity=INT;
 
 //////////////////////////// VIRTUAL ////////////////////////////
 
@@ -142,6 +166,10 @@ instructionOrInstrGroup_ref : name=(ID|KEYWORD_ALL) ;
 stage_ref : name=ID ;
 
 pipeline_ref : name=ID ;
+
+microactionOrPipeline_ref : name=ID ;
+
+stageOrPipeline_ref : name=ID ;
 
 //////////////////////////// LEXER RULES ////////////////////////////
 

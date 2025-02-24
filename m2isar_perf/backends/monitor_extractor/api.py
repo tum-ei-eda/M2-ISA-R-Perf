@@ -32,39 +32,39 @@ def execute(model_, outDir_):
     print()
     print("-- BACKEND: MONITOR_EXTRACTOR --")
     
-    for corePerfModel_i in model_.getAllCorePerfModels():
+    for variant_i in model_.getAllVariants():
         
         # Create trace dictionary
         trace = {}
-        trace["name"] = corePerfModel_i.name
-        trace["core"] = corePerfModel_i.core
+        trace["name"] = variant_i.name
+        trace["core"] = variant_i.core
         trace["setId"] = "Manual"
-        trace["traceValues"] = getTraceValues(corePerfModel_i)
-        trace["instructions"] = getInstructions(corePerfModel_i)
+        trace["traceValues"] = getTraceValues(variant_i)
+        trace["instructions"] = getInstructions(variant_i)
 
         # Create a "root" dictionary for json
         json_dict = {}
         json_dict["trace"] = trace
 
         # Dump root dictionary to file
-        outFile = dirUtils.getMonitorDirPath(outDir_, corePerfModel_i.name) / (corePerfModel_i.name + "_trace.json")
+        outFile = dirUtils.getMonitorDirPath(outDir_, variant_i.name) / (variant_i.name + "_trace.json")
         outFile.parent.mkdir(parents=True, exist_ok=True) # Make sure that output directory exists
         with outFile.open('w') as f:
             json.dump(json_dict, f, indent=2)
 
 ##### SUPPORT FUNCTIONS #####
             
-def getTraceValues(corePerfModel_):
+def getTraceValues(variant_):
     traceValues = []
-    for trVal_i in corePerfModel_.getAllUsedTraceValues():
+    for trVal_i in variant_.getAllUsedTraceValues():
         traceValues.append({"name": trVal_i.name, "type": "uint64_t"})
     return traceValues
 
-def getInstructions(corePerfModel_):
-    usedTraceValues = corePerfModel_.getAllUsedTraceValues()
+def getInstructions(variant_):
+    usedTraceValues = variant_.getAllUsedTraceValues()
         
     instructions = []
-    for instr_i in corePerfModel_.getAllInstructions():
+    for instr_i in variant_.getAllInstructions():
         mappings = []
         for map_i in instr_i.getTraceValueAssignments():
             if map_i.getTraceValue() in usedTraceValues:

@@ -104,8 +104,28 @@ class CorePerfDSLVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by CorePerfDSLParser#pipeline_list.
+    def visitPipeline_list(self, ctx:CorePerfDSLParser.Pipeline_listContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by CorePerfDSLParser#pipeline.
     def visitPipeline(self, ctx:CorePerfDSLParser.PipelineContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CorePerfDSLParser#pipeline_sequential.
+    def visitPipeline_sequential(self, ctx:CorePerfDSLParser.Pipeline_sequentialContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CorePerfDSLParser#pipeline_parallel.
+    def visitPipeline_parallel(self, ctx:CorePerfDSLParser.Pipeline_parallelContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CorePerfDSLParser#pipeline_attr.
+    def visitPipeline_attr(self, ctx:CorePerfDSLParser.Pipeline_attrContext):
         return self.visitChildren(ctx)
 
 
@@ -114,8 +134,18 @@ class CorePerfDSLVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by CorePerfDSLParser#stage_list.
+    def visitStage_list(self, ctx:CorePerfDSLParser.Stage_listContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by CorePerfDSLParser#stage.
     def visitStage(self, ctx:CorePerfDSLParser.StageContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CorePerfDSLParser#stage_attr.
+    def visitStage_attr(self, ctx:CorePerfDSLParser.Stage_attrContext):
         return self.visitChildren(ctx)
 
 
@@ -144,18 +174,18 @@ class CorePerfDSLVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CorePerfDSLParser#resource_model.
-    def visitResource_model(self, ctx:CorePerfDSLParser.Resource_modelContext):
+    # Visit a parse tree produced by CorePerfDSLParser#resource_list.
+    def visitResource_list(self, ctx:CorePerfDSLParser.Resource_listContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CorePerfDSLParser#resource_delay.
-    def visitResource_delay(self, ctx:CorePerfDSLParser.Resource_delayContext):
+    # Visit a parse tree produced by CorePerfDSLParser#resource.
+    def visitResource(self, ctx:CorePerfDSLParser.ResourceContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CorePerfDSLParser#resource_default.
-    def visitResource_default(self, ctx:CorePerfDSLParser.Resource_defaultContext):
+    # Visit a parse tree produced by CorePerfDSLParser#resource_attr.
+    def visitResource_attr(self, ctx:CorePerfDSLParser.Resource_attrContext):
         return self.visitChildren(ctx)
 
 
@@ -226,6 +256,16 @@ class CorePerfDSLVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CorePerfDSLParser#pipeline_ref.
     def visitPipeline_ref(self, ctx:CorePerfDSLParser.Pipeline_refContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CorePerfDSLParser#microactionOrPipeline_ref.
+    def visitMicroactionOrPipeline_ref(self, ctx:CorePerfDSLParser.MicroactionOrPipeline_refContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CorePerfDSLParser#stageOrPipeline_ref.
+    def visitStageOrPipeline_ref(self, ctx:CorePerfDSLParser.StageOrPipeline_refContext):
         return self.visitChildren(ctx)
 
 

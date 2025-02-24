@@ -16,21 +16,21 @@
 
 from meta_models.common.FrozenBase import FrozenBase
 
-class TopModel(FrozenBase):
+class StructuralModel(FrozenBase):
 
     def __init__(self):
-        self.corePerfModels = []
+        self.variants = []
 
         super().__init__()
 
-    def getAllCorePerfModels(self):
-        return self.corePerfModels
+    def getAllVariants(self):
+        return self.variants
         
-class CorePerfModel(FrozenBase):
+class Variant(FrozenBase):
 
     def __init__(self):
         self.name = ""
-        self.pipeline = None
+        self.pipeline = None # TopPipeline
         self.core = ""
         self.connectorModels = []
         self.resourceModels = []
@@ -41,20 +41,24 @@ class CorePerfModel(FrozenBase):
     def getAllStages(self):
         if self.pipeline is None:
             raise TypeError("Cannot call MetaModel.CorePerfModel.getAllStages before a pipeline has been assigned!")
-
-        stages = []
-        for st in self.pipeline.stages:
-            stages.append(st)
-
-        return stages
+        return self.pipeline.getAllStages()
+        
+        #stages = []
+        #for st in self.pipeline.stages:
+        #    stages.append(st)
+        #
+        #return stages
 
     def getAllMicroactions(self):
-        microactions = []
-        for st in self.getAllStages():
-            for uA in st.microactions:
-                microactions.append(uA)
-
-        return microactions
+        return self.pipeline.getAllMicroactions()
+        
+    #def getAllMicroactions(self): # TODO: Update or rename
+    #    microactions = []
+    #    for st in self.getAllStages():
+    #        for path_i in st.paths:
+    #            microactions.append(path_i)
+    #
+    #    return microactions
     
     def getAllConnectorModels(self):
         return self.connectorModels
@@ -104,23 +108,42 @@ class Pipeline(FrozenBase):
 
     def __init__(self):
         self.name = ""
-        self.stages = []
-
+        self.components = [] # Stages and/or sub-pipelines
+        self.isParallel = False
+        self.blockPipelines = [] # List of pipelines blocked by THIS pipeline
+        
         super().__init__()
 
+   # # TODO: Is this used anywhere? Delete?
+   # def getAllStages(self):
+   #     stages = []
+   #     for comp_i in self.components:
+   #         if type(comp_i) is Pipeline:
+   #             stages.extend(comp_i.getAllStages())
+   #         elif type(comp_i) is Stage:
+   #             stages.append(comp_i)
+   #     return stages
+
+    # Return all microactions located in (sub-) stages of this pipeline
+    def getAllMicroactions(self):
+        uActions = []
+        for comp_i in self.components:
+            uActions.extend(comp_i.getAllMicroactions())
+        return uActions
+            
     def getFirstStage(self):
-        return self.stages[0]
+        return self.components[0]
 
     def isLastStage(self, stage_):
-        return stage_ == self.stages[-1]
+        return stage_ == self.components[-1]
 
     def getLastStage(self):
-        return self.stages[-1]
+        return self.components[-1]
     
     def getNextStage(self, stage_):
         retStage = None
         found = False
-        for st_i in self.stages:
+        for st_i in self.components:
             if stage_ == st_i: # found current stage
                 found = True
                 continue
@@ -133,12 +156,29 @@ class Stage(FrozenBase):
 
     def __init__(self):
         self.name = ""
-        self.microactions = []
-
+        self.paths = [] # List of parallel microactions and/or sub-pipelines in stage
+        self.capacity = 0
+        self.hasOutputBuffer = False
+        
         super().__init__()
 
-    def getUsedMicroactions(self):
+    def getUsedMicroactions(self): # TODO: Is this still used somewhere? Replace with getMicroactions?
         return self.microactions
+
+    # Return microactions directly in this stage (not in sub-stages)
+    def getMicroactions(self):
+        return [p for p in self.paths if type(p) is Microaction]
+
+    # Return all microactions in this stage and all its substages
+    def getAllMicroactions(self):
+        uActions = self.getMicroactions()
+        for path_i in self.paths:
+            if type(path_i) is Pipeline:
+                uActions.extend(path_i.getAllMicroactions())
+        return uActions
+                    
+    def getAllPathes(self):
+        return self.paths
         
 class Microaction(FrozenBase):
 
@@ -187,6 +227,7 @@ class Resource(FrozenBase):
         self.virtualAlias = ""
         self.delay = 0
         self.resourceModel = None
+        self.capacity = 0
 
         super().__init__()
 

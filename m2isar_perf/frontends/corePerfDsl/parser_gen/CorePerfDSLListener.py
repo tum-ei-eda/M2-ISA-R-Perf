@@ -179,12 +179,48 @@ class CorePerfDSLListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by CorePerfDSLParser#pipeline_list.
+    def enterPipeline_list(self, ctx:CorePerfDSLParser.Pipeline_listContext):
+        pass
+
+    # Exit a parse tree produced by CorePerfDSLParser#pipeline_list.
+    def exitPipeline_list(self, ctx:CorePerfDSLParser.Pipeline_listContext):
+        pass
+
+
     # Enter a parse tree produced by CorePerfDSLParser#pipeline.
     def enterPipeline(self, ctx:CorePerfDSLParser.PipelineContext):
         pass
 
     # Exit a parse tree produced by CorePerfDSLParser#pipeline.
     def exitPipeline(self, ctx:CorePerfDSLParser.PipelineContext):
+        pass
+
+
+    # Enter a parse tree produced by CorePerfDSLParser#pipeline_sequential.
+    def enterPipeline_sequential(self, ctx:CorePerfDSLParser.Pipeline_sequentialContext):
+        pass
+
+    # Exit a parse tree produced by CorePerfDSLParser#pipeline_sequential.
+    def exitPipeline_sequential(self, ctx:CorePerfDSLParser.Pipeline_sequentialContext):
+        pass
+
+
+    # Enter a parse tree produced by CorePerfDSLParser#pipeline_parallel.
+    def enterPipeline_parallel(self, ctx:CorePerfDSLParser.Pipeline_parallelContext):
+        pass
+
+    # Exit a parse tree produced by CorePerfDSLParser#pipeline_parallel.
+    def exitPipeline_parallel(self, ctx:CorePerfDSLParser.Pipeline_parallelContext):
+        pass
+
+
+    # Enter a parse tree produced by CorePerfDSLParser#pipeline_attr.
+    def enterPipeline_attr(self, ctx:CorePerfDSLParser.Pipeline_attrContext):
+        pass
+
+    # Exit a parse tree produced by CorePerfDSLParser#pipeline_attr.
+    def exitPipeline_attr(self, ctx:CorePerfDSLParser.Pipeline_attrContext):
         pass
 
 
@@ -197,12 +233,30 @@ class CorePerfDSLListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by CorePerfDSLParser#stage_list.
+    def enterStage_list(self, ctx:CorePerfDSLParser.Stage_listContext):
+        pass
+
+    # Exit a parse tree produced by CorePerfDSLParser#stage_list.
+    def exitStage_list(self, ctx:CorePerfDSLParser.Stage_listContext):
+        pass
+
+
     # Enter a parse tree produced by CorePerfDSLParser#stage.
     def enterStage(self, ctx:CorePerfDSLParser.StageContext):
         pass
 
     # Exit a parse tree produced by CorePerfDSLParser#stage.
     def exitStage(self, ctx:CorePerfDSLParser.StageContext):
+        pass
+
+
+    # Enter a parse tree produced by CorePerfDSLParser#stage_attr.
+    def enterStage_attr(self, ctx:CorePerfDSLParser.Stage_attrContext):
+        pass
+
+    # Exit a parse tree produced by CorePerfDSLParser#stage_attr.
+    def exitStage_attr(self, ctx:CorePerfDSLParser.Stage_attrContext):
         pass
 
 
@@ -251,30 +305,30 @@ class CorePerfDSLListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by CorePerfDSLParser#resource_model.
-    def enterResource_model(self, ctx:CorePerfDSLParser.Resource_modelContext):
+    # Enter a parse tree produced by CorePerfDSLParser#resource_list.
+    def enterResource_list(self, ctx:CorePerfDSLParser.Resource_listContext):
         pass
 
-    # Exit a parse tree produced by CorePerfDSLParser#resource_model.
-    def exitResource_model(self, ctx:CorePerfDSLParser.Resource_modelContext):
-        pass
-
-
-    # Enter a parse tree produced by CorePerfDSLParser#resource_delay.
-    def enterResource_delay(self, ctx:CorePerfDSLParser.Resource_delayContext):
-        pass
-
-    # Exit a parse tree produced by CorePerfDSLParser#resource_delay.
-    def exitResource_delay(self, ctx:CorePerfDSLParser.Resource_delayContext):
+    # Exit a parse tree produced by CorePerfDSLParser#resource_list.
+    def exitResource_list(self, ctx:CorePerfDSLParser.Resource_listContext):
         pass
 
 
-    # Enter a parse tree produced by CorePerfDSLParser#resource_default.
-    def enterResource_default(self, ctx:CorePerfDSLParser.Resource_defaultContext):
+    # Enter a parse tree produced by CorePerfDSLParser#resource.
+    def enterResource(self, ctx:CorePerfDSLParser.ResourceContext):
         pass
 
-    # Exit a parse tree produced by CorePerfDSLParser#resource_default.
-    def exitResource_default(self, ctx:CorePerfDSLParser.Resource_defaultContext):
+    # Exit a parse tree produced by CorePerfDSLParser#resource.
+    def exitResource(self, ctx:CorePerfDSLParser.ResourceContext):
+        pass
+
+
+    # Enter a parse tree produced by CorePerfDSLParser#resource_attr.
+    def enterResource_attr(self, ctx:CorePerfDSLParser.Resource_attrContext):
+        pass
+
+    # Exit a parse tree produced by CorePerfDSLParser#resource_attr.
+    def exitResource_attr(self, ctx:CorePerfDSLParser.Resource_attrContext):
         pass
 
 
@@ -401,6 +455,24 @@ class CorePerfDSLListener(ParseTreeListener):
 
     # Exit a parse tree produced by CorePerfDSLParser#pipeline_ref.
     def exitPipeline_ref(self, ctx:CorePerfDSLParser.Pipeline_refContext):
+        pass
+
+
+    # Enter a parse tree produced by CorePerfDSLParser#microactionOrPipeline_ref.
+    def enterMicroactionOrPipeline_ref(self, ctx:CorePerfDSLParser.MicroactionOrPipeline_refContext):
+        pass
+
+    # Exit a parse tree produced by CorePerfDSLParser#microactionOrPipeline_ref.
+    def exitMicroactionOrPipeline_ref(self, ctx:CorePerfDSLParser.MicroactionOrPipeline_refContext):
+        pass
+
+
+    # Enter a parse tree produced by CorePerfDSLParser#stageOrPipeline_ref.
+    def enterStageOrPipeline_ref(self, ctx:CorePerfDSLParser.StageOrPipeline_refContext):
+        pass
+
+    # Exit a parse tree produced by CorePerfDSLParser#stageOrPipeline_ref.
+    def exitStageOrPipeline_ref(self, ctx:CorePerfDSLParser.StageOrPipeline_refContext):
         pass
 
 

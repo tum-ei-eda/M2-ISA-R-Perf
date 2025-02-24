@@ -27,7 +27,7 @@ class Builder():
         
     def buildTopModel(self):
 
-        top = StructuralModel.TopModel()
+        top = StructuralModel.StructuralModel()
         
         # Assign microactions and trace-value-assignments which are defined via the ALL and REST keywords
         instrId = 0
@@ -49,63 +49,63 @@ class Builder():
             instr.identifier = instrId
             instrId += 1
                 
-        # Finalize the CorePerfModels and add to TopModel
-        for model_name in self.dictionary.corePerfModels.keys():
+        # Finalize the variants and add to top (structural model)
+        for model_name in self.dictionary.variants.keys():
 
-            # Assign all instructions to each corePerfModel
+            # Assign all instructions to each variant
             for instr_i in self.dictionary.instructions.values():
-                self.dictionary.corePerfModels[model_name].instructions.append(instr_i)
+                self.dictionary.variants[model_name].instructions.append(instr_i)
                 
-            # Create corePerfModel instance with unique child objects
+            # Create variant instance with unique child objects
             # NOTE: Make deep copy of dictionary, as we also need to copy non-virtual resources/microactions that are assigned to the current model later on
             dictionary_cpy = copy.deepcopy(self.dictionary)
-            corePerfModel = dictionary_cpy.corePerfModels[model_name]
+            variant = dictionary_cpy.variants[model_name]
             
             # Resolve virtual microactions
-            for uActAss in dictionary_cpy.microactionAssignments[corePerfModel.name]:                
+            for uActAss in dictionary_cpy.microactionAssignments[variant.name]:                
                 viruAct = uActAss[0]
                 uAct = uActAss[1]
                 viruAct.assign(uAct)
 
             # Resolve virtual resources
-            for resAss in dictionary_cpy.resourceAssignments[corePerfModel.name]:
+            for resAss in dictionary_cpy.resourceAssignments[variant.name]:
                 virRes = resAss[0]
                 res = resAss[1]
                 virRes.assign(res)
-
+                
             # Check that all virtual components of CorePerfModel have been resolved and link resource models to corePerfModel
-            for uA in corePerfModel.getAllMicroactions():
+            for uA in variant.getAllMicroactions():
                 if uA.name == "":
-                    print("ERROR: CorePerfModel %s does not assign a microaction to virtual microaction %s" % (corePerfModel.name, uA.virtualAlias)) # TODO: Add proper error handling
+                    print("ERROR: Variant %s does not assign a microaction to virtual microaction %s" % (variant.name, uA.virtualAlias)) # TODO: Add proper error handling
                 else:
                     res = uA.resource
                     if res is not None:
                         if res.name == "":
-                            print("ERROR: CorePerfModel %s does not assign a resource to virtual resource %s" % (corePerfModel.name, res.virtualAlias)) # TODO: Add proper error handling
+                            print("ERROR: Variant %s does not assign a resource to virtual resource %s" % (variant.name, res.virtualAlias)) # TODO: Add proper error handling
                         else:
                             resModel = res.resourceModel
                             if resModel is not None:
-                                corePerfModel.resourceModels.append(resModel)
+                                variant.resourceModels.append(resModel)
             
             # Establish link from Connectors to ConnectorModel & set connector type
             #   (Remember: Connector type is set seen from perspective of microaction.
             #    I.e. a connector connected to input of connectorModel is of type CON_TYPE_OUT,
             #    and vice versa)
-            for conModel in corePerfModel.connectorModels:
+            for conModel in variant.connectorModels:
                 for inCon in conModel.inConnectors:
                     inCon.connectorModel = conModel
-                    self.__setConnectorType(inCon, Defs.CON_TYPE_OUT, conModel, corePerfModel)
+                    self.__setConnectorType(inCon, Defs.CON_TYPE_OUT, conModel, variant)
                 for outCon in conModel.outConnectors:
                     outCon.connectorModel = conModel
-                    self.__setConnectorType(outCon, Defs.CON_TYPE_IN, conModel, corePerfModel)
+                    self.__setConnectorType(outCon, Defs.CON_TYPE_IN, conModel, variant)
 
             # Check that there are no connectors without a connector model & that connector type matches microaction
-            for uA in corePerfModel.getAllMicroactions():
-                self.__checkConnector(uA.inConnector, Defs.CON_TYPE_IN, uA, corePerfModel)
-                self.__checkConnector(uA.outConnector, Defs.CON_TYPE_OUT, uA, corePerfModel)
+            for uA in variant.getAllMicroactions():
+                self.__checkConnector(uA.inConnector, Defs.CON_TYPE_IN, uA, variant)
+                self.__checkConnector(uA.outConnector, Defs.CON_TYPE_OUT, uA, variant)
                         
             # Add finalized CorePerfModel to TopModel
-            top.corePerfModels.append(corePerfModel)
+            top.variants.append(variant)
 
         return top
                     

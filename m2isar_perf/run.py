@@ -23,8 +23,11 @@ import sys
 
 from common import common as cf
 
+from frontends.corePerfDsl import api as Frontend # TODO: Change from API to Class format 
+
 from meta_models.scheduling_model.SchedulingTransformer import SchedulingTransformer
 
+from backends.monitor_extractor import api as backend_monitor_extractor # TODO: Change from API to Class format 
 from backends.schedule_viewer.SchedulingModelViewer import SchedulingModelViewer
 from backends.estimator_generator.EstimatorGenerator import EstimatorGenerator
 
@@ -41,39 +44,32 @@ args = argParser.parse_args()
 # Resolve outDir
 outDir = cf.resolveOutDir(args.output_dir, __file__, 1)
 
-# Import appropriate frontend
+# Call frontend to generate structural-model
 if args.description.endswith('.corePerfDsl'):
-    import frontends.corePerfDsl.api as frontend
+    structModel = Frontend.execute(args.description, args.dump_dir)
 else:
     sys.exit("FATAL: Description format is not supported. Currently only supporting files of type .corePerfDsl")
 
-# Import backends
-backends = []
-if args.code_gen:
-    #import backends.estimator_gen.run as backend_estimator_gen
-    #backends.append(backend_estimator_gen)
-    print("\nNOTE: Backend currently not supported! Try again later...")
+# Call model transformer (structural -> scheduling model) if applicable
+if args.code_gen or args.info_print:
+    print("WARNING: SchedulingModel transformer currently disabled!")
+
+    # schedModel = SchedulingTransformer().transform(structModel)
+    # #transformer = SchedulingTransformer()
+    # #schedModel = transformer.transform(structModel)
+
+# Call applicable backends
 if args.monitor_description:
-    import backends.monitor_extractor.api as backend_monitor_extractor
-    backends.append(backend_monitor_extractor)
-if args.info_print:
-    import backends.structure_viewer.api as backend_structure_viewer
-    backends.append(backend_structure_viewer)
-    #print("\nNOTE: Backend currently not supported! Try again later...")
+    backend_monitor_extractor.execute(structModel, outDir)
+if args.code_gen:
+    print("WARNING: Code-generator backend currently disabled!")
     
-# Call frontend
-model = frontend.execute(args.description, args.dump_dir)
-
-# TEST SchedulingTransformer
-transformer = SchedulingTransformer()
-sModel = transformer.transform(model)
-
-#viewer = SchedulingModelViewer()
-#viewer.execute(sModel, outDir)
-
-generator = EstimatorGenerator()
-generator.execute(sModel, outDir)
-
-# Call all selected backends
-for backend_i in backends:
-    backend_i.execute(model, outDir)
+    # EstimatorGenerator().execute(schedModel, outDir)
+    # #generator = EstimatorGenerator()
+    # #generator.execute(schedModel, outDir)
+if args.info_print :
+    print("WARNING: SchedulingViewer backend currently disabled!")
+    
+    # SchedulingViewer().execute(schedModel, outDir)
+    # #viewer = SchedulingViewer()
+    # #viewer.execute(schedModel, outDir)

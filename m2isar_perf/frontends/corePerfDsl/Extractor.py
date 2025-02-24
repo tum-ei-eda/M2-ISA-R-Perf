@@ -70,13 +70,19 @@ class Extractor(CorePerfDSLVisitor):
         
     def extract(self, tree_):
 
+        # Iterate over tree
         while True:
             self.visit(tree_)
             if self.level.isMax():
                 break
             else:
                 self.level.increase()
-         
+
+        # Establish previously unresolved references
+        # NOTE: Currently, this is only done for stages, as stages and pipelines can reference each other.
+        # TODO: Consider doing this for each type? This would allow to stop iterating through the tree based on levels.
+        self.dictionary.resolveStages()
+                
     # Top Node 
     def visitTop(self, ctx):
         self.visitChildren(ctx)
@@ -134,19 +140,42 @@ class Extractor(CorePerfDSLVisitor):
             self.dictionary.mapTraceValues(instrOrGroup, trValAssigns)
             
     # Level:RESOURCES definitions
-             
-    def visitResource_model(self, ctx):
+
+    def visitResource(self, ctx):
         if self.level.isLevel("RESOURCES"):
-            modelRef = self.visit(ctx.res_model)
-            self.dictionary.addResource(ctx.name.text, model_=modelRef)
- 
-    def visitResource_delay(self, ctx):
-        if self.level.isLevel("RESOURCES"):
-            self.dictionary.addResource(ctx.name.text, delay_=ctx.delay.text)
-             
-    def visitResource_default(self, ctx):
-        if self.level.isLevel("RESOURCES"):
-            self.dictionary.addResource(ctx.name.text, delay_=1)
+            
+            # Check for capacity attribute
+            capacity = 1
+            if ctx.attribute:
+                capacity = ctx.attribute.capacity.text
+
+            # Check for delay
+            delay = 1
+            dynDelay = False
+            if ctx.delay: # Static delay
+                delay = ctx.delay.text
+            elif ctx.res_model: # Dynamic delay (external resource model)
+                delay = self.visit(ctx.res_model)
+                dynDelay = True
+
+            # Add resource
+            if dynDelay:
+                self.dictionary.addResource(ctx.name.text, capacity, model_=delay)
+            else:
+                self.dictionary.addResource(ctx.name.text, capacity, delay_=delay)
+    
+    # def visitResource_model(self, ctx):
+    #     if self.level.isLevel("RESOURCES"):
+    #         modelRef = self.visit(ctx.res_model)
+    #         self.dictionary.addResource(ctx.name.text, model_=modelRef)
+    # 
+    # def visitResource_delay(self, ctx):
+    #     if self.level.isLevel("RESOURCES"):
+    #         self.dictionary.addResource(ctx.name.text, delay_=ctx.delay.text)
+    #          
+    # def visitResource_default(self, ctx):
+    #     if self.level.isLevel("RESOURCES"):
+    #         self.dictionary.addResource(ctx.name.text, delay_=1)
 
     # Level:MICROACTIONS definitions
 
@@ -159,8 +188,21 @@ class Extractor(CorePerfDSLVisitor):
              
     def visitStage(self, ctx):
         if self.level.isLevel("STAGES_AND_MICROACTION_MAPPING"):
-            uARefs = [self.visit(uA) for uA in ctx.microactions]
-            self.dictionary.addStage(ctx.name.text, uARefs)
+
+            # Check for attributes
+            capacity = 1
+            hasOutputBuffer = False
+            if ctx.attributes:
+                for attr_i in ctx.attributes:
+                    if attr_i.capacity:
+                        capacity = attr_i.capacity.text
+                    if attr_i.getText() == "output-buffer":
+                        hasOutputBuffer = True
+
+            #print(f"{ctx.name.text}: {capacity} | {hasOutputBuffer}")
+
+            pathRefs = [self.visit(p) for p in ctx.paths] # microaction or pipeline refs
+            self.dictionary.addStage(ctx.name.text, pathRefs, capacity, hasOutputBuffer)
 
     def visitMicroactionMapping(self, ctx):
         if self.level.isLevel("STAGES_AND_MICROACTION_MAPPING"):
@@ -172,9 +214,31 @@ class Extractor(CorePerfDSLVisitor):
              
     def visitPipeline(self, ctx):
         if self.level.isLevel("PIPELINES"):
-            stRefs = [self.visit(st) for st in ctx.stages]
-            self.dictionary.addPipeline(ctx.name.text, stRefs)
- 
+            
+            # Check for attributes
+            if ctx.attribute:
+                blockPipelineRefs = [self.visit(pipe) for pipe in ctx.attribute.blockPipelines]
+            else:
+                blockPipelineRefs = []
+                
+            # Read components
+            isParallel = False
+            if ctx.sequentialComponentList:
+                compRefs = self.visit(ctx.sequentialComponentList)
+            elif ctx.parallelComponentList:
+                isParallel = True
+                compRefs = self.visit(ctx.parallelComponentList)
+                
+            self.dictionary.addPipeline(ctx.name.text, compRefs, isParallel, blockPipelineRefs)
+
+    def visitPipeline_sequential(self, ctx):
+        if self.level.isLevel("PIPELINES"):
+            return [self.visit(comp) for comp in ctx.components]
+
+    def visitPipeline_parallel(self, ctx):
+        if self.level.isLevel("PIPELINES"):
+            return [self.visit(comp) for comp in ctx.components]
+            
     # Level:CORE_PERF_MODEL definitinons
              
     def visitCorePerfModel(self, ctx):
@@ -191,14 +255,14 @@ class Extractor(CorePerfDSLVisitor):
 
             # Check that required arguments are present
             if ctx.use_pipeline is None:
-                raise RuntimeError("CorePerfModel %s does not specify a pipeline" % ctx.name.text)
+                raise RuntimeError(f"CorePerfModel {ctx.name.text} does not specify a pipeline [Line: {ctx.start.line}]") # TODO: Unify error handling
             pipeRef = self.visit(ctx.use_pipeline)
 
             if ctx.core is None:
-                raise RuntimeError("CorePerfModel %s does not specify a core" % ctx.name.text)
+                raise RuntimeError(f"CorePerfModel {ctx.name.text} does not specify a core [Line: {ctx.start.line}]") # TODO: Unify error handling
 
             # Add model to dictionary
-            self.dictionary.addCorePerfModel(ctx.name.text, pipeRef, ctx.core.text, conModelRefs, resAssigns, uActionAssigns)
+            self.dictionary.addVariant(ctx.name.text, pipeRef, ctx.core.text, conModelRefs, resAssigns, uActionAssigns)
             
                 
     # Assignments
@@ -229,36 +293,37 @@ class Extractor(CorePerfDSLVisitor):
     # References
                 
     def visitConnector_ref(self, ctx):
-        return self.__resolveReference(ctx.name.text, "Connector")
+        return self.__resolveReference(ctx.name.text, "Connector", ctx.start.line)
         
     def visitTraceValue_ref(self, ctx):
-        return self.__resolveReference(ctx.name.text, "TraceValue")
+        return self.__resolveReference(ctx.name.text, "TraceValue", ctx.start.line)
         
     def visitResourceModel_ref(self, ctx):
-        return self.__resolveReference(ctx.name.text, "ResourceModel")
+        return self.__resolveReference(ctx.name.text, "ResourceModel", ctx.start.line)
 
     def visitConnectorModel_ref(self, ctx):
-        return self.__resolveReference(ctx.name.text, "ConnectorModel")
+        return self.__resolveReference(ctx.name.text, "ConnectorModel", ctx.start.line)
     
     def visitResource_ref(self, ctx):
-        return self.__resolveReference(ctx.name.text, "Resource")
+        return self.__resolveReference(ctx.name.text, "Resource", ctx.start.line)
     
     def visitResourceOrConnector_ref(self, ctx):
-        ref = self.dictionary.getInstance(ctx.name.text, "Resource")
+        ref = self.dictionary.getInstance(ctx.name.text, "Resource", ctx.start.line)
         if type(ref) is UnresolvedReference:
-            ref = self.dictionary.getInstance(ctx.name.text, "Connector")
+            ref = self.dictionary.getInstance(ctx.name.text, "Connector", ctx.start.line)
             if type(ref) is UnresolvedReference:
-                print("ERROR: Could not resolve reference %s. Neiter a resource nor a connector instance." % ctx.name.text)
+                ref.reportError()
+                #print(f"ERROR [Line: {ctx.start.line}]: Could not resolve reference {ctx.name.text}. Neiter a resource nor a connector instance.") # TODO: Add line info to every error message
         return ref
 
     def visitMicroaction_ref(self, ctx):
-        return self.__resolveReference(ctx.name.text, "Microaction")
+        return self.__resolveReference(ctx.name.text, "Microaction", ctx.start.line)
 
     def visitStage_ref(self, ctx):
-        return self.__resolveReference(ctx.name.text, "Stage")
-
+        return self.__resolveReference(ctx.name.text, "Stage", ctx.start.line)
+        
     def visitPipeline_ref(self, ctx):
-        return self.__resolveReference(ctx.name.text, "Pipeline")
+        return self.__resolveReference(ctx.name.text, "Pipeline", ctx.start.line)
 
     def visitInstructionOrInstrGroup_ref(self, ctx):
         if(ctx.name.text == Defs.KEYWORD_ALL):
@@ -266,20 +331,33 @@ class Extractor(CorePerfDSLVisitor):
         elif(ctx.name.text == Defs.KEYWORD_REST):
             ref = self.dictionary.REST_Instruction
         else:
-            ref = self.dictionary.getInstance(ctx.name.text, "InstructionGroup")
+            ref = self.dictionary.getInstance(ctx.name.text, "InstructionGroup", ctx.start.line)
             if type(ref) is UnresolvedReference:
-                ref = self.dictionary.getInstance(ctx.name.text, "Instruction")
+                ref = self.dictionary.getInstance(ctx.name.text, "Instruction", ctx.start.line)
                 if type(ref) is UnresolvedReference:
                     self.dictionary.addInstruction(ctx.name.text)
-                    ref = self.dictionary.getInstance(ctx.name.text, "Instruction")
+                    ref = self.dictionary.getInstance(ctx.name.text, "Instruction", ctx.start.line)
         return ref
-    
+
+    def visitMicroactionOrPipeline_ref(self, ctx):
+        ref = self.dictionary.getInstance(ctx.name.text, "Microaction", ctx.start.line)
+        if type(ref) is UnresolvedReference:
+            ref = self.dictionary.getInstance(ctx.name.text, "Pipeline", ctx.start.line) # Will try to resolve this again after tree is read in -> no error
+        return ref
+
+    def visitStageOrPipeline_ref(self, ctx):
+        ref = self.dictionary.getInstance(ctx.name.text, "Stage", ctx.start.line)
+        if type(ref) is UnresolvedReference:
+            ref = self.__resolveReference(ctx.name.text, "Pipeline", ctx.start.line)
+        return ref
+            
     # Helper functions
 
-    def __resolveReference(self, name_, type_):
-        ref = self.dictionary.getInstance(name_, type_)
+    def __resolveReference(self, name_, type_, line_=0):
+        ref = self.dictionary.getInstance(name_, type_, line_)
         if type(ref) is UnresolvedReference:
-            print("ERROR: Could not resolve reference %s of type %s. No such instance." %(name_, type_))
+            ref.reportError()
+            #print(f"ERROR [Line: {line}]: Could not resolve reference {name_} of type {type_}. No such instance.")
         return ref
 
     # NOTE: Current CorePerfDSL.g4 setup causes string to be read including quotes (").

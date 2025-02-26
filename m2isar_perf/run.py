@@ -52,11 +52,9 @@ else:
 
 # Call model transformer (structural -> scheduling model) if applicable
 if args.code_gen or args.info_print:
-    print("WARNING: SchedulingModel transformer currently disabled!")
-
-    # schedModel = SchedulingTransformer().transform(structModel)
-    # #transformer = SchedulingTransformer()
-    # #schedModel = transformer.transform(structModel)
+    schedModel = SchedulingTransformer().transform(structModel)
+    #transformer = SchedulingTransformer()
+    #schedModel = transformer.transform(structModel)
 
 # Call applicable backends
 if args.monitor_description:
@@ -70,6 +68,6 @@ if args.code_gen:
 if args.info_print :
     print("WARNING: SchedulingViewer backend currently disabled!")
     
-    # SchedulingViewer().execute(schedModel, outDir)
-    # #viewer = SchedulingViewer()
-    # #viewer.execute(schedModel, outDir)
+    SchedulingModelViewer().execute(schedModel, outDir)
+    #viewer = SchedulingViewer()
+    #viewer.execute(schedModel, outDir)

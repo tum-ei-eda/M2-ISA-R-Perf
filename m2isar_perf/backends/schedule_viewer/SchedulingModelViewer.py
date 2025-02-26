@@ -38,11 +38,12 @@ class SchedulingModelViewer:
             dirUtils.createOrReplaceDir(tempDir, suppress_warning=True)
             outDir = dirUtils.getDocDirPath(outDir_, variant_i.name)
             # Generate sub-dirs for each instr/sched.function
-            for schedFunc_i in variant_i.getAllTimingVariables():
+            for schedFunc_i in variant_i.getAllSchedulingFunctions():
                 (outDir / schedFunc_i.name).mkdir(parents=True, exist_ok=True) # Do not over-write: Could delete output for structure_viewer
             
             for func_i in variant_i.getAllSchedulingFunctions():
-                if func_i.name:
+
+                if func_i.name: #TODO: Check why there would be any sched.funcs without a name?
                     
                     dotGraph = graphviz.Digraph(comment=func_i.name)
                     dotGraph.attr(rankdir='TB')
@@ -51,12 +52,12 @@ class SchedulingModelViewer:
                     with dotGraph.subgraph() as top:
                         top.attr(rank='min')
                         tVar_prev = None
-                        for tvariant_i in variant_i.getAllTimingVariables():
-                            top.node(self.__timingVariableIn(tvariant_i.name), label=tvariant_i.name, shape='box')
+                        for tvariable_i in variant_i.getAllTimingVariables():
+                            top.node(self.__timingVariableIn(tvariable_i.name), label=(tvariable_i.name + " [" + str(tvariable_i.depth) + "]"), shape='box')
                             # Enforce representation of tVar nodes in order?
                             if tVar_prev is not None:
-                                top.edge(self.__timingVariableIn(tVar_prev.name), self.__timingVariableIn(tvariant_i.name), style='invis') 
-                            tVar_prev = tvariant_i
+                                top.edge(self.__timingVariableIn(tVar_prev.name), self.__timingVariableIn(tvariable_i.name), style='invis') 
+                            tVar_prev = tvariable_i
 
                         # TODO: Show all connector models, or just the onces used by this scheduling function? 
                         for conModel_i in variant_i.getAllConnectorModels():
@@ -66,12 +67,12 @@ class SchedulingModelViewer:
                     with dotGraph.subgraph() as bottom:
                         bottom.attr(rank='max')
                         tVar_prev = None
-                        for tvariant_i in variant_i.getAllTimingVariables():
-                            bottom.node(self.__timingVariableOut(tvariant_i.name), label=tvariant_i.name, shape='box')
+                        for tvariable_i in variant_i.getAllTimingVariables():
+                            bottom.node(self.__timingVariableOut(tvariable_i.name), label=tvariable_i.name, shape='box')
                             # Enforce representation of tVar nodes in order?
                             if tVar_prev is not None:
-                                bottom.edge(self.__timingVariableOut(tVar_prev.name), self.__timingVariableOut(tvariant_i.name), style='invis') 
-                            tVar_prev = tvariant_i
+                                bottom.edge(self.__timingVariableOut(tVar_prev.name), self.__timingVariableOut(tvariable_i.name), style='invis') 
+                            tVar_prev = tvariable_i
 
                         # TODO: Show all connector models, or just the onces used by this scheduling function? 
                         for conModel_i in variant_i.getAllConnectorModels():
@@ -79,6 +80,7 @@ class SchedulingModelViewer:
                             
                     # Make nodes for scheduling function nodes
                     for node_i in func_i.getAllNodes():
+
                         dotGraph.node(self.__scheduleNode(node_i.name), label=node_i.name, shape='ellipse')
                         # Connect resource model
                         if node_i.hasDynamicDelay():
@@ -93,7 +95,7 @@ class SchedulingModelViewer:
                             if edge_i.isDynamic():
                                 dotGraph.edge(self.__connectorModelIn(edge_i.getConnectorModel().name), self.__scheduleNode(node_i.name), label=edge_i.name)
                             else:
-                                dotGraph.edge(self.__timingVariableIn(edge_i.getTimingVariable().name), self.__scheduleNode(node_i.name))
+                                dotGraph.edge(self.__timingVariableIn(edge_i.getTimingVariable().name), self.__scheduleNode(node_i.name), label=("[" + str(edge_i.depth) + "]")) # Implicit "cast" to StaticEdge
                         # Connect out-edges
                         for edge_i in node_i.getAllOutEdges():
                             if edge_i.isDynamic():
@@ -110,6 +112,7 @@ class SchedulingModelViewer:
                     os.chdir(tempDir)
                     os.system(f"dot -Tpdf {func_i.name}.dot -o {func_i.name}.pdf")
                     os.replace(f"{str(tempDir)}/{func_i.name}.pdf", f"{str(outDir / func_i.name)}/{func_i.name}_schedulingFunction.pdf")
+                    
                     
     def __timingVariableIn(self, name_):
         return ("tvi_" + name_)

@@ -171,12 +171,12 @@ class Dictionary():
         self.__addInstance(pipe, "Pipeline")
 
     def addVariant(self, name_, pipe_, core_, conModels_, resAssigns_, uActionAssigns_):
-        model = StructuralModel.Variant()
-        model.name = name_
-        model.pipeline = pipe_
-        model.core = self.__convertString(core_)
-        model.connectorModels = conModels_
-        self.__addInstance(model, "Variant")
+        variant = StructuralModel.Variant()
+        variant.name = name_
+        variant.pipeline = pipe_
+        variant.core = self.__convertString(core_)
+        variant.connectorModels = conModels_
+        self.__addInstance(variant, "Variant")
         
         self.resourceAssignments[name_] = resAssigns_
         self.microactionAssignments[name_] = uActionAssigns_
@@ -221,7 +221,7 @@ class Dictionary():
 
     def resolveStages(self):
         for stage_i in self.stages.values():
-            self.__resolveReferenceList(stage_i.getAllPathes())
+            self.__resolveReferenceList(stage_i.getPaths())
 
     def getInstance(self, name_, type_, line_=0):
         subDict = self.__getSubDictionary(type_)

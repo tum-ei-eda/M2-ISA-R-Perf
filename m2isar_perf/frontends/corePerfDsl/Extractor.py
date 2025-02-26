@@ -147,13 +147,13 @@ class Extractor(CorePerfDSLVisitor):
             # Check for capacity attribute
             capacity = 1
             if ctx.attribute:
-                capacity = ctx.attribute.capacity.text
+                capacity = int(ctx.attribute.capacity.text)
 
             # Check for delay
             delay = 1
             dynDelay = False
             if ctx.delay: # Static delay
-                delay = ctx.delay.text
+                delay = int(ctx.delay.text)
             elif ctx.res_model: # Dynamic delay (external resource model)
                 delay = self.visit(ctx.res_model)
                 dynDelay = True
@@ -195,7 +195,7 @@ class Extractor(CorePerfDSLVisitor):
             if ctx.attributes:
                 for attr_i in ctx.attributes:
                     if attr_i.capacity:
-                        capacity = attr_i.capacity.text
+                        capacity = int(attr_i.capacity.text)
                     if attr_i.getText() == "output-buffer":
                         hasOutputBuffer = True
 

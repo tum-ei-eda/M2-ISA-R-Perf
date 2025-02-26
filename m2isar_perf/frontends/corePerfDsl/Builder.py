@@ -28,6 +28,9 @@ class Builder():
     def buildTopModel(self):
 
         top = StructuralModel.StructuralModel()
+
+        # Establish connections between stages and pipelines (parents, blocking)
+        
         
         # Assign microactions and trace-value-assignments which are defined via the ALL and REST keywords
         instrId = 0
@@ -103,8 +106,11 @@ class Builder():
             for uA in variant.getAllMicroactions():
                 self.__checkConnector(uA.inConnector, Defs.CON_TYPE_IN, uA, variant)
                 self.__checkConnector(uA.outConnector, Defs.CON_TYPE_OUT, uA, variant)
-                        
-            # Add finalized CorePerfModel to TopModel
+
+            # Establish link between stages and pipelines (parent components, blocking pipelines)
+            variant.resolvePipelineStructure()
+                
+            # Add finalized variant to TopModel
             top.variants.append(variant)
 
         return top

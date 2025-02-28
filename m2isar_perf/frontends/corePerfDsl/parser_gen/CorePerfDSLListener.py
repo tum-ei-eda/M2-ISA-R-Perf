@@ -269,12 +269,39 @@ class CorePerfDSLListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by CorePerfDSLParser#microaction_list.
+    def enterMicroaction_list(self, ctx:CorePerfDSLParser.Microaction_listContext):
+        pass
+
+    # Exit a parse tree produced by CorePerfDSLParser#microaction_list.
+    def exitMicroaction_list(self, ctx:CorePerfDSLParser.Microaction_listContext):
+        pass
+
+
     # Enter a parse tree produced by CorePerfDSLParser#microaction.
     def enterMicroaction(self, ctx:CorePerfDSLParser.MicroactionContext):
         pass
 
     # Exit a parse tree produced by CorePerfDSLParser#microaction.
     def exitMicroaction(self, ctx:CorePerfDSLParser.MicroactionContext):
+        pass
+
+
+    # Enter a parse tree produced by CorePerfDSLParser#microactionComponent.
+    def enterMicroactionComponent(self, ctx:CorePerfDSLParser.MicroactionComponentContext):
+        pass
+
+    # Exit a parse tree produced by CorePerfDSLParser#microactionComponent.
+    def exitMicroactionComponent(self, ctx:CorePerfDSLParser.MicroactionComponentContext):
+        pass
+
+
+    # Enter a parse tree produced by CorePerfDSLParser#microactionComponent_list.
+    def enterMicroactionComponent_list(self, ctx:CorePerfDSLParser.MicroactionComponent_listContext):
+        pass
+
+    # Exit a parse tree produced by CorePerfDSLParser#microactionComponent_list.
+    def exitMicroactionComponent_list(self, ctx:CorePerfDSLParser.MicroactionComponent_listContext):
         pass
 
 

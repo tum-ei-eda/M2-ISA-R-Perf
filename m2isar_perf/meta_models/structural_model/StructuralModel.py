@@ -384,29 +384,31 @@ class Microaction(FrozenBase):
     def __init__(self):
         self.name = ""
         self.virtualAlias = ""
-        self.inConnector = None
-        self.resource = None
-        self.outConnector = None
+        self.inConnectors = []
+        self.resources = []
+        self.outConnectors = []
          
         super().__init__()
 
-    def hasInConnector(self):
-        return (self.inConnector is not None)
+    # TODO: Outdated
+    # def hasInConnector(self):
+    #     return (self.inConnector is not None)
         
-    def getInConnector(self):
-        return self.inConnector
+    def getInConnectors(self):
+        return self.inConnectors
 
-    def hasResource(self):
-        return (self.resource is not None)
+    def hasResources(self):
+        return bool(self.resources)
     
-    def getResource(self):
-        return self.resource
+    def getResources(self):
+        return self.resources
 
-    def hasOutConnector(self):
-        return (self.outConnector is not None)
+    # TODO: Outdated
+    # def hasOutConnector(self):
+    #     return (self.outConnector is not None)
     
-    def getOutConnector(self):
-        return self.outConnector
+    def getOutConnectors(self):
+        return self.outConnectors
 
     def assign(self, uA_):
         if type(uA_) is not Microaction:
@@ -415,9 +417,9 @@ class Microaction(FrozenBase):
             raise TypeError("Virtual microaction %s has allready been assigned to %s" %(self.virtualAlias, self.name))
 
         self.name = uA_.name
-        self.inConnector = uA_.inConnector
-        self.resource = uA_.resource
-        self.outConnector = uA_.outConnector
+        self.inConnectors = uA_.inConnectors
+        self.resources = uA_.resources
+        self.outConnectors = uA_.outConnectors
     
 class Resource(FrozenBase):
 

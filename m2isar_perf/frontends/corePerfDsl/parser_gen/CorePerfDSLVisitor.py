@@ -154,8 +154,23 @@ class CorePerfDSLVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by CorePerfDSLParser#microaction_list.
+    def visitMicroaction_list(self, ctx:CorePerfDSLParser.Microaction_listContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by CorePerfDSLParser#microaction.
     def visitMicroaction(self, ctx:CorePerfDSLParser.MicroactionContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CorePerfDSLParser#microactionComponent.
+    def visitMicroactionComponent(self, ctx:CorePerfDSLParser.MicroactionComponentContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CorePerfDSLParser#microactionComponent_list.
+    def visitMicroactionComponent_list(self, ctx:CorePerfDSLParser.MicroactionComponent_listContext):
         return self.visitChildren(ctx)
 
 

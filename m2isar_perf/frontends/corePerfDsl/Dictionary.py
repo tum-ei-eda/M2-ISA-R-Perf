@@ -120,33 +120,91 @@ class Dictionary():
         vRes = StructuralModel.Resource()
         vRes.virtualAlias = virAlias_
         self.__addInstance(vRes, "Resource")
-        
+
     def addMicroaction(self, name_, refs_):
         uAction = StructuralModel.Microaction()
         uAction.name = name_
+
+        combinationError = False
+
+        # NOTE: Below we only check type of first referrence for each group of compoents.
+        # Extractor must make sure that a group of components only contains components of one type!
         
-        # Evaluate references (inCon -> Res -> outCon)
-        if(len(refs_)>0 and len(refs_)<4):
-            nextType = "inCon_or_res"
-            for ref in refs_:
-                # Input connector
-                if((type(ref) is StructuralModel.Connector) and nextType == "inCon_or_res"):
-                    uAction.inConnector = ref
-                    nextType = "res"
-                # Resource
-                elif((type(ref) is StructuralModel.Resource) and (nextType == "inCon_or_res" or nextType == "res")):
-                    uAction.resource = ref
-                    nextType = "outCon"
-                # Output connector
-                elif((type(ref) is StructuralModel.Connector) and nextType == "outCon"):
-                    uAction.outConnector = ref
-                    nextType = "none"
+        # Case: inCon -> res -> outCon
+        if len(refs_) == 3:
+            if type(refs_[0][0]) is StructuralModel.Connector:
+                uAction.inConnectors = refs_[0]
+            else:
+                combinationError = True
+            if type(refs_[1][0]) is StructuralModel.Resource:
+                uAction.resources = refs_[1]
+            else:
+                combinationError = True
+            if type(refs_[2][0]) is StructuralModel.Connector:
+                uAction.outConnectors = refs_[2]
+            else:
+                combinationError = True
+
+        # Cases: (inCon -> res) or (res -> outCon)
+        elif len(refs_) == 2:
+            # Case: (inCon -> res)
+            if type(refs_[0][0]) is StructuralModel.Connector:
+                uAction.inConnectors = refs_[0]
+                if type(refs_[1][0]) is StructuralModel.Resource:
+                    uAction.resources = refs_[1]
                 else:
-                    print("ERROR: Unexpected reference %s in definition of %s" %(ref.name, name_))
+                    combinationError = True
+            # Case: (res -> outCon)
+            elif type(refs_[0][0]) is StructuralModel.Resource:
+                uAction.resources = refs_[0]
+                if type(refs_[1][0]) is StructuralModel.Connector:
+                    uAction.outConnectors = refs_[1]
+                else:
+                    combinationError = True
+
+        # Cases: (inCon) or (res)
+        elif len(refs_) == 1:
+            # Case: (inCon)
+            if type(refs_[0][0]) is StructuralModel.Connector:
+                uAction.inConnectors = refs_[0]
+            # Case: (res)
+            elif type(refs_[0][0]) is StructuralModel.Resource:
+                uAction.resources = refs_[0]
+
         else:
-            raise TypeError("Function addMicroaction for %s called with illegal number of references (%d)" %(name_, len(refs_)))
+            raise RuntimeError(f"Function addMicroaction for {name_} called with illegal number of references ({len(refs)})")
+
+        if combinationError:
+            raise RuntimeError(f"Function addMicroaction for {name_} called with illegal combination of connectors and resources)")
 
         self.__addInstance(uAction, "Microaction")
+        
+    #def addMicroaction(self, name_, refs_):
+    #    uAction = StructuralModel.Microaction()
+    #    uAction.name = name_
+    #    
+    #    # Evaluate references (inCon -> Res -> outCon)
+    #    if(len(refs_)>0 and len(refs_)<4):
+    #        nextType = "inCon_or_res"
+    #        for ref in refs_:
+    #            # Input connector
+    #            if((type(ref) is StructuralModel.Connector) and nextType == "inCon_or_res"):
+    #                uAction.inConnector = ref
+    #                nextType = "res"
+    #            # Resource
+    #            elif((type(ref) is StructuralModel.Resource) and (nextType == "inCon_or_res" or nextType == "res")):
+    #                uAction.resource = ref
+    #                nextType = "outCon"
+    #            # Output connector
+    #            elif((type(ref) is StructuralModel.Connector) and nextType == "outCon"):
+    #                uAction.outConnector = ref
+    #                nextType = "none"
+    #            else:
+    #                print("ERROR: Unexpected reference %s in definition of %s" %(ref.name, name_))
+    #    else:
+    #        raise TypeError("Function addMicroaction for %s called with illegal number of references (%d)" %(name_, len(refs_)))
+    #
+    #    self.__addInstance(uAction, "Microaction")
 
     def addVirtualMicroaction(self, virAlias_):
         vuAction = StructuralModel.Microaction()

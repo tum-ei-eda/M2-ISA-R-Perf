@@ -106,12 +106,25 @@ stage_attr : 'capacity' ':' capacity=INT
 
 microaction_def : 'Microaction' (microaction | '{' microaction (',' microaction)* '}');
 
+microaction_list : '{' microaction (',' microaction)* '}';
+
+//microaction : name=ID '(' (
+//	    refs+=resourceOrConnector_ref
+//	    | refs+=resourceOrConnector_ref '->' refs+=resourceOrConnector_ref
+//	    | refs+=resourceOrConnector_ref '->' refs+=resourceOrConnector_ref '->' refs+=resourceOrConnector_ref
+//	    ) ')'
+//;
+
 microaction : name=ID '(' (
-	    refs+=resourceOrConnector_ref
-	    | refs+=resourceOrConnector_ref '->' refs+=resourceOrConnector_ref
-	    | refs+=resourceOrConnector_ref '->' refs+=resourceOrConnector_ref '->' refs+=resourceOrConnector_ref
+	    comps_1=microactionComponent
+	    | comps_1=microactionComponent '->' comps_2=microactionComponent
+	    | comps_1=microactionComponent '->' comps_2=microactionComponent '->' comps_3=microactionComponent
 	    ) ')'
 ;
+
+microactionComponent : ( singleComponent=resourceOrConnector_ref | multipleComponents=microactionComponent_list ) ;
+
+microactionComponent_list : '{' refs+=resourceOrConnector_ref (',' refs+=resourceOrConnector_ref)* '}' ;
 
 //////////////////////////// CONNECTOR ////////////////////////////
 

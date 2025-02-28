@@ -176,9 +176,30 @@ class Extractor(CorePerfDSLVisitor):
 
     def visitMicroaction(self, ctx):
         if self.level.isLevel("MICROACTIONS"):
+            refs = []
+            refs.append(self.visit(ctx.comps_1))
+            if ctx.comps_2:
+                refs.append(self.visit(ctx.comps_2))
+            if ctx.comps_3:
+                refs.append(self.visit(ctx.comps_3))
+            self.dictionary.addMicroaction(ctx.name.text, refs)    
+                
+    def visitMicroactionComponent(self, ctx):
+        if self.level.isLevel("MICROACTIONS"):
+            if ctx.singleComponent:
+                return [self.visit(ctx.singleComponent)]
+            elif ctx.multipleComponents:
+                return self.visit(ctx.multipleComponents)
+
+    def visitMicroactionComponent_list(self, ctx):
+        if self.level.isLevel("MICROACTIONS"):
             refs = [self.visit(ref) for ref in ctx.refs]
-            self.dictionary.addMicroaction(ctx.name.text, refs)
-            
+            refType = type(refs[0])
+            for ref_i in refs:
+                if type(ref_i) is not refType:
+                    print(f"ERROR [Line {ctx.start.line}]: Set of Microaction-components of different types") # TODO: Unify error handling
+        return refs
+                
     # Level:STAGES_AND_MICROACTIONS_MAPPING definitions
              
     def visitStage(self, ctx):
@@ -193,8 +214,6 @@ class Extractor(CorePerfDSLVisitor):
                         capacity = int(attr_i.capacity.text)
                     if attr_i.getText() == "output-buffer":
                         hasOutputBuffer = True
-
-            #print(f"{ctx.name.text}: {capacity} | {hasOutputBuffer}")
 
             pathRefs = [self.visit(p) for p in ctx.paths] # microaction or pipeline refs
             self.dictionary.addStage(ctx.name.text, pathRefs, capacity, hasOutputBuffer)
@@ -308,7 +327,6 @@ class Extractor(CorePerfDSLVisitor):
             ref = self.dictionary.getInstance(ctx.name.text, "Connector", ctx.start.line)
             if type(ref) is UnresolvedReference:
                 ref.reportError()
-                #print(f"ERROR [Line: {ctx.start.line}]: Could not resolve reference {ctx.name.text}. Neiter a resource nor a connector instance.") # TODO: Add line info to every error message
         return ref
 
     def visitMicroaction_ref(self, ctx):
@@ -352,7 +370,6 @@ class Extractor(CorePerfDSLVisitor):
         ref = self.dictionary.getInstance(name_, type_, line_)
         if type(ref) is UnresolvedReference:
             ref.reportError()
-            #print(f"ERROR [Line: {line}]: Could not resolve reference {name_} of type {type_}. No such instance.")
         return ref
 
     # NOTE: Current CorePerfDSL.g4 setup causes string to be read including quotes (").

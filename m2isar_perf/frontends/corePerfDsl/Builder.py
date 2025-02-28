@@ -81,13 +81,11 @@ class Builder():
                 if uA.name == "":
                     print("ERROR: Variant %s does not assign a microaction to virtual microaction %s" % (variant.name, uA.virtualAlias)) # TODO: Add proper error handling
                 else:
-                    res = uA.resource
-                    if res is not None:
-                        if res.name == "":
-                            print("ERROR: Variant %s does not assign a resource to virtual resource %s" % (variant.name, res.virtualAlias)) # TODO: Add proper error handling
+                    for res_i in uA.getResources():
+                        if res_i.name == "":
+                            raise RuntimeError(f"Variant {variant.name} does not assign a resource to virtual resource {res.virtualAlias}")
                         else:
-                            resModel = res.resourceModel
-                            if resModel is not None:
+                            if (resModel:=res_i.resourceModel) is not None:
                                 variant.resourceModels.append(resModel)
             
             # Establish link from Connectors to ConnectorModel & set connector type
@@ -104,8 +102,8 @@ class Builder():
 
             # Check that there are no connectors without a connector model & that connector type matches microaction
             for uA in variant.getAllMicroactions():
-                self.__checkConnector(uA.inConnector, Defs.CON_TYPE_IN, uA, variant)
-                self.__checkConnector(uA.outConnector, Defs.CON_TYPE_OUT, uA, variant)
+                self.__checkConnector(uA.getInConnectors(), Defs.CON_TYPE_IN, uA, variant)
+                self.__checkConnector(uA.getOutConnectors(), Defs.CON_TYPE_OUT, uA, variant)
 
             # Establish link between stages and pipelines (parent components, blocking pipelines)
             variant.resolvePipelineStructure()
@@ -124,10 +122,11 @@ class Builder():
             if con_.connectorType != type_:
                 print("ERROR: For CorePerfModel %s, Connector %s is not of type %s but connected to input of ConnectorModel %s" % (corePerfModel.name, con_.name, type_, conModel_.name)) # Add proper error handling
 
-    def __checkConnector(self, con_, type_, uA_, corePerfModel_):
-        if con_ is not None:
-            if con_.connectorModel is None:
-                print("ERROR: For CorePerfModel %s, Connector %s (in %s) is not connected to any ConnectorModel" % (corePerfModel_.name, con_.name, uA_.name))
-            else:
-                if con_.connectorType != type_:
-                    print("ERROR: For CorePerfModel %s, Connector %s is an %s-Connecotr for Microaction %s and connected to the input of ConnectorModel %s" % (corePerfModel_.name, con_.name, type_, uA_.name, con_.connectorModel.name))
+    def __checkConnector(self, cons_, type_, uA_, corePerfModel_):
+        for con_i in cons_:
+            if con_i is not None:
+                if con_i.connectorModel is None:
+                    raise RuntimeError(f"For CorePerfModel {corePerfModel_.name}, Connector {con_i.name} (in {uA_.name}) is not connected to any ConnectorModel")
+                else:
+                    if con_i.connectorType != type_:
+                        raise RuntimeError(f"For CorePerfModel {corePerfModel_.name}, Connector {con_i.name} is an {type_}-Connecotr for Microaction {uA_.name} and connected to the input of ConnectorModel {con_i.connectorModel.name}")

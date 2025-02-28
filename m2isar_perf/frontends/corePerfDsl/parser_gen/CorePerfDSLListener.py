@@ -323,15 +323,6 @@ class CorePerfDSLListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by CorePerfDSLParser#resource_attr.
-    def enterResource_attr(self, ctx:CorePerfDSLParser.Resource_attrContext):
-        pass
-
-    # Exit a parse tree produced by CorePerfDSLParser#resource_attr.
-    def exitResource_attr(self, ctx:CorePerfDSLParser.Resource_attrContext):
-        pass
-
-
     # Enter a parse tree produced by CorePerfDSLParser#virtual_def.
     def enterVirtual_def(self, ctx:CorePerfDSLParser.Virtual_defContext):
         pass

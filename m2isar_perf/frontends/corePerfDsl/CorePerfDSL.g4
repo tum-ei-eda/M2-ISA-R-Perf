@@ -126,10 +126,7 @@ resource_def : 'Resource' (resource | '{' resource_list '}');
 resource_list : resource (',' resource)*;
 
 resource : name=ID // Resource name
-('[' attribute=resource_attr ']')? // Attributes (optional)
 ('(' (res_model=resourceModel_ref | delay=INT) ')')? ; // Delay specification (optional)
-
-resource_attr : 'capacity' ':' capacity=INT;
 
 //////////////////////////// VIRTUAL ////////////////////////////
 

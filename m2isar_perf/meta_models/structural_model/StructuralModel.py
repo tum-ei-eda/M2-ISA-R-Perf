@@ -426,7 +426,6 @@ class Resource(FrozenBase):
         self.virtualAlias = ""
         self.delay = 0
         self.resourceModel = None
-        self.capacity = 0
 
         super().__init__()
 

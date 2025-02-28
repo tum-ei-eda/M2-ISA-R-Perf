@@ -184,11 +184,6 @@ class CorePerfDSLVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CorePerfDSLParser#resource_attr.
-    def visitResource_attr(self, ctx:CorePerfDSLParser.Resource_attrContext):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by CorePerfDSLParser#virtual_def.
     def visitVirtual_def(self, ctx:CorePerfDSLParser.Virtual_defContext):
         return self.visitChildren(ctx)

@@ -93,15 +93,15 @@ class SchedulingModelViewer:
                         # Connect in-edges
                         for edge_i in node_i.getAllInEdges():
                             if edge_i.isDynamic():
-                                dotGraph.edge(self.__connectorModelIn(edge_i.getConnectorModel().name), self.__scheduleNode(node_i.name), label=edge_i.name)
+                                dotGraph.edge(self.__connectorModelIn(edge_i.getConnectorModel().name), self.__scheduleNode(node_i.name), label=edge_i.name, color='blue')
                             else:
-                                dotGraph.edge(self.__timingVariableIn(edge_i.getTimingVariable().name), self.__scheduleNode(node_i.name), label=("[" + str(edge_i.depth) + "]")) # Implicit "cast" to StaticEdge
+                                dotGraph.edge(self.__timingVariableIn(edge_i.getTimingVariable().name), self.__scheduleNode(node_i.name), label=("[" + str(edge_i.depth) + "]"), color='red') # Implicit "cast" to StaticEdge
                         # Connect out-edges
                         for edge_i in node_i.getAllOutEdges():
                             if edge_i.isDynamic():
-                                dotGraph.edge(self.__scheduleNode(node_i.name), self.__connectorModelOut(edge_i.getConnectorModel().name), label=edge_i.name)
+                                dotGraph.edge(self.__scheduleNode(node_i.name), self.__connectorModelOut(edge_i.getConnectorModel().name), label=edge_i.name, color='blue')
                             else:
-                                dotGraph.edge(self.__scheduleNode(node_i.name), self.__timingVariableOut(edge_i.getTimingVariable().name))
+                                dotGraph.edge(self.__scheduleNode(node_i.name), self.__timingVariableOut(edge_i.getTimingVariable().name), color='red')
                                 
                     #dotGraph.render('graph', format='png', view=True)
 

@@ -143,11 +143,6 @@ class Extractor(CorePerfDSLVisitor):
 
     def visitResource(self, ctx):
         if self.level.isLevel("RESOURCES"):
-            
-            # Check for capacity attribute
-            capacity = 1
-            if ctx.attribute:
-                capacity = int(ctx.attribute.capacity.text)
 
             # Check for delay
             delay = 1
@@ -160,9 +155,9 @@ class Extractor(CorePerfDSLVisitor):
 
             # Add resource
             if dynDelay:
-                self.dictionary.addResource(ctx.name.text, capacity, model_=delay)
+                self.dictionary.addResource(ctx.name.text, model_=delay)
             else:
-                self.dictionary.addResource(ctx.name.text, capacity, delay_=delay)
+                self.dictionary.addResource(ctx.name.text, delay_=delay)
     
     # def visitResource_model(self, ctx):
     #     if self.level.isLevel("RESOURCES"):

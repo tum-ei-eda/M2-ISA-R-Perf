@@ -106,7 +106,7 @@ class Dictionary():
         resModel.traceValues = trVals_
         self.__addInstance(resModel, "ResourceModel")
 
-    def addResource(self, name_, capacity_, delay_=0, model_=None):
+    def addResource(self, name_, delay_=0, model_=None):
         res = StructuralModel.Resource()
         res.name = name_
         if((delay_ != 0) and (model_ != None)):
@@ -114,7 +114,6 @@ class Dictionary():
         else:
             res.delay = delay_
             res.resourceModel = model_
-            res.capacity = capacity_
         self.__addInstance(res, "Resource")
 
     def addVirtualResource(self, virAlias_):

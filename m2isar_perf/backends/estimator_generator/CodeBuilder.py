@@ -14,6 +14,8 @@
 # limitations under the License.
 #
 
+from datetime import datetime
+
 from meta_models.scheduling_model.SchedulingModel import DynamicEdge
 from meta_models.scheduling_model.SchedulingModel import StaticEdge
 from meta_models.scheduling_model.SchedulingModel import Node
@@ -23,6 +25,26 @@ class CodeBuilder:
     def __init__(self, variant_):
         self.variant = variant_
 
+    def getFileHeader(self):
+        retStr = "/*\n"
+        retStr += f"* Copyright {datetime.today().year} Chair of EDA, Technical University of Munich\n"
+        retStr += "*\n"
+        retStr += "* Licensed under the Apache License, Version 2.0 (the \"License\");\n"
+        retStr += "* you may not use this file except in compliance with the License.\n"
+        retStr += "* You may obtain a copy of the License at\n"
+        retStr += "*\n"
+        retStr += "*	 http://www.apache.org/licenses/LICENSE-2.0\n"
+        retStr += "*\n"
+        retStr += "* Unless required by applicable law or agreed to in writing, software\n"
+        retStr += "* distributed under the License is distributed on an \"AS IS\" BASIS,\n"
+        retStr += "* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n"
+        retStr += "* See the License for the specific language governing permissions and\n"
+        retStr += "* limitations under the License.\n"
+        retStr += "*/\n"
+        retStr += "\n"
+        retStr += "/********************* AUTO GENERATE FILE (create by M2-ISA-R-Perf) *********************/\n"
+        return retStr
+         
     def getHeaderGuardPrefix(self):
         return ("SWEVAL_BACKENDS_" + self.variant.name.upper())
 
@@ -31,6 +53,11 @@ class CodeBuilder:
         fileName = link_.split('/').pop()
         return fileName.split('.h')[0]
 
+    def getTimingVariableCnt(self, tVar_):
+        if tVar_.hasMultiElements():
+            return tVar_.name + ".get(1)" # TODO: Check if this matches the final definition of the get function
+        return tVar_.name
+    
     def getNodeStr(self, node_):
         return ("n_" + node_.name)
 
@@ -46,14 +73,24 @@ class CodeBuilder:
         if isinstance(element_, Node):
             return self.getNodeStr(element_)
         elif isinstance(element_, StaticEdge):
-            return ("perfModel->" + element_.getTimingVariable().name + ".get()") # TODO: Adjust for get-call to timing variable with depth
+            tVar = element_.getTimingVariable()
+            if tVar.hasMultiElements():
+                return(f"perfModel->{tVar.name}.get({element_.depth})")
+            else:
+                return(f"perfModel->{tVar.name}")
+            #return ("perfModel->" + element_.getTimingVariable().name + ".get()") # TODO: Adjust for get-call to timing variable with depth
         elif isinstance(element_, DynamicEdge):
             return ("perfModel->" + element_.getConnectorModel().name + ".get" + element_.name + "()")
         raise RuntimeError(f"Provided element ({element_}) cannot be identified")
 
     def getOutEdgeStr(self, edge_, node_):
         if isinstance(edge_, StaticEdge):
-            return ("perfModel->" + edge_.getTimingVariable().name + ".set(" + self.getNodeStr(node_) + ")")
+            tVar = edge_.getTimingVariable()
+            if tVar.hasMultiElements():
+                return (f"perfModel->{tVar.name}.set({self.getNodeStr(node_)})")
+            else:
+                return(f"perfModel->{tVar.name} = {self.getNodeStr(node_)}")
+            #return ("perfModel->" + edge_.getTimingVariable().name + ".set(" + self.getNodeStr(node_) + ")")
         elif isinstance(edge_, DynamicEdge):
             return ("perfModel->" + edge_.getConnectorModel().name + ".set" + edge_.name + "(" + self.getNodeStr(node_) + ")")
         raise RuntimeError(f"Provided edge ({edge_}) cannot be identified")

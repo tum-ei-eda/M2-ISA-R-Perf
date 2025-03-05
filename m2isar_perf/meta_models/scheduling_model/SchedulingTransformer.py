@@ -39,7 +39,6 @@ class SchedulingTransformer:
 
     def __generateResourceModels(self, structVariant_, schedVariant_):
         for resM_i in structVariant_.getAllResourceModels():
-            print(resM_i)
             resModel = schedVariant_.createResourceModel(resM_i.name, resM_i.link)
             resModel.addTraceValues([t.name for t in resM_i.getTraceValues()])
 
@@ -50,7 +49,7 @@ class SchedulingTransformer:
 
     def __generateTimingVariables(self, structVariant_, schedVariant_):
         for st_i in structVariant_.getAllStages():            
-            schedVariant_.createTimingVariable(st_i.name, st_i.capacity)
+            schedVariant_.createTimingVariable(st_i.name, st_i.capacity, st_i.isPrimaryStage())
 
         # TODO: Check what makes sense here
         #lastStageName = structVariant_.getPipeline().getLastStage().name

@@ -28,6 +28,7 @@ from frontends.corePerfDsl import api as Frontend # TODO: Change from API to Cla
 from meta_models.scheduling_model.SchedulingTransformer import SchedulingTransformer
 
 from backends.monitor_extractor import api as backend_monitor_extractor # TODO: Change from API to Class format 
+from backends.structure_viewer.StructuralModelViewer import StructuralModelViewer
 from backends.schedule_viewer.SchedulingModelViewer import SchedulingModelViewer
 from backends.estimator_generator.EstimatorGenerator import EstimatorGenerator
 
@@ -62,12 +63,12 @@ if args.monitor_description:
 if args.code_gen:
     print("WARNING: Code-generator backend currently disabled!")
     
-    # EstimatorGenerator().execute(schedModel, outDir)
+    EstimatorGenerator().execute(schedModel, outDir)
     # #generator = EstimatorGenerator()
     # #generator.execute(schedModel, outDir)
 if args.info_print :
-    print("WARNING: SchedulingViewer backend currently disabled!")
+    print("WARNING: StructuralViewer backend currently disabled!")
+
+    #StructuralModelViewer().execute(structModel, outDir)
     
     SchedulingModelViewer().execute(schedModel, outDir)
-    #viewer = SchedulingViewer()
-    #viewer.execute(schedModel, outDir)

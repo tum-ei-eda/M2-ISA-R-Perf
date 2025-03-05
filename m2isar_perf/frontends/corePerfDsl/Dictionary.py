@@ -179,33 +179,6 @@ class Dictionary():
 
         self.__addInstance(uAction, "Microaction")
         
-    #def addMicroaction(self, name_, refs_):
-    #    uAction = StructuralModel.Microaction()
-    #    uAction.name = name_
-    #    
-    #    # Evaluate references (inCon -> Res -> outCon)
-    #    if(len(refs_)>0 and len(refs_)<4):
-    #        nextType = "inCon_or_res"
-    #        for ref in refs_:
-    #            # Input connector
-    #            if((type(ref) is StructuralModel.Connector) and nextType == "inCon_or_res"):
-    #                uAction.inConnector = ref
-    #                nextType = "res"
-    #            # Resource
-    #            elif((type(ref) is StructuralModel.Resource) and (nextType == "inCon_or_res" or nextType == "res")):
-    #                uAction.resource = ref
-    #                nextType = "outCon"
-    #            # Output connector
-    #            elif((type(ref) is StructuralModel.Connector) and nextType == "outCon"):
-    #                uAction.outConnector = ref
-    #                nextType = "none"
-    #            else:
-    #                print("ERROR: Unexpected reference %s in definition of %s" %(ref.name, name_))
-    #    else:
-    #        raise TypeError("Function addMicroaction for %s called with illegal number of references (%d)" %(name_, len(refs_)))
-    #
-    #    self.__addInstance(uAction, "Microaction")
-
     def addVirtualMicroaction(self, virAlias_):
         vuAction = StructuralModel.Microaction()
         vuAction.virtualAlias = virAlias_

@@ -43,7 +43,6 @@ class Variant(FrozenBase):
         # Owned instances
         self.schedulingFunctions:List[SchedulingFunction] = []
         self.timingVariables:Dict[TimingVariable] = {}
-        self.timingVariableAliases:Dict[TimingVariable] = {}
         self.resourceModels:Dict[str,ResourceModel] = {}
         self.connectorModels:Dict[ConnectorModel] = {}
 
@@ -63,23 +62,12 @@ class Variant(FrozenBase):
         self.connectorModels[name_] = model
         return model
         
-    def createTimingVariable(self, name_:str, depth_:int=1) -> 'TimingVariable':
+    def createTimingVariable(self, name_:str, numElements_:int=1, traced_:bool=False) -> 'TimingVariable':
         if name_ in self.timingVariables:
             raise RuntimeError(f"TimingVaribale {name_} was already created")
-        var = TimingVariable(name_, depth_)
+        var = TimingVariable(name_, numElements_, traced_)
         self.timingVariables[name_] = var
         return var
-
-    # TODO: No longer requried. Get rid of aliases
-    def createTimingVariableAlias(self, name_:str, target_:str) -> 'TimingVariable':
-        if name_ in self.timingVariables:
-            raise RuntimeError(f"Cannot create TimingVaribale alias {name_}. TimingVaribale with this name already exists.")
-        elif name_ in self.timingVariableAliases:
-            raise RuntimeError(f"Cannot create TimingVaribale alias {name_}. TimingVaribale alias with this already exists.")
-        elif target_ not in self.timingVariables:
-            raise RuntimeError(f"Cannot create TimingVaribale alias {name_}. TimingVaribale with name {var_.name} does not exist.")
-        self.timingVariableAliases[name_] = self.getTimingVariable(target_)
-        return self.timingVariableAliases[name_]
         
     def createSchedulingFunction(self, name_:str, id_:int) -> 'SchedulingFunction':
         func = SchedulingFunction(name_, id_, self)
@@ -120,6 +108,27 @@ class Variant(FrozenBase):
     def getAllTimingVariables(self) -> List['TimingVariables']:
         return list(self.timingVariables.values())
 
+    def getAllMultiElementTimingVariables(self) -> List['TimingVariables']:
+        ret = []
+        for tVar_i in self.timingVariables.values():
+            if tVar_i.hasMultiElements():
+                ret.append(tVar_i)
+        return ret
+
+    def getAllSingleElementTimingVariables(self) -> List['TimingVariables']:
+        ret = []
+        for tVar_i in self.timingVariables.values():
+            if not tVar_i.hasMultiElements():
+                ret.append(tVar_i)
+        return ret
+
+    def getAllTracedTimingVariables(self) -> List['TimingVariables']:
+        ret = []
+        for tVar_i in self.getAllTimingVariables():
+            if tVar_i.isTraced():
+                ret.append(tVar_i)
+        return ret
+    
     def getAllSchedulingFunctions(self) -> List['SchedulingFunction']:
         return self.schedulingFunctions
     
@@ -163,14 +172,27 @@ class SchedulingFunction(FrozenBase):
 
 class TimingVariable(FrozenBase):
 
-    def __init__(self, name_:str, depth_:int=1):
+    def __init__(self, name_:str, numElements_:int=1, traced_:bool=False):
         self.name = name_
-        self.depth = depth_
+        self.numElements = numElements_
+        self.traced = traced_ # Observable in timing trace
+        
+        # TODO: Are these members still required somewhere?
         self.lastStage = False # TODO: How to handle this for V-form pipelines? Replace by isEndStage?
         self.isEndStage = False
         
         super().__init__()
 
+    def hasMultiElements(self) -> bool:
+        return (self.numElements > 1)
+
+    def getNumElements(self) -> int:
+        return self.numElements
+
+    def isTraced(self) -> bool:
+        return self.traced
+    
+    # TODO: Is this still required somewhere?
     def setEndStage(self):
         self.isEndStage = True
 
@@ -252,38 +274,62 @@ class Node(FrozenBase):
         self.outNodes.append(node_)
         node_.addInNode(self)
 
+    def disconnectNode(self, node_:Optional['Node']):
+        self.outNodes.remove(node_)
+        node_.removeInNode(self)
+        
     def mergeNode(self, node_:Optional['Node']):
 
+        # Check if merge is legal
         if self.parentSchedulingFunction is not node_.parentSchedulingFunction:
             raise RuntimeError(f"Trying to merge two nodes ({self.name, node_.name}) belonging to different SchedulingFunctions.")
         if self.parentVariant is not node_.parentVariant:
             raise RuntimeError(f"Trying to merge two nodes ({self.name, node_.name}) belonging to different Variants.")
-        
-        self.inNodes.extend(node_.getAllInNodes())
-        self.outNodes.extend(node_.getAllOutNodes())
+
+        # Connect merging node (self) to in- and out-nodes of merged node (node_)
+        # Ignore if in- or out-node is merging node (self)
+        for in_i in node_.getAllInNodes():
+            if not in_i is self:
+                in_i.connectNode(self)
+        for out_i in node_.getAllOutNodes():
+            if not out_i is self:
+                self.connectNode(out_i)
+
+        # Copy in- and out-edges from merged node (node_)
         self.inEdges.extend(node_.getAllInEdges())
         self.outEdges.extend(node_.getAllOutEdges())
-
+            
+        # Copy resourceModel or delay from merged node ()
         if (self.resourceModel is not None) and (node_.resourceModel is not None):
             raise RuntimeError(f"Trying to merge two nodes ({self.name, node_.name}) with own ResourceModels. Unspecified behavior.")
         elif node_.resourceModel is not None:
             self.resourceModel = node_.resourceModel
-            self
 
         if (self.delay != 0) and (node_.delay != 0):
             raise RuntimeError(f"Trying to merge two nodes ({self.name, node_.name}) with own static delays. Unspecified behavior.")
         elif node_.delay != 0:
             self.delay = node_.delay
 
+        # Delete merged node (node_)
         node_.delete()
             
     def delete(self):
+        # Disconnect all in- and out-nodes
+        for in_i in self.getAllInNodes():
+            in_i.disconnectNode(self)
+        for out_i in self.getAllOutNodes():
+            self.disconnectNode(out_i)
+
+        # Remove from parent SchedFunc, and delete object
         self.parentSchedulingFunction.deleteNode(self)
         del self
             
     def addInNode(self, node_:Optional['Node']):
         self.inNodes.append(node_)
 
+    def removeInNode(self, node_:Optional['Node']):
+        self.inNodes.remove(node_)
+        
     def getAllInNodes(self) -> List['Node']:
         return self.inNodes
 
@@ -330,8 +376,8 @@ class Node(FrozenBase):
     def __createStaticEdge(self, variable_:str, depth_:int=1) -> 'StaticEdge':
         edge = StaticEdge(depth_)
         tVar = self.parentVariant.getTimingVariable(variable_)
-        if depth_ > tVar.depth:
-            raise RuntimeError(f"Depth ({depth_}) of StaticEdge to TimingVariable {variable_} exceeds depth of that TimingVariable ({tVar.depth})")
+        if depth_ > tVar.numElements:
+            raise RuntimeError(f"Depth ({depth_}) of StaticEdge to TimingVariable {variable_} exceeds depth of that TimingVariable ({tVar.numElements})")
         edge.setTimingVariable(tVar)
         return edge
         

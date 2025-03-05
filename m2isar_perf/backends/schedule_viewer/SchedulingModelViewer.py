@@ -53,7 +53,7 @@ class SchedulingModelViewer:
                         top.attr(rank='min')
                         tVar_prev = None
                         for tvariable_i in variant_i.getAllTimingVariables():
-                            top.node(self.__timingVariableIn(tvariable_i.name), label=(tvariable_i.name + " [" + str(tvariable_i.depth) + "]"), shape='box')
+                            top.node(self.__timingVariableIn(tvariable_i.name), label=(tvariable_i.name + " [" + str(tvariable_i.numElements) + "]"), shape='box')
                             # Enforce representation of tVar nodes in order?
                             if tVar_prev is not None:
                                 top.edge(self.__timingVariableIn(tVar_prev.name), self.__timingVariableIn(tvariable_i.name), style='invis') 

@@ -55,7 +55,7 @@ class EstimatorGenerator:
             f.write(code_header)
 
         template_src = Template(filename = str(self.templateDir) + "/src/PerformanceModel.mako")
-        code_src = template_src.render(**{"variant_": variant_})
+        code_src = template_src.render(**{"variant_": variant_, "builder_": self.builder})
         outFile_src = outDir_ / "src" / (variant_.name + "_PerformanceModel.cpp")
         with outFile_src.open('w') as f:
             f.write(code_src)
@@ -71,7 +71,7 @@ class EstimatorGenerator:
 
         # Generate SchedulingFunction file
         template = Template(filename = str(self.templateDir) + "/src/SchedulingFunction.mako")
-        code = template.render(**{"variant_": variant_, "codeBodyDict_": codeBodyDict})
+        code = template.render(**{"variant_": variant_, "codeBodyDict_": codeBodyDict, "builder_": self.builder})
         outFile = outDir_ / "src" / (variant_.name + "_SchedulingFunction.cpp")
         with outFile.open('w') as f:
             f.write(code)
@@ -81,7 +81,7 @@ class EstimatorGenerator:
         Iterate through scheduling function nodes breadth-first.
 
         Every node is only visited once.
-        Function func_ is executed for each node (input arguments: node_ (type Node) and inputDict_ (Dictionary containing inputs expected by function))
+        Function func_ is executed for each node (input arguments: node_ (type Node) and inputDict_ (Dictionary containing inputs expected by function func_))
         """
 
         visitedNodes = []

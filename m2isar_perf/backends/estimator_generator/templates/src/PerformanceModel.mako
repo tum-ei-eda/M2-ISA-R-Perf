@@ -1,20 +1,4 @@
-/*
- * Copyright 2024 Chair of EDA, Technical University of Munich
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *	 http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-/********************* AUTO GENERATE FILE (create by M2-ISA-R-Perf) *********************/
+${builder_.getFileHeader()}
 
 #include "${variant_.name}_PerformanceModel.h"
 
@@ -56,14 +40,13 @@ void ${variant_.name}_PerformanceModel::connectChannel(Channel* channel_)
 
 uint64_t ${variant_.name}_PerformanceModel::getCycleCount(void)
 {
-  return std::max({\
-  <% firstIt = True %>\
+  <% firstIt = True %>
+  return std::max({
   %for var_i in variant_.getAllTimingVariables():
   %if firstIt:
-  ${var_i.name}.get()\
-  <% firstIt = False %>\
+    ${builder_.getTimingVariableCnt(var_i)} <% firstIt = False %>
   %else:
-  , ${var_i.name}.get()\
+    ,${builder_.getTimingVariableCnt(var_i)}
   %endif
   %endfor
   });
@@ -73,11 +56,11 @@ std::string ${variant_.name}_PerformanceModel::getPipelineStream(void)
 {
   std::stringstream ret_strs;
   <% firstIt = True%>
-  %for var_i in variant_.getAllTimingVariables():
+  %for var_i in variant_.getAllTracedTimingVariables():
   %if firstIt:
-  ret_strs << ${var_i.name}.get(); <% firstIt = False%>
+  ret_strs << ${builder_.getTimingVariableCnt(var_i)}; <% firstIt = False%>
   %else:
-  ret_strs << "," << ${var_i.name}.get();
+  ret_strs << "," << ${builder_.getTimingVariableCnt(var_i)};
   %endif
   %endfor
   ret_strs << std::endl;
@@ -88,7 +71,7 @@ std::string ${variant_.name}_PerformanceModel::getPrintHeader(void)
 {
   std::stringstream ret_strs;
   <% firstIt = True %>
-  %for var_i in variant_.getAllTimingVariables():
+  %for var_i in variant_.getAllTracedTimingVariables():
   %if firstIt:
   ret_strs << "${var_i.name}"; <% firstIt = False %>
   %else:

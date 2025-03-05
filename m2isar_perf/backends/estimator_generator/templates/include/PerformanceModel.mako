@@ -1,20 +1,4 @@
-/*
- * Copyright 2024 Chair of EDA, Technical University of Munich
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *	 http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-/********************* AUTO GENERATE FILE (create by M2-ISA-R-Perf) *********************/
+${builder_.getFileHeader()}
 
 #ifndef ${builder_.getHeaderGuardPrefix()}_PERFORMANCE_MODEL_H
 #define ${builder_.getHeaderGuardPrefix()}_PERFORMANCE_MODEL_H
@@ -42,8 +26,8 @@ class ${variant_.name}_PerformanceModel : public PerformanceModel
 public:
 
   ${variant_.name}_PerformanceModel() : PerformanceModel("${variant_.name}", ${variant_.name}_SchedulingFunctionSet)
-    % for tVar_i in variant_.getAllTimingVariables():
-    ,${tVar_i.name}("${tVar_i.name}")
+    % for tVar_i in variant_.getAllMultiElementTimingVariables():
+    ,${tVar_i.name}(${tVar_i.getNumElements()},0)
     %endfor
     % for resM_i in variant_.getAllResourceModels():
     ,${resM_i.name}(this)
@@ -52,15 +36,31 @@ public:
     ,${conM_i.name}(this)
     %endfor
   {};
-  
-  %for tVar_i in variant_.getAllTimingVariables():
-  TimingVariable ${tVar_i.name};
+
+  %if variant_.getAllSingleElementTimingVariables():
+  // Single-Element Timing Variables
+  %endif
+  %for tVar_i in variant_.getAllSingleElementTimingVariables():
+  uint64_t ${tVar_i.name} = 0;
+  %endfor
+
+  %if variant_.getAllMultiElementTimingVariables():
+  // Multi-Element Timing Variables
+  %endif
+  %for tVar_i in variant_.getAllMultiElementTimingVariables():
+  MultiElementTimingVariable ${tVar_i.name};
   %endfor	 
 
+  %if variant_.getAllResourceModels():
+  // External Resource Models
+  %endif
   %for resM_i in variant_.getAllResourceModels():
   ${builder_.getModelType(resM_i.link)} ${resM_i.name};
   %endfor
 
+  %if variant_.getAllConnectorModels():
+  // External Connector Models
+  %endif
   %for conM_i in variant_.getAllConnectorModels():
   ${builder_.getModelType(conM_i.link)} ${conM_i.name};
   %endfor

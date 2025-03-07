@@ -62,7 +62,8 @@ class Dictionary():
         self.variants = {}
         self.resourceModels = {}
         self.connectorModels = {}
-
+        self.models = {}
+        
         self.instructions = {}
         self.instructionsGroups = {}
 
@@ -91,21 +92,42 @@ class Dictionary():
         self.__addInstance(trVal, "TraceValue")
         
     def addConnectorModel(self, name_, link_, inCons_, outCons_, trVals_):
-        conModel = StructuralModel.ConnectorModel()
-        conModel.name = name_
-        conModel.link = self.__convertString(link_)
-        conModel.inConnectors = inCons_
-        conModel.outConnectors = outCons_
-        conModel.traceValues = trVals_
-        self.__addInstance(conModel, "ConnectorModel")
-
+        #conModel = StructuralModel.ConnectorModel()
+        #conModel.name = name_
+        #conModel.link = self.__convertString(link_)
+        #conModel.inConnectors = inCons_
+        #conModel.outConnectors = outCons_
+        #conModel.traceValues = trVals_
+        #self.__addInstance(conModel, "ConnectorModel")
+        model = StructuralModel.Model()
+        model.name = name_
+        model.link = self.__convertString(link_)
+        model.traceValues = trVals_
+        model.inConnectors = inCons_
+        model.outConnectors = outCons_
+        self.__addInstance(model, "Model")
+        
     def addResourceModel(self, name_, link_, trVals_):
-        resModel = StructuralModel.ResourceModel()
-        resModel.name = name_
-        resModel.link = self.__convertString(link_)
-        resModel.traceValues = trVals_
-        self.__addInstance(resModel, "ResourceModel")
-
+        #resModel = StructuralModel.ResourceModel()
+        #resModel.name = name_
+        #resModel.link = self.__convertString(link_)
+        #resModel.traceValues = trVals_
+        #self.__addInstance(resModel, "ResourceModel")
+        model = StructuralModel.Model()
+        model.name = name_
+        model.link = self.__convertString(link_)
+        model.traceValues = trVals_
+        self.__addInstance(model, "Model")
+        
+    def addModel(self, name_, link_, trVals_=[], inCons_=[], outCons_=[]):
+        model = StructuralModel.Model()
+        model.name = name_
+        model.link = self.__convertString(link_)
+        model.traceValues = trVals_
+        model.inConnectors = inCons_
+        model.outConnectors = outCons_
+        self.__addInstance(model, "Model")
+        
     def addResource(self, name_, delay_=0, model_=None):
         res = StructuralModel.Resource()
         res.name = name_
@@ -205,7 +227,8 @@ class Dictionary():
         variant.name = name_
         variant.pipeline = pipe_
         variant.core = self.__convertString(core_)
-        variant.connectorModels = conModels_
+        for model_i in conModels_:
+            variant.addConnectorModel(model_i)
         self.__addInstance(variant, "Variant")
         
         self.resourceAssignments[name_] = resAssigns_
@@ -294,6 +317,8 @@ class Dictionary():
             return self.connectorModels
         elif(type_ == "ResourceModel"):
             return self.resourceModels
+        elif(type_ == "Model"):
+            return self.models
         elif(type_ == "Resource"):
             return self.resources
         elif(type_ == "Microaction"):

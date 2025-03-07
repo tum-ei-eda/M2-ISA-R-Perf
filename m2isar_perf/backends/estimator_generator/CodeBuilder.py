@@ -48,14 +48,17 @@ class CodeBuilder:
     def getHeaderGuardPrefix(self):
         return ("SWEVAL_BACKENDS_" + self.variant.name.upper())
 
-    def getModelType(self, link_):
-        # Assumption: Model type has same name as header-file. E.g.: link:"models/Register.h" -> type:Register
-        fileName = link_.split('/').pop()
-        return fileName.split('.h')[0]
+    def getModelClassName(self, model_):
+        # 1. Assumption: Model class has same name as header-file. E.g.: link:"models/common/Register.h" -> class:Register
+        # 2. Assumption: Namespace of model class identical to dir containing header-file. E.g.: link:"models/common/Register.h" -> namespace:common
+        linkSplit = model_.link.split('/')
+        className = linkSplit.pop().split('.h')[0]
+        namespace = linkSplit.pop()
+        return (f"{namespace}::{className}")
 
     def getTimingVariableCnt(self, tVar_):
         if tVar_.hasMultiElements():
-            return tVar_.name + ".get(1)" # TODO: Check if this matches the final definition of the get function
+            return tVar_.name + ".get(1)"
         return tVar_.name
     
     def getNodeStr(self, node_):
@@ -78,7 +81,6 @@ class CodeBuilder:
                 return(f"perfModel->{tVar.name}.get({element_.depth})")
             else:
                 return(f"perfModel->{tVar.name}")
-            #return ("perfModel->" + element_.getTimingVariable().name + ".get()") # TODO: Adjust for get-call to timing variable with depth
         elif isinstance(element_, DynamicEdge):
             return ("perfModel->" + element_.getConnectorModel().name + ".get" + element_.name + "()")
         raise RuntimeError(f"Provided element ({element_}) cannot be identified")
@@ -90,7 +92,6 @@ class CodeBuilder:
                 return (f"perfModel->{tVar.name}.set({self.getNodeStr(node_)})")
             else:
                 return(f"perfModel->{tVar.name} = {self.getNodeStr(node_)}")
-            #return ("perfModel->" + edge_.getTimingVariable().name + ".set(" + self.getNodeStr(node_) + ")")
         elif isinstance(edge_, DynamicEdge):
             return ("perfModel->" + edge_.getConnectorModel().name + ".set" + edge_.name + "(" + self.getNodeStr(node_) + ")")
         raise RuntimeError(f"Provided edge ({edge_}) cannot be identified")

@@ -11,11 +11,8 @@ ${builder_.getFileHeader()}
 
 #include "${variant_.name}_Channel.h"
 
-% for resM_i in variant_.getAllResourceModels():
-#include "${resM_i.link}"
-%endfor
-% for conM_i in variant_.getAllConnectorModels():
-#include "${conM_i.link}"
+% for model_i in variant_.getAllExternalModels():
+#include "${model_i.link}"
 %endfor
 
 namespace ${variant_.name}{
@@ -24,15 +21,9 @@ void ${variant_.name}_PerformanceModel::connectChannel(Channel* channel_)
 {
   ${variant_.name}_Channel* channel = static_cast<${variant_.name}_Channel*>(channel_);
 
-  % for resM_i in variant_.getAllResourceModels():
-  % for trVal_i in resM_i.getAllTraceValues():
-  ${resM_i.name}.${trVal_i}_ptr = channel->${trVal_i};
-  %endfor
-
-  %endfor
-  % for conM_i in variant_.getAllConnectorModels():
-  % for trVal_i in conM_i.getAllTraceValues():
-  ${conM_i.name}.${trVal_i}_ptr = channel->${trVal_i};
+  % for model_i in variant_.getAllExternalModels():
+  % for trVal_i in model_i.getAllTraceValues():
+  ${model_i.name}.${trVal_i}_ptr = channel->${trVal_i};
   %endfor
 
   %endfor

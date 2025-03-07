@@ -28,9 +28,6 @@ class Builder():
     def buildTopModel(self):
 
         top = StructuralModel.StructuralModel()
-
-        # Establish connections between stages and pipelines (parents, blocking)
-        
         
         # Assign microactions and trace-value-assignments which are defined via the ALL and REST keywords
         instrId = 0
@@ -79,31 +76,30 @@ class Builder():
             # Check that all virtual components of CorePerfModel have been resolved and link resource models to corePerfModel
             for uA in variant.getAllMicroactions():
                 if uA.name == "":
-                    print("ERROR: Variant %s does not assign a microaction to virtual microaction %s" % (variant.name, uA.virtualAlias)) # TODO: Add proper error handling
+                    raise RuntimeError(f"Variant {variant.name} does not assign a microaction to virtual microaction {uA.virtualAlias}")
                 else:
                     for res_i in uA.getResources():
                         if res_i.name == "":
                             raise RuntimeError(f"Variant {variant.name} does not assign a resource to virtual resource {res.virtualAlias}")
-                        else:
-                            if (resModel:=res_i.resourceModel) is not None:
-                                variant.resourceModels.append(resModel)
-            
-            # Establish link from Connectors to ConnectorModel & set connector type
-            #   (Remember: Connector type is set seen from perspective of microaction.
-            #    I.e. a connector connected to input of connectorModel is of type CON_TYPE_OUT,
-            #    and vice versa)
-            for conModel in variant.connectorModels:
-                for inCon in conModel.inConnectors:
-                    inCon.connectorModel = conModel
-                    self.__setConnectorType(inCon, Defs.CON_TYPE_OUT, conModel, variant)
-                for outCon in conModel.outConnectors:
-                    outCon.connectorModel = conModel
-                    self.__setConnectorType(outCon, Defs.CON_TYPE_IN, conModel, variant)
-
-            # Check that there are no connectors without a connector model & that connector type matches microaction
+                        
+            # Link required models used as resource models to variant
             for uA in variant.getAllMicroactions():
-                self.__checkConnector(uA.getInConnectors(), Defs.CON_TYPE_IN, uA, variant)
-                self.__checkConnector(uA.getOutConnectors(), Defs.CON_TYPE_OUT, uA, variant)
+                for res_i in uA.getResources():
+                    if (resModel:=res_i.resourceModel) is not None:
+                        variant.addResourceModel(resModel)
+
+            # Establish link from Connectors to (Connector)Models 
+            # Check that (Connector)Model out-connectors are unique (i.e. no connector "driven" by more than one external model)
+            outConnectors = []
+            for conModel_i in variant.getAllConnectorModels():
+                for con_i in conModel_i.getInConnectors():
+                    con_i.connectorModel = conModel_i
+                for con_i in conModel_i.getOutConnectors():
+                    if con_i in outConnectors:
+                        raise RuntimeError(f"Connector {outCon_i.name} set by more than one (Connector)Model.")
+                    else:
+                        con_i.connectorModel = conModel_i
+                        outConnectors.append(con_i)
 
             # Establish link between stages and pipelines (parent components, blocking pipelines)
             variant.resolvePipelineStructure()

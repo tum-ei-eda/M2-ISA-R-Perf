@@ -30,33 +30,41 @@ class SchedulingTransformer:
 
             variant = schedulingModel.createVariant(var_i.name)
 
-            self.__generateResourceModels(var_i, variant)
-            self.__generateConnectorModels(var_i, variant)
+            self.__generateExternalModels(var_i, variant)
+            
+            #self.__generateResourceModels(var_i, variant)
+            #self.__generateConnectorModels(var_i, variant)
+
             self.__generateTimingVariables(var_i, variant)
             self.__generateSchedulingFunction(var_i, variant)
             
         return schedulingModel
 
-    def __generateResourceModels(self, structVariant_, schedVariant_):
-        for resM_i in structVariant_.getAllResourceModels():
-            resModel = schedVariant_.createResourceModel(resM_i.name, resM_i.link)
-            resModel.addTraceValues([t.name for t in resM_i.getTraceValues()])
-
-    def __generateConnectorModels(self, structVariant_, schedVariant_):
-        for conM_i in structVariant_.getAllConnectorModels():
-            conModel = schedVariant_.createConnectorModel(conM_i.name, conM_i.link)
-            conModel.addTraceValues([t.name for t in conM_i.getTraceValues()])
+    def __generateExternalModels(self, structVariant_, schedVariant_):
+        for model_i in structVariant_.getAllModels():
+            extModel = schedVariant_.createExternalModel(model_i.name, model_i.link, model_i.isConnectorModel, model_i.isResourceModel)
+            extModel.addTraceValues([t.name for t in model_i.getTraceValues()])
+    
+    #def __generateResourceModels(self, structVariant_, schedVariant_):
+    #    for resM_i in structVariant_.getAllResourceModels():
+    #        resModel = schedVariant_.createResourceModel(resM_i.name, resM_i.link)
+    #        resModel.addTraceValues([t.name for t in resM_i.getTraceValues()])
+    #
+    #def __generateConnectorModels(self, structVariant_, schedVariant_):
+    #    for conM_i in structVariant_.getAllConnectorModels():
+    #        conModel = schedVariant_.createConnectorModel(conM_i.name, conM_i.link)
+    #        conModel.addTraceValues([t.name for t in conM_i.getTraceValues()])
 
     def __generateTimingVariables(self, structVariant_, schedVariant_):
         for st_i in structVariant_.getAllStages():            
             schedVariant_.createTimingVariable(st_i.name, st_i.capacity, st_i.isPrimaryStage())
 
-        # TODO: Check what makes sense here
-        #lastStageName = structVariant_.getPipeline().getLastStage().name
-        #schedVariant_.getTimingVariable(lastStageName).setLastStage()
-        endStages = [x.name for x in structVariant_.getPipeline().getLastStages()]
-        for st_i in endStages:
-            schedVariant_.getTimingVariable(st_i).setEndStage()
+        ## TODO: Check what makes sense here
+        ##lastStageName = structVariant_.getPipeline().getLastStage().name
+        ##schedVariant_.getTimingVariable(lastStageName).setLastStage()
+        #endStages = [x.name for x in structVariant_.getPipeline().getLastStages()]
+        #for st_i in endStages:
+        #    schedVariant_.getTimingVariable(st_i).setEndStage()
         
     def __generateSchedulingFunction(self, structVariant_, schedVariant_):
 

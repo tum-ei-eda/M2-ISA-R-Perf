@@ -123,7 +123,7 @@ class Extractor(CorePerfDSLVisitor):
             if ctx.link is not None:
                 self.dictionary.addConnectorModel(ctx.name.text, ctx.link.text, inConRefs, outConRefs, trRefs)
             else:
-                print("ERROR: ConnectorModel %s defined without a link" % ctx.name.text) # TODO: Add error handling
+                print(f"ERROR [Line {ctx.start.line}]: ConnectorModel {ctx.name.text} defined without a link")
  
     def visitResourceModel(self, ctx):
         if self.level.isLevel("MODELS_AND_TRACE_VALUE_MAPPING"):
@@ -131,8 +131,18 @@ class Extractor(CorePerfDSLVisitor):
             if ctx.link is not None:
                 self.dictionary.addResourceModel(ctx.name.text, ctx.link.text, trRefs)
             else:
-                print("ERROR: ResourceModel %s defined without a link" % ctx.name.text) # TODO: Add error handling
+                print(f"ERROR [Line {ctx.start.line}]: ResourceModel {ctx.name.text} defined without a link")
 
+    def visitModel(self, ctx):
+        if self.level.isLevel("MODELS_AND_TRACE_VALUE_MAPPING"):
+            trRefs = [self.visit(tr) for tr in ctx.traceVals]
+            inConRefs = [self.visit(inCon) for inCon in ctx.inCons]
+            outConRefs = [self.visit(outCon) for outCon in ctx.outCons]
+            if ctx.link is not None:
+                self.dictionary.addModel(ctx.name.text, ctx.link.text, trRefs, inConRefs, outConRefs)
+            else:
+                print(f"ERROR [Line {ctx.start.line}]: Model {ctx.name.text} defined without a link")
+                
     def visitTraceValueMapping(self, ctx):
         if self.level.isLevel("MODELS_AND_TRACE_VALUE_MAPPING"):
             instrOrGroup = self.visit(ctx.instr)
@@ -159,19 +169,6 @@ class Extractor(CorePerfDSLVisitor):
             else:
                 self.dictionary.addResource(ctx.name.text, delay_=delay)
     
-    # def visitResource_model(self, ctx):
-    #     if self.level.isLevel("RESOURCES"):
-    #         modelRef = self.visit(ctx.res_model)
-    #         self.dictionary.addResource(ctx.name.text, model_=modelRef)
-    # 
-    # def visitResource_delay(self, ctx):
-    #     if self.level.isLevel("RESOURCES"):
-    #         self.dictionary.addResource(ctx.name.text, delay_=ctx.delay.text)
-    #          
-    # def visitResource_default(self, ctx):
-    #     if self.level.isLevel("RESOURCES"):
-    #         self.dictionary.addResource(ctx.name.text, delay_=1)
-
     # Level:MICROACTIONS definitions
 
     def visitMicroaction(self, ctx):
@@ -261,12 +258,6 @@ class Extractor(CorePerfDSLVisitor):
             resAssigns = [self.visit(resAss) for resAss in ctx.resAssigns]
             uActionAssigns = [self.visit(uAAss) for uAAss in ctx.uActionAssigns]
             
-            #if ctx.use_pipeline is None:
-            #    print("ERROR: CorePerfModel %s does not specify a pipeline" % ctx.name.text)
-            #else:
-            #    pipeRef = self.visit(ctx.use_pipeline)
-            #    self.dictionary.addCorePerfModel(ctx.name.text, pipeRef, conModelRefs, resAssigns, uActionAssigns)
-
             # Check that required arguments are present
             if ctx.use_pipeline is None:
                 raise RuntimeError(f"CorePerfModel {ctx.name.text} does not specify a pipeline [Line: {ctx.start.line}]") # TODO: Unify error handling
@@ -315,11 +306,14 @@ class Extractor(CorePerfDSLVisitor):
     def visitResourceModel_ref(self, ctx):
         return self.__resolveReference(ctx.name.text, "ResourceModel", ctx.start.line)
 
-    def visitConnectorModel_ref(self, ctx):
-        return self.__resolveReference(ctx.name.text, "ConnectorModel", ctx.start.line)
-    
-    def visitResource_ref(self, ctx):
-        return self.__resolveReference(ctx.name.text, "Resource", ctx.start.line)
+    #def visitConnectorModel_ref(self, ctx):
+    #    return self.__resolveReference(ctx.name.text, "ConnectorModel", ctx.start.line)
+    #
+    #def visitResource_ref(self, ctx):
+    #    return self.__resolveReference(ctx.name.text, "Resource", ctx.start.line)
+
+    def visitModel_ref(self, ctx):
+        return self.__resolveReference(ctx.name.text, "Model", ctx.start.line)
     
     def visitResourceOrConnector_ref(self, ctx):
         ref = self.dictionary.getInstance(ctx.name.text, "Resource", ctx.start.line)

@@ -6,10 +6,11 @@ top : (corePerfModel_sec
 ;
 
 corePerfModel_sec : virtual_def | connector_def | resource_def | microaction_def | stage_def | pipeline_def | corePerfModel_def ;
-externModel_sec : traceValue_def | connectorModel_def | resourceModel_def ;
+externModel_sec : traceValue_def | connectorModel_def | resourceModel_def | model_def ;
 instruction_sec : instrGroup_def | microactionMapping_def | traceValueMapping_def ;
 
 //////////////////////////// CONNECTOR_MODEL ////////////////////////////
+// NOTE: Replaced by generic MODEL. Kept for backwards compatibility
 
 connectorModel_def : 'ConnectorModel' (connectorModel | '{' connectorModel (',' connectorModel)* '}');
 
@@ -22,6 +23,7 @@ connectorModel : name=ID '(' (
 ;
 
 //////////////////////////// RESOURCE_MODEL ////////////////////////////
+// NOTE: Replaced by generic MODEL. Kept for backwards compatibility
 
 resourceModel_def : 'ResourceModel' (resourceModel | '{' resourceModel (',' resourceModel)* '}') ;
 
@@ -29,6 +31,21 @@ resourceModel : name=ID '(' (
 	      'trace' ':' (traceVals+=traceValue_ref | '{' traceVals+=traceValue_ref (',' traceVals+=traceValue_ref)* '}')
 	      | 'link' ':' link=STRING
 	      )* ')'
+;
+
+//////////////////////////// MODEL ////////////////////////////
+// NOTE: Generic MODEL replaced RESOURCE_MODEL and CONNECTOR_MODEL
+
+model_def : 'Model' (model | model_list);
+
+model_list : '{' model (',' model)* '}';
+
+model : name=ID '(' (
+      'link' ':' link=STRING
+      | 'trace' ':' (traceVals+=traceValue_ref | '{' traceVals+=traceValue_ref (',' traceVals+=traceValue_ref)* '}')
+      | 'connectorIn' ':' (inCons+=connector_ref | '{' inCons+=connector_ref (',' inCons+=connector_ref)* '}')
+      | 'connectorOut' ':' (outCons+=connector_ref | '{' outCons+=connector_ref (',' outCons+=connector_ref)* '}')
+)* ')'
 ;
 
 //////////////////////////// TRACE_VALUE_MAPPING ////////////////////////////
@@ -62,7 +79,7 @@ corePerfModel_def : 'CorePerfModel' (corePerfModel | '{' corePerfModel (',' core
 corePerfModel : name=ID '(' (
 	      'core' ':' core=STRING
 	      | 'use' 'Pipeline' ':' use_pipeline=pipeline_ref
-	      | 'use' 'ConnectorModel' ':' (conModels+=connectorModel_ref | '{' conModels+=connectorModel_ref (',' conModels+=connectorModel_ref)* '}')
+	      | 'use' 'ConnectorModel' ':' (conModels+=model_ref | '{' conModels+=model_ref (',' conModels+=model_ref)* '}')
 	      | 'assign' 'Resource' ':' (resAssigns+=resource_assign | '{' resAssigns+=resource_assign (',' resAssigns+=resource_assign)* '}')
 	      | 'assign' 'Microaction' ':' (uActionAssigns+=microaction_assign | '{' uActionAssigns+=microaction_assign (',' uActionAssigns+=microaction_assign)* '}')
 	      )* ')'
@@ -73,11 +90,6 @@ corePerfModel : name=ID '(' (
 pipeline_def : 'Pipeline' (pipeline |  pipeline_list);
 
 pipeline_list : '{' pipeline (',' pipeline)* '}';
-
-// pipeline : name=ID // Pipeline name
-// ('[' attribute=pipeline_attr ']')? // Attributes (optional)
-// //'(' components+=stageOrPipeline_ref ('->' components+=stageOrPipeline_ref)* ')'; // Concatination of components (stages and/or (sub-)pipelines)
-// '(' (pipeline_sequential | pipeline_parallel) ')'; // Concatination of components (stages and/or (sub-)pipelines)
 
 pipeline : name=ID // Pipeline name
 ('[' attribute=pipeline_attr ']')? // Attributes (optional)
@@ -108,13 +120,6 @@ microaction_def : 'Microaction' (microaction | '{' microaction (',' microaction)
 
 microaction_list : '{' microaction (',' microaction)* '}';
 
-//microaction : name=ID '(' (
-//	    refs+=resourceOrConnector_ref
-//	    | refs+=resourceOrConnector_ref '->' refs+=resourceOrConnector_ref
-//	    | refs+=resourceOrConnector_ref '->' refs+=resourceOrConnector_ref '->' refs+=resourceOrConnector_ref
-//	    ) ')'
-//;
-
 microaction : name=ID '(' (
 	    comps_1=microactionComponent
 	    | comps_1=microactionComponent '->' comps_2=microactionComponent
@@ -139,7 +144,7 @@ resource_def : 'Resource' (resource | '{' resource_list '}');
 resource_list : resource (',' resource)*;
 
 resource : name=ID // Resource name
-('(' (res_model=resourceModel_ref | delay=INT) ')')? ; // Delay specification (optional)
+('(' (res_model=model_ref | delay=INT) ')')? ; // Delay specification (optional)
 
 //////////////////////////// VIRTUAL ////////////////////////////
 
@@ -162,6 +167,8 @@ traceValue_ref : name=ID ;
 resourceModel_ref : name=ID ;
 
 connectorModel_ref : name=ID ;
+
+model_ref : name=ID;
 
 resource_ref : name=ID ;
 

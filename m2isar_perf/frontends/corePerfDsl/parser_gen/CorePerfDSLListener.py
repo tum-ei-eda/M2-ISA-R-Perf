@@ -80,6 +80,33 @@ class CorePerfDSLListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by CorePerfDSLParser#model_def.
+    def enterModel_def(self, ctx:CorePerfDSLParser.Model_defContext):
+        pass
+
+    # Exit a parse tree produced by CorePerfDSLParser#model_def.
+    def exitModel_def(self, ctx:CorePerfDSLParser.Model_defContext):
+        pass
+
+
+    # Enter a parse tree produced by CorePerfDSLParser#model_list.
+    def enterModel_list(self, ctx:CorePerfDSLParser.Model_listContext):
+        pass
+
+    # Exit a parse tree produced by CorePerfDSLParser#model_list.
+    def exitModel_list(self, ctx:CorePerfDSLParser.Model_listContext):
+        pass
+
+
+    # Enter a parse tree produced by CorePerfDSLParser#model.
+    def enterModel(self, ctx:CorePerfDSLParser.ModelContext):
+        pass
+
+    # Exit a parse tree produced by CorePerfDSLParser#model.
+    def exitModel(self, ctx:CorePerfDSLParser.ModelContext):
+        pass
+
+
     # Enter a parse tree produced by CorePerfDSLParser#traceValueMapping_def.
     def enterTraceValueMapping_def(self, ctx:CorePerfDSLParser.TraceValueMapping_defContext):
         pass
@@ -419,6 +446,15 @@ class CorePerfDSLListener(ParseTreeListener):
 
     # Exit a parse tree produced by CorePerfDSLParser#connectorModel_ref.
     def exitConnectorModel_ref(self, ctx:CorePerfDSLParser.ConnectorModel_refContext):
+        pass
+
+
+    # Enter a parse tree produced by CorePerfDSLParser#model_ref.
+    def enterModel_ref(self, ctx:CorePerfDSLParser.Model_refContext):
+        pass
+
+    # Exit a parse tree produced by CorePerfDSLParser#model_ref.
+    def exitModel_ref(self, ctx:CorePerfDSLParser.Model_refContext):
         pass
 
 

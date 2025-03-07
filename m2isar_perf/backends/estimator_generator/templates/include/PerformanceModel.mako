@@ -10,11 +10,8 @@ ${builder_.getFileHeader()}
 #include "PerformanceModel.h"
 #include "Channel.h"
 
-% for resM_i in variant_.getAllResourceModels():
-#include "${resM_i.link}"
-%endfor
-% for conM_i in variant_.getAllConnectorModels():
-#include "${conM_i.link}"
+%for model_i in variant_.getAllExternalModels():
+#include "${model_i.link}"
 %endfor
 
 namespace ${variant_.name}{
@@ -29,11 +26,8 @@ public:
     % for tVar_i in variant_.getAllMultiElementTimingVariables():
     ,${tVar_i.name}(${tVar_i.getNumElements()},0)
     %endfor
-    % for resM_i in variant_.getAllResourceModels():
-    ,${resM_i.name}(this)
-    %endfor
-    % for conM_i in variant_.getAllConnectorModels():
-    ,${conM_i.name}(this)
+    % for model_i in variant_.getAllExternalModels():
+    ,${model_i.name}(this)
     %endfor
   {};
 
@@ -51,18 +45,11 @@ public:
   MultiElementTimingVariable ${tVar_i.name};
   %endfor	 
 
-  %if variant_.getAllResourceModels():
+  %if variant_.getAllExternalModels():
   // External Resource Models
   %endif
-  %for resM_i in variant_.getAllResourceModels():
-  ${builder_.getModelType(resM_i.link)} ${resM_i.name};
-  %endfor
-
-  %if variant_.getAllConnectorModels():
-  // External Connector Models
-  %endif
-  %for conM_i in variant_.getAllConnectorModels():
-  ${builder_.getModelType(conM_i.link)} ${conM_i.name};
+  %for model_i in variant_.getAllExternalModels():
+  ${builder_.getModelClassName(model_i)} ${model_i.name};
   %endfor
 
   virtual void connectChannel(Channel*);

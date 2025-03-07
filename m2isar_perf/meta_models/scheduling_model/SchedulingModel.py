@@ -43,24 +43,34 @@ class Variant(FrozenBase):
         # Owned instances
         self.schedulingFunctions:List[SchedulingFunction] = []
         self.timingVariables:Dict[TimingVariable] = {}
-        self.resourceModels:Dict[str,ResourceModel] = {}
-        self.connectorModels:Dict[ConnectorModel] = {}
+        #self.resourceModels:Dict[str,ResourceModel] = {}
+        #self.connectorModels:Dict[ConnectorModel] = {}
 
+        self.externalModels:Dict[str,ExternalModel] = {}
+        
         super().__init__()
 
-    def createResourceModel(self, name_:str, link_:str) -> 'ResourceModel':
-        if name_ in self.resourceModels:
-            raise RuntimeError(f"ResourceModel {name_} was already created!")
-        model = ResourceModel(name_, link_)
-        self.resourceModels[name_] = model
+
+    def createExternalModel(self, name_:str, link_:str, isConModel_:bool, isResModel_:bool) -> 'ExternalModel':
+        if name_ in self.externalModels:
+            raise RuntimeError(f"ExternalModel {name_} was already created!")
+        model = ExternalModel(name_, link_, isConModel_, isResModel_)
+        self.externalModels[name_] = model
         return model
-    
-    def createConnectorModel(self, name_:str, link_:str) -> 'ConnectorModel':
-        if name_ in self.connectorModels:
-            raise RuntimeError(f"ConenctorModel {name_} was already created!")
-        model = ConnectorModel(name_, link_)
-        self.connectorModels[name_] = model
-        return model
+        
+    #def createResourceModel(self, name_:str, link_:str) -> 'ResourceModel':
+    #    if name_ in self.resourceModels:
+    #        raise RuntimeError(f"ResourceModel {name_} was already created!")
+    #    model = ResourceModel(name_, link_)
+    #    self.resourceModels[name_] = model
+    #    return model
+    #
+    #def createConnectorModel(self, name_:str, link_:str) -> 'ConnectorModel':
+    #    if name_ in self.connectorModels:
+    #        raise RuntimeError(f"ConenctorModel {name_} was already created!")
+    #    model = ConnectorModel(name_, link_)
+    #    self.connectorModels[name_] = model
+    #    return model
         
     def createTimingVariable(self, name_:str, numElements_:int=1, traced_:bool=False) -> 'TimingVariable':
         if name_ in self.timingVariables:
@@ -74,37 +84,41 @@ class Variant(FrozenBase):
         self.schedulingFunctions.append(func)
         return func
 
-    def getResourceModel(self, name_:str) -> Optional['ResourceModel']:
-        if name_ not in self.resourceModels:
-            raise RuntimeError(f"ResourceModel {name_} does not exist!")
-        return self.resourceModels[name_]
+    def getResourceModel(self, name_:str) -> Optional['ExternalModel']:
+        resModel = self.__getExternalModel(name_)
+        if not resModel.isResourceModel:
+            raise RuntimeError(f"{resModel.name} is not a resource model")
+        return resModel
 
-    def getConnectorModel(self, name_:str) -> Optional['ConnectorModel']:
-        if name_ not in self.connectorModels:
-            raise RuntimeError(f"ConnectorModel {name_} does not exist!")
-        return self.connectorModels[name_]
+    def getConnectorModel(self, name_:str) -> Optional['ExternalModel']:
+        conModel = self.__getExternalModel(name_)
+        if not conModel.isConnectorModel:
+            raise RuntimeError(f"{conModel.name} is not a connector model")
+        return conModel
     
     def getTimingVariable(self, name_:str) -> Optional['TimingVariable']:
         if name_ in self.timingVariables:
             return self.timingVariables[name_]
-        elif name_ in self.timingVariableAliases:
-            return self.timingVariableAliases[name_]
-        raise RuntimeError(f"TimingVariable {name_} does not exist! (Neither original nor as alias)")
+        raise RuntimeError(f"TimingVariable {name_} does not exist!")
 
-    def getLastStageTimingVariable(self) -> Optional['TimingVariable']:
-        # TODO: Only returns one stage! How does this work for V-form pipelines?
-        for tVar_i in self.getAllTimingVariables():
-            if tVar_i.isLastStage():
-                return tVar_i
-        raise RuntimeError("No TimingVariable is marked as representing the pipeline's last stage!")
-        return None
-    
-    def getAllResourceModels(self) -> List['ResourceModel']:
-        return list(self.resourceModels.values())
-    
-    def getAllConnectorModels(self) -> List['ConnectorModel']:
-        return list(self.connectorModels.values())
+    # TODO: Still required?
+    #def getLastStageTimingVariable(self) -> Optional['TimingVariable']:
+    #    # TODO: Only returns one stage! How does this work for V-form pipelines?
+    #    for tVar_i in self.getAllTimingVariables():
+    #        if tVar_i.isLastStage():
+    #            return tVar_i
+    #    raise RuntimeError("No TimingVariable is marked as representing the pipeline's last stage!")
+    #    return None
 
+    def getAllExternalModels(self) -> List['ExternalModels']:
+        return list(self.externalModels.values())
+    
+    def getAllResourceModels(self) -> List['ExternalModels']:
+        return [x for x in self.externalModels.values() if x.isResourceModel]
+        
+    def getAllConnectorModels(self) -> List['ExternalModels']:
+        return [x for x in self.externalModels.values() if x.isConnectorModel]
+    
     def getAllTimingVariables(self) -> List['TimingVariables']:
         return list(self.timingVariables.values())
 
@@ -131,6 +145,11 @@ class Variant(FrozenBase):
     
     def getAllSchedulingFunctions(self) -> List['SchedulingFunction']:
         return self.schedulingFunctions
+
+    def __getExternalModel(self, name_) -> Optional['ExternalModel']:
+        if name_ not in self.externalModels:
+            raise RuntimeError(f"ExternalModel {name_} does not exist!")
+        return self.externalModels[name_]
     
 class SchedulingFunction(FrozenBase):
 
@@ -205,13 +224,14 @@ class TimingVariable(FrozenBase):
         
 class ExternalModel(FrozenBase):
 
-    # "Virtual class"
-    
-    def __init__(self, name_:str, link_:str):
+    def __init__(self, name_:str, link_:str, isConModel_:bool, isResModel_:bool):
         self.name = name_
         self.link = link_
         self.traceValues:List[str] = []
 
+        self.isConnectorModel = isConModel_
+        self.isResourceModel = isResModel_
+        
     def addTraceValues(self, trVal_:List[str]):
         self.traceValues.extend(trVal_)
 
@@ -235,7 +255,6 @@ class Node(FrozenBase):
     def __init__(self, name_:str, parentVariant_:Optional[Variant], parent_:Optional[SchedulingFunction]):
         self.name = name_
         self.delay:int = 0
-        #self.dynamicDelay:bool = False # TODO: Still used?
         self.parentVariant = parentVariant_
         self.parentSchedulingFunction = parent_
         
@@ -247,10 +266,6 @@ class Node(FrozenBase):
         self.outEdges:List[Optional[Edge]] = []
         
         super().__init__()
-
-    # TODO: Outdated?
-    # def setResourceModel(self, resM_:Optional['ResourceModel']):
-    #     self.resourceModel = resM_
 
     def linkResourceModel(self, resM_:str):
         self.resourceModel = self.parentVariant.getResourceModel(resM_)

@@ -32,23 +32,27 @@ class Variant(FrozenBase):
         self.name = ""
         self.pipeline = None # TopPipeline
         self.core = ""
-        self.connectorModels = []
-        self.resourceModels = []
+
+        self.models = []
+        
         self.instructions = []
 
         super().__init__()
 
-    # def getAllStages(self):
-    #     if self.pipeline is None:
-    #         raise TypeError("Cannot call MetaModel.CorePerfModel.getAllStages before a pipeline has been assigned!")
-    #     return self.pipeline.getAllStages()
-    #     
-    #     #stages = []
-    #     #for st in self.pipeline.stages:
-    #     #    stages.append(st)
-    #     #
-    #     #return stages
+    def addModel(self, model_):
+        if model_ not in self.models:
+            self.models.append(model_)
 
+    # TODO: Is this of any use?
+    def addConnectorModel(self, model_):
+        model_.isConnectorModel = True
+        self.addModel(model_)
+
+    # TODO: Is this of any use?
+    def addResourceModel(self, model_):
+        model_.isResourceModel = True
+        self.addModel(model_)
+        
     # Link stage and pipeline elements
     def resolvePipelineStructure(self):
         # Iterates through all (sub-)stages and (sub-)pipelines, and sets parent component.
@@ -64,20 +68,23 @@ class Variant(FrozenBase):
 
     def getAllStages(self):
         return self.pipeline.getAllStages()
-    
-    #def getAllMicroactions(self): # TODO: Update or rename
-    #    microactions = []
-    #    for st in self.getAllStages():
-    #        for path_i in st.paths:
-    #            microactions.append(path_i)
-    #
-    #    return microactions
-    
+
+    def getAllModels(self):
+        return self.models
+        
     def getAllConnectorModels(self):
-        return self.connectorModels
+        ret = []
+        for m_i in self.models:
+            if m_i.isConnectorModel:
+                ret.append(m_i)
+        return ret
         
     def getAllResourceModels(self):
-        return self.resourceModels
+        ret = []
+        for m_i in self.models:
+            if m_i.isResourceModel:
+                ret.append(m_i)
+        return ret
         
     def getAllInstructions(self):
         return self.instructions
@@ -143,16 +150,6 @@ class Pipeline(FrozenBase):
     def isTopPipeline(self):
         return self.parent is None
         
-   # # TODO: Is this used anywhere? Delete?
-   # def getAllStages(self):
-   #     stages = []
-   #     for comp_i in self.components:
-   #         if type(comp_i) is Pipeline:
-   #             stages.extend(comp_i.getAllStages())
-   #         elif type(comp_i) is Stage:
-   #             stages.append(comp_i)
-   #     return stages
-
     # Return all microactions located in (sub-) stages of this pipeline
     def getAllMicroactions(self):
         uActions = []
@@ -182,19 +179,6 @@ class Pipeline(FrozenBase):
                 pipes.extend(comp_i.getAllPipelines())
         return pipes
     
-    # TODO: Outdated?            
-    # def getFirstStage(self):
-    #     return self.components[0]
-
-    # TODO: Outdated?
-    # def isLastStage(self, stage_):
-    #     return stage_ == self.components[-1]
-
-    # TODO: Outdated?
-    # def getLastStage(self):
-    #     return self.components[-1]
-
-    
     # Returns first stages of this pipeline (Only 1st-level sub-stages, i.e. does not iterrate into sub-stages)
     def getFirstStages(self):
         stages = []
@@ -216,18 +200,6 @@ class Pipeline(FrozenBase):
             stages.extend(self.__getLastStagesFromComponent(comp))
         return stages
     
-    # def getNextStage(self, stage_):
-    #     retStage = None
-    #     found = False
-    #     for st_i in self.components:
-    #         if stage_ == st_i: # found current stage
-    #             found = True
-    #             continue
-    #         if found == True:
-    #             retStage = st_i
-    #             break
-    #     return retStage
-
     def getNextStages(self, comp_):
 
         # Sequential
@@ -265,14 +237,14 @@ class Pipeline(FrozenBase):
             return comp_.getLastStages()
         elif type(comp_) is Stage:
             return [comp_]
-        return None # Should never happen
-
+        raise RuntimeError(f"Unexpected type {type(comp_)}")
+        
     def __getFirstStagesFromComponent(self, comp_):
         if type(comp_) is Pipeline:
             return comp_.getFirstStages()
         elif type(comp_) is Stage:
             return [comp_]
-        return None # Should never happen
+        raise RuntimeError(f"Unexpected type {type(comp_)}")
     
 class Stage(FrozenBase):
 
@@ -306,9 +278,6 @@ class Stage(FrozenBase):
     
     def isSubStage(self):
         return not self.isPrimaryStage()
-            
-    #def getUsedMicroactions(self): # TODO: Is this still used somewhere? Replace with getMicroactions?
-    #    return self.microactions
 
     # Returns microactions directly in this stage (not in sub-stages)
     def getMicroactions(self):
@@ -390,10 +359,6 @@ class Microaction(FrozenBase):
          
         super().__init__()
 
-    # TODO: Outdated
-    # def hasInConnector(self):
-    #     return (self.inConnector is not None)
-        
     def getInConnectors(self):
         return self.inConnectors
 
@@ -402,10 +367,6 @@ class Microaction(FrozenBase):
     
     def getResources(self):
         return self.resources
-
-    # TODO: Outdated
-    # def hasOutConnector(self):
-    #     return (self.outConnector is not None)
     
     def getOutConnectors(self):
         return self.outConnectors
@@ -452,38 +413,36 @@ class Connector(FrozenBase):
     def __init__(self):
         self.name = ""
         self.connectorModel = None
-        self.connectorType = ""
+        #self.connectorType = "" #TODO: is this information used / redundant (implied by micoraction)? 
         
         super().__init__()
 
     def getConnectorModel(self):
         return self.connectorModel
         
-class ResourceModel(FrozenBase):
+class Model(FrozenBase):
 
     def __init__(self):
         self.name = ""
         self.link = ""
         self.traceValues = []
+        self.inConnectors = []
+        self.outConnectors = []
 
+        # TODO: Is this info ever required?
+        self.isConnectorModel = False
+        self.isResourceModel = False
+        
         super().__init__()
 
     def getTraceValues(self):
         return self.traceValues
         
-class ConnectorModel(FrozenBase):
+    def getInConnectors(self):
+        return self.inConnectors
 
-    def __init__(self):
-        self.name = ""
-        self.link = ""
-        self.inConnectors = []
-        self.outConnectors = []
-        self.traceValues = []
-
-        super().__init__()
-
-    def getTraceValues(self):
-        return self.traceValues
+    def getOutConnectors(self):
+        return self.outConnectors
         
 class TraceValue(FrozenBase):
 

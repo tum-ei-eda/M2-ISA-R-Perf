@@ -49,6 +49,21 @@ class CorePerfDSLVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by CorePerfDSLParser#model_def.
+    def visitModel_def(self, ctx:CorePerfDSLParser.Model_defContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CorePerfDSLParser#model_list.
+    def visitModel_list(self, ctx:CorePerfDSLParser.Model_listContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CorePerfDSLParser#model.
+    def visitModel(self, ctx:CorePerfDSLParser.ModelContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by CorePerfDSLParser#traceValueMapping_def.
     def visitTraceValueMapping_def(self, ctx:CorePerfDSLParser.TraceValueMapping_defContext):
         return self.visitChildren(ctx)
@@ -236,6 +251,11 @@ class CorePerfDSLVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CorePerfDSLParser#connectorModel_ref.
     def visitConnectorModel_ref(self, ctx:CorePerfDSLParser.ConnectorModel_refContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CorePerfDSLParser#model_ref.
+    def visitModel_ref(self, ctx:CorePerfDSLParser.Model_refContext):
         return self.visitChildren(ctx)
 
 

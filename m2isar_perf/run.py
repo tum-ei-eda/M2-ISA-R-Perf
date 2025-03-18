@@ -54,21 +54,12 @@ else:
 # Call model transformer (structural -> scheduling model) if applicable
 if args.code_gen or args.info_print:
     schedModel = SchedulingTransformer().transform(structModel)
-    #transformer = SchedulingTransformer()
-    #schedModel = transformer.transform(structModel)
 
 # Call applicable backends
 if args.monitor_description:
     backend_monitor_extractor.execute(structModel, outDir)
 if args.code_gen:
-    print("WARNING: Code-generator backend currently disabled!")
-    
     EstimatorGenerator().execute(schedModel, outDir)
-    # #generator = EstimatorGenerator()
-    # #generator.execute(schedModel, outDir)
 if args.info_print :
-    print("WARNING: StructuralViewer backend currently disabled!")
-
     #StructuralModelViewer().execute(structModel, outDir)
-    
     SchedulingModelViewer().execute(schedModel, outDir)

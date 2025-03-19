@@ -112,7 +112,20 @@ class Extractor(CorePerfDSLVisitor):
         if self.level.isLevel("BASE_COMPONENTS"):
             instrs = [instr.text for instr in ctx.instructions]
             self.dictionary.addInstructionGroup(ctx.name.text, instrs)
- 
+
+    def visitTraceConfig_def(self, ctx):
+        if self.level.isLevel("BASE_COMPONENTS"):
+            failed = False
+            if ctx.name is None:
+                print(f"ERROR [Line {ctx.start.line}]: TraceConfig defined without a name")
+                failed = True
+            if ctx.core is None:
+                print(f"ERROR [Line {ctx.start.line}]: TraceConfig defined without a core")
+                failed = True
+
+            if not failed:
+                self.dictionary.addTraceConfig(ctx.name.text, ctx.core.text)
+            
     # Level:MODELS_AND_TRACE_VALUE_MAPPING definitions
  
     def visitConnectorModel(self, ctx):

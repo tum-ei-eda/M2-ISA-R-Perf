@@ -7,7 +7,7 @@ top : (corePerfModel_sec
 
 corePerfModel_sec : virtual_def | connector_def | resource_def | microaction_def | stage_def | pipeline_def | corePerfModel_def ;
 externModel_sec : traceValue_def | connectorModel_def | resourceModel_def | model_def ;
-instruction_sec : instrGroup_def | microactionMapping_def | traceValueMapping_def ;
+instruction_sec : instrGroup_def | microactionMapping_def | traceValueMapping_def | traceConfig_def ;
 
 //////////////////////////// CONNECTOR_MODEL ////////////////////////////
 // NOTE: Replaced by generic MODEL. Kept for backwards compatibility
@@ -45,6 +45,14 @@ model : name=ID '(' (
       | 'trace' ':' (traceVals+=traceValue_ref | '{' traceVals+=traceValue_ref (',' traceVals+=traceValue_ref)* '}')
       | 'connectorIn' ':' (inCons+=connector_ref | '{' inCons+=connector_ref (',' inCons+=connector_ref)* '}')
       | 'connectorOut' ':' (outCons+=connector_ref | '{' outCons+=connector_ref (',' outCons+=connector_ref)* '}')
+)* ')'
+;
+
+//////////////////////////// TRACE_CONFIG ////////////////////////////
+
+traceConfig_def : 'TraceConfig' '(' (
+ 		'name' ':' name=STRING
+		| 'core' ':' core=STRING
 )* ')'
 ;
 

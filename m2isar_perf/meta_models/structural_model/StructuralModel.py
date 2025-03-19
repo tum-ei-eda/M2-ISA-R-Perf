@@ -20,12 +20,18 @@ class StructuralModel(FrozenBase):
 
     def __init__(self):
         self.variants = []
-
+        
         super().__init__()
 
     def getAllVariants(self):
         return self.variants
 
+class TraceConfig(FrozenBase):
+
+    def __init__(self):
+        self.name = ""
+        self.core = ""
+    
 class Variant(FrozenBase):
 
     def __init__(self):

@@ -78,6 +78,8 @@ class Dictionary():
 
         self.microactionAssignments = {}
         self.resourceAssignments = {}
+
+        self.traceConfig = None
         
     ## Interface functions
         
@@ -92,13 +94,6 @@ class Dictionary():
         self.__addInstance(trVal, "TraceValue")
         
     def addConnectorModel(self, name_, link_, inCons_, outCons_, trVals_):
-        #conModel = StructuralModel.ConnectorModel()
-        #conModel.name = name_
-        #conModel.link = self.__convertString(link_)
-        #conModel.inConnectors = inCons_
-        #conModel.outConnectors = outCons_
-        #conModel.traceValues = trVals_
-        #self.__addInstance(conModel, "ConnectorModel")
         model = StructuralModel.Model()
         model.name = name_
         model.link = self.__convertString(link_)
@@ -108,11 +103,6 @@ class Dictionary():
         self.__addInstance(model, "Model")
         
     def addResourceModel(self, name_, link_, trVals_):
-        #resModel = StructuralModel.ResourceModel()
-        #resModel.name = name_
-        #resModel.link = self.__convertString(link_)
-        #resModel.traceValues = trVals_
-        #self.__addInstance(resModel, "ResourceModel")
         model = StructuralModel.Model()
         model.name = name_
         model.link = self.__convertString(link_)
@@ -183,7 +173,7 @@ class Dictionary():
                     uAction.outConnectors = refs_[1]
                 else:
                     combinationError = True
-
+                    
         # Cases: (inCon) or (res)
         elif len(refs_) == 1:
             # Case: (inCon)
@@ -192,7 +182,6 @@ class Dictionary():
             # Case: (res)
             elif type(refs_[0][0]) is StructuralModel.Resource:
                 uAction.resources = refs_[0]
-
         else:
             raise RuntimeError(f"Function addMicroaction for {name_} called with illegal number of references ({len(refs)})")
 
@@ -254,6 +243,14 @@ class Dictionary():
         instr.name = name_
         self.__addInstance(instr, "Instruction")
 
+    def addTraceConfig(self, name_, core_):
+        if self.traceConfig is None:
+            self.traceConfig = StructuralModel.TraceConfig()
+            self.traceConfig.name = self.__convertString(name_)
+            self.traceConfig.core = self.__convertString(core_)
+        else:
+            print(f"WARNING: Re-definition of TraceConfig (name:{name_}, core:{core_}) is ignored!")
+        
     def mapMicroactions(self, instrOrGroup_, microactions_):
         if type(instrOrGroup_) is InstructionGroup:
             for instr in instrOrGroup_.instructions:

@@ -16,7 +16,7 @@ Clone this repository and navigate to its top folder. (The given example uses an
 Switch to the latest release version:
 
       $ git fetch --tags
-      $ git checkout tags/v1.1
+      $ git checkout tags/v2.0
 
 Initialize required git-submodules:
 
@@ -51,14 +51,15 @@ Use the help option to get an overview of supported input arguments:
 
 ## Version
 
-The latest release version of this repository is v1.1.
+The latest release version of this repository is v2.0.
 
 This repository does not contain any submodules.
 
-Version v1.1 is compatible with the following external repositories:
+Version v2.0 is compatible with the following external repositories:
 
 | Repository | Version |
 | ---------- | ------- |
-| CorePerfDSL-Exampley | v1.0 |
-| SoftwareEvalLib | v1.0 |
-| SoftwareEval-Backends | v1.0 |
+| CorePerfDSL-Example | v2.0 |
+| SoftwareEvalLib | v2.0 |
+| SoftwareEval-Backends | v2.0 |
+| etiss-perf-sim | v0.10 |

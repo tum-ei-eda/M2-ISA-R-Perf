@@ -64,6 +64,11 @@ class CorePerfDSLVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by CorePerfDSLParser#model_attr.
+    def visitModel_attr(self, ctx:CorePerfDSLParser.Model_attrContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by CorePerfDSLParser#traceValueMapping_def.
     def visitTraceValueMapping_def(self, ctx:CorePerfDSLParser.TraceValueMapping_defContext):
         return self.visitChildren(ctx)

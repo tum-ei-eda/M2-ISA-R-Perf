@@ -42,19 +42,9 @@ class SchedulingTransformer:
 
     def __generateExternalModels(self, structVariant_, schedVariant_):
         for model_i in structVariant_.getAllModels():
-            extModel = schedVariant_.createExternalModel(model_i.name, model_i.link, model_i.isConnectorModel, model_i.isResourceModel)
+            extModel = schedVariant_.createExternalModel(model_i.name, model_i.link, model_i.isConnectorModel, model_i.isResourceModel, model_i.hasInfoTrace)
             extModel.addTraceValues([t.name for t in model_i.getTraceValues()])
     
-    #def __generateResourceModels(self, structVariant_, schedVariant_):
-    #    for resM_i in structVariant_.getAllResourceModels():
-    #        resModel = schedVariant_.createResourceModel(resM_i.name, resM_i.link)
-    #        resModel.addTraceValues([t.name for t in resM_i.getTraceValues()])
-    #
-    #def __generateConnectorModels(self, structVariant_, schedVariant_):
-    #    for conM_i in structVariant_.getAllConnectorModels():
-    #        conModel = schedVariant_.createConnectorModel(conM_i.name, conM_i.link)
-    #        conModel.addTraceValues([t.name for t in conM_i.getTraceValues()])
-
     def __generateTimingVariables(self, structVariant_, schedVariant_):
         for st_i in structVariant_.getAllStages():            
             schedVariant_.createTimingVariable(st_i.name, st_i.capacity, st_i.isPrimaryStage())

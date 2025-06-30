@@ -107,6 +107,15 @@ class CorePerfDSLListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by CorePerfDSLParser#model_attr.
+    def enterModel_attr(self, ctx:CorePerfDSLParser.Model_attrContext):
+        pass
+
+    # Exit a parse tree produced by CorePerfDSLParser#model_attr.
+    def exitModel_attr(self, ctx:CorePerfDSLParser.Model_attrContext):
+        pass
+
+
     # Enter a parse tree produced by CorePerfDSLParser#traceValueMapping_def.
     def enterTraceValueMapping_def(self, ctx:CorePerfDSLParser.TraceValueMapping_defContext):
         pass

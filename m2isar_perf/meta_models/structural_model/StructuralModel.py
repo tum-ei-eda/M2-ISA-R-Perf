@@ -428,7 +428,8 @@ class Model(FrozenBase):
         self.traceValues = []
         self.inConnectors = []
         self.outConnectors = []
-
+        self.hasInfoTrace = False
+        
         # TODO: Is this info ever required?
         self.isConnectorModel = False
         self.isResourceModel = False

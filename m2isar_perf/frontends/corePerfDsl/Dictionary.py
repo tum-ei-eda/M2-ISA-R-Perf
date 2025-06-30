@@ -119,13 +119,15 @@ class Dictionary():
         model.traceValues = trVals_
         self.__addInstance(model, "Model")
         
-    def addModel(self, name_, link_, trVals_=[], inCons_=[], outCons_=[]):
+    def addModel(self, name_, link_, trVals_=[], inCons_=[], outCons_=[], infoTrace_=False):
         model = StructuralModel.Model()
         model.name = name_
         model.link = self.__convertString(link_)
         model.traceValues = trVals_
         model.inConnectors = inCons_
         model.outConnectors = outCons_
+        model.hasInfoTrace = infoTrace_
+        
         self.__addInstance(model, "Model")
         
     def addResource(self, name_, delay_=0, model_=None):

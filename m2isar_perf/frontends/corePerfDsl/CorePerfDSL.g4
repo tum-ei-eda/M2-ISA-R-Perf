@@ -40,14 +40,17 @@ model_def : 'Model' (model | model_list);
 
 model_list : '{' model (',' model)* '}';
 
-model : name=ID '(' (
-      'link' ':' link=STRING
+model : name=ID // Stage name
+('[' attributes+=model_attr (',' attributes+=model_attr)* ']')? // Optional list of attributes
+'(' ( 'link' ':' link=STRING // Model description
       | 'trace' ':' (traceVals+=traceValue_ref | '{' traceVals+=traceValue_ref (',' traceVals+=traceValue_ref)* '}')
       | 'connectorIn' ':' (inCons+=connector_ref | '{' inCons+=connector_ref (',' inCons+=connector_ref)* '}')
       | 'connectorOut' ':' (outCons+=connector_ref | '{' outCons+=connector_ref (',' outCons+=connector_ref)* '}')
 )* ')'
 ;
 
+model_attr : 'info-trace' ;
+	   
 //////////////////////////// TRACE_VALUE_MAPPING ////////////////////////////
 
 traceValueMapping_def : 'TraceValueMapping' (traceValueMapping | '{' traceValueMapping (',' traceValueMapping)* '}') ;

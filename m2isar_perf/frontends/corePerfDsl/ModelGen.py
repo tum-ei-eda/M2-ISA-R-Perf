@@ -29,4 +29,31 @@ class ModelGen():
 
     def buildModel(self):
         builder = Builder(self.dictionary)
+
+        # model = builder.buildTopModel()
+        # 
+        # for i in model.instructions:
+        #     if i.name == "add":
+        #         for j in i.traceValueAssignments:
+        #             print(f"{j.traceValue.name} -> {j.description}")
+        # 
+        # 
+        # print()
+        # print("Pre:")
+        # for var_i in model.instructions:
+        #     print(var_i.name)
+        # 
+        # print()
+        # print("Modifying:")
+        # instr = model.variants[0].pipeline.components[0].paths[0].instructions[0]
+        # newName = "xMyNewNamex"
+        # print(f"{instr.name} -> {newName}")
+        # instr.name = newName
+        # print(f"Check: {instr.name}")
+        # 
+        # print()
+        # print("Post:")
+        # for var_i in model.instructions:
+        #     print(var_i.name)
+            
         return builder.buildTopModel()

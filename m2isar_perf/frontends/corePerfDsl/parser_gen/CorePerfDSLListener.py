@@ -107,12 +107,12 @@ class CorePerfDSLListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by CorePerfDSLParser#traceConfig_def.
-    def enterTraceConfig_def(self, ctx:CorePerfDSLParser.TraceConfig_defContext):
+    # Enter a parse tree produced by CorePerfDSLParser#model_attr.
+    def enterModel_attr(self, ctx:CorePerfDSLParser.Model_attrContext):
         pass
 
-    # Exit a parse tree produced by CorePerfDSLParser#traceConfig_def.
-    def exitTraceConfig_def(self, ctx:CorePerfDSLParser.TraceConfig_defContext):
+    # Exit a parse tree produced by CorePerfDSLParser#model_attr.
+    def exitModel_attr(self, ctx:CorePerfDSLParser.Model_attrContext):
         pass
 
 
@@ -188,21 +188,48 @@ class CorePerfDSLListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by CorePerfDSLParser#corePerfModel_def.
-    def enterCorePerfModel_def(self, ctx:CorePerfDSLParser.CorePerfModel_defContext):
+    # Enter a parse tree produced by CorePerfDSLParser#architecture_def.
+    def enterArchitecture_def(self, ctx:CorePerfDSLParser.Architecture_defContext):
         pass
 
-    # Exit a parse tree produced by CorePerfDSLParser#corePerfModel_def.
-    def exitCorePerfModel_def(self, ctx:CorePerfDSLParser.CorePerfModel_defContext):
+    # Exit a parse tree produced by CorePerfDSLParser#architecture_def.
+    def exitArchitecture_def(self, ctx:CorePerfDSLParser.Architecture_defContext):
         pass
 
 
-    # Enter a parse tree produced by CorePerfDSLParser#corePerfModel.
-    def enterCorePerfModel(self, ctx:CorePerfDSLParser.CorePerfModelContext):
+    # Enter a parse tree produced by CorePerfDSLParser#architecture.
+    def enterArchitecture(self, ctx:CorePerfDSLParser.ArchitectureContext):
         pass
 
-    # Exit a parse tree produced by CorePerfDSLParser#corePerfModel.
-    def exitCorePerfModel(self, ctx:CorePerfDSLParser.CorePerfModelContext):
+    # Exit a parse tree produced by CorePerfDSLParser#architecture.
+    def exitArchitecture(self, ctx:CorePerfDSLParser.ArchitectureContext):
+        pass
+
+
+    # Enter a parse tree produced by CorePerfDSLParser#variant_def.
+    def enterVariant_def(self, ctx:CorePerfDSLParser.Variant_defContext):
+        pass
+
+    # Exit a parse tree produced by CorePerfDSLParser#variant_def.
+    def exitVariant_def(self, ctx:CorePerfDSLParser.Variant_defContext):
+        pass
+
+
+    # Enter a parse tree produced by CorePerfDSLParser#variant_list.
+    def enterVariant_list(self, ctx:CorePerfDSLParser.Variant_listContext):
+        pass
+
+    # Exit a parse tree produced by CorePerfDSLParser#variant_list.
+    def exitVariant_list(self, ctx:CorePerfDSLParser.Variant_listContext):
+        pass
+
+
+    # Enter a parse tree produced by CorePerfDSLParser#variant.
+    def enterVariant(self, ctx:CorePerfDSLParser.VariantContext):
+        pass
+
+    # Exit a parse tree produced by CorePerfDSLParser#variant.
+    def exitVariant(self, ctx:CorePerfDSLParser.VariantContext):
         pass
 
 

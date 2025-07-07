@@ -31,48 +31,56 @@ def execute(model_, outDir_):
 
     print()
     print("-- BACKEND: MONITOR_EXTRACTOR --")
+
+    checkUnusedTracevalues(model_)
     
-    for variant_i in model_.getAllVariants():
-        
-        # Create trace dictionary
-        trace = {}
-        trace["name"] = variant_i.name
-        trace["core"] = variant_i.core
-        trace["setId"] = "Manual"
-        trace["traceValues"] = getTraceValues(variant_i)
-        trace["instructions"] = getInstructions(variant_i)
+    # Create trace dictionary
+    trace = {
+        "name" : model_.name,
+        "core" : model_.isa,
+        "setId": "Manual",
+        "traceValues" : getTraceValues(model_),
+        "instructions" : getInstructions(model_)
+    }
 
-        # Create a "root" dictionary for json
-        json_dict = {}
-        json_dict["trace"] = trace
-
-        # Dump root dictionary to file
-        outFile = dirUtils.getMonitorDirPath(outDir_, variant_i.name) / (variant_i.name + "_trace.json")
-        outFile.parent.mkdir(parents=True, exist_ok=True) # Make sure that output directory exists
-        with outFile.open('w') as f:
-            json.dump(json_dict, f, indent=2)
-
+    # Create a "root" dictionary for json
+    json_dict = {}
+    json_dict["trace"] = trace
+    
+    # Dump root dictionary to file
+    outFile = dirUtils.getMonitorFilePath(outDir_, model_)
+    outFile.parent.mkdir(parents=True, exist_ok=True) # Make sure that output directory exists
+    with outFile.open('w') as f:
+        json.dump(json_dict, f, indent=2)
+    
 ##### SUPPORT FUNCTIONS #####
-            
-def getTraceValues(variant_):
+
+def checkUnusedTracevalues(model_):
+    usedTraceValues = []
+    for var_i in model_.getAllVariants():
+        for trVal_i in var_i.getAllUsedTraceValues():
+            if trVal_i not in usedTraceValues:
+                usedTraceValues.append(trVal_i)
+
+    for trVal_i in model_.getAllTraceValues():
+        if trVal_i not in usedTraceValues:
+            print(f"NOTE: TraceValue {trVal_i.name} is not used by any Variant. Can be excluded.")
+
+def getTraceValues(model_):
     traceValues = []
-    for trVal_i in variant_.getAllUsedTraceValues():
+    for trVal_i in model_.getAllTraceValues():
         traceValues.append({"name": trVal_i.name, "type": "uint64_t"})
     return traceValues
 
-def getInstructions(variant_):
-    usedTraceValues = variant_.getAllUsedTraceValues()
-        
+def getInstructions(model_):
     instructions = []
-    for instr_i in variant_.getAllInstructions():
+    for instr_i in model_.getAllInstructions():
         mappings = []
         for map_i in instr_i.getTraceValueAssignments():
-            if map_i.getTraceValue() in usedTraceValues:
-                mappings.append({"traceValue": map_i.getTraceValue().name, "description": map_i.getDescription()})
-        instructions.append({"name": instr_i.name, "id": instr_i.identifier, "mappings": mappings}) 
-
+            mappings.append({"traceValue": map_i.getTraceValue().name, "description": map_i.getDescription()})
+        instructions.append({"name": instr_i.name, "id": instr_i.identifier, "mappings": mappings})
     return instructions
-
+        
 ##### STAND-ALONE #####
 
 # Run this if backend is called stand-alone (i.e. this file is directly called)

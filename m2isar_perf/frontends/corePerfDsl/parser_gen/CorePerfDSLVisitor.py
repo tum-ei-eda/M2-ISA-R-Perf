@@ -64,8 +64,8 @@ class CorePerfDSLVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CorePerfDSLParser#traceConfig_def.
-    def visitTraceConfig_def(self, ctx:CorePerfDSLParser.TraceConfig_defContext):
+    # Visit a parse tree produced by CorePerfDSLParser#model_attr.
+    def visitModel_attr(self, ctx:CorePerfDSLParser.Model_attrContext):
         return self.visitChildren(ctx)
 
 
@@ -109,13 +109,28 @@ class CorePerfDSLVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CorePerfDSLParser#corePerfModel_def.
-    def visitCorePerfModel_def(self, ctx:CorePerfDSLParser.CorePerfModel_defContext):
+    # Visit a parse tree produced by CorePerfDSLParser#architecture_def.
+    def visitArchitecture_def(self, ctx:CorePerfDSLParser.Architecture_defContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CorePerfDSLParser#corePerfModel.
-    def visitCorePerfModel(self, ctx:CorePerfDSLParser.CorePerfModelContext):
+    # Visit a parse tree produced by CorePerfDSLParser#architecture.
+    def visitArchitecture(self, ctx:CorePerfDSLParser.ArchitectureContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CorePerfDSLParser#variant_def.
+    def visitVariant_def(self, ctx:CorePerfDSLParser.Variant_defContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CorePerfDSLParser#variant_list.
+    def visitVariant_list(self, ctx:CorePerfDSLParser.Variant_listContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CorePerfDSLParser#variant.
+    def visitVariant(self, ctx:CorePerfDSLParser.VariantContext):
         return self.visitChildren(ctx)
 
 

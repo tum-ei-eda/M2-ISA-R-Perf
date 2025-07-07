@@ -24,51 +24,27 @@ class SchedulingTransformer:
 
     def transform(self, structuralModel_:StructuralModel) -> SchedulingModel:
 
-        schedulingModel = SchedulingModel()
+        schedulingModel = SchedulingModel(structuralModel_.name)
 
         for var_i in structuralModel_.getAllVariants():
-
             variant = schedulingModel.createVariant(var_i.name)
-
             self.__generateExternalModels(var_i, variant)
-            
-            #self.__generateResourceModels(var_i, variant)
-            #self.__generateConnectorModels(var_i, variant)
-
             self.__generateTimingVariables(var_i, variant)
             self.__generateSchedulingFunction(var_i, variant)
-            
         return schedulingModel
 
     def __generateExternalModels(self, structVariant_, schedVariant_):
         for model_i in structVariant_.getAllModels():
-            extModel = schedVariant_.createExternalModel(model_i.name, model_i.link, model_i.isConnectorModel, model_i.isResourceModel)
+            extModel = schedVariant_.createExternalModel(model_i.name, model_i.link, model_i.isConnectorModel, model_i.isResourceModel, model_i.isConfigurable())
             extModel.addTraceValues([t.name for t in model_i.getTraceValues()])
     
-    #def __generateResourceModels(self, structVariant_, schedVariant_):
-    #    for resM_i in structVariant_.getAllResourceModels():
-    #        resModel = schedVariant_.createResourceModel(resM_i.name, resM_i.link)
-    #        resModel.addTraceValues([t.name for t in resM_i.getTraceValues()])
-    #
-    #def __generateConnectorModels(self, structVariant_, schedVariant_):
-    #    for conM_i in structVariant_.getAllConnectorModels():
-    #        conModel = schedVariant_.createConnectorModel(conM_i.name, conM_i.link)
-    #        conModel.addTraceValues([t.name for t in conM_i.getTraceValues()])
-
     def __generateTimingVariables(self, structVariant_, schedVariant_):
         for st_i in structVariant_.getAllStages():            
             schedVariant_.createTimingVariable(st_i.name, st_i.capacity, st_i.isPrimaryStage())
-
-        ## TODO: Check what makes sense here
-        ##lastStageName = structVariant_.getPipeline().getLastStage().name
-        ##schedVariant_.getTimingVariable(lastStageName).setLastStage()
-        #endStages = [x.name for x in structVariant_.getPipeline().getLastStages()]
-        #for st_i in endStages:
-        #    schedVariant_.getTimingVariable(st_i).setEndStage()
         
     def __generateSchedulingFunction(self, structVariant_, schedVariant_):
 
-        for instr_i in structVariant_.getAllInstructions():
+        for instr_i in structVariant_.getAllUsedInstructions():
             pipeline = structVariant_.getPipeline()
 
             # Create scheduling function and root node
@@ -77,7 +53,6 @@ class SchedulingTransformer:
             schedFunc.setRootNode(stageNode)
 
             self.__createStageNodes(schedFunc, instr_i, pipeline.getFirstStages(), stageNode)
-                    
                 
     def __createStageNodes(self, schedFunc_, instr_, initStages_, root_):
         initialStages = [s.name for s in initStages_]
@@ -91,7 +66,7 @@ class SchedulingTransformer:
 
             # Ignore stage if it is not used by the instr (i.e. none of its microactions are mapped to the instr)
             # NOTE: This will abord the entire path (i.e. also following stages) Is this the wanted behavior?
-            if not curStage.isUsedBy(instr_):
+            if not curStage.isUsedByInstr(instr_):
                 continue
             
             if curStage.name not in resolvedStages:
@@ -118,8 +93,8 @@ class SchedulingTransformer:
                 
                 # Resolve the microactions if existing
                 for microAction_i in curStage.getMicroactions():
-                    if microAction_i in instr_.getUsedMicroactions():
-
+                    if microAction_i.isUsedByInstr(instr_):
+                    
                         # Create resource nodes
                         resNodes = []
                         if microAction_i.hasResources():

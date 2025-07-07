@@ -9,7 +9,7 @@ ${builder_.getFileHeader()}
 
 #include "Channel.h"
 
-#include "${variant_.name}_Channel.h"
+#include "${builder_.getChannelName()}_Channel.h"
 
 % for model_i in variant_.getAllExternalModels():
 #include "${model_i.link}"
@@ -19,7 +19,7 @@ namespace ${variant_.name}{
 
 void ${variant_.name}_PerformanceModel::connectChannel(Channel* channel_)
 {
-  ${variant_.name}_Channel* channel = static_cast<${variant_.name}_Channel*>(channel_);
+  ${builder_.getChannelName()}_Channel* channel = static_cast<${builder_.getChannelName()}_Channel*>(channel_);
 
   % for model_i in variant_.getAllExternalModels():
   % for trVal_i in model_i.getAllTraceValues():

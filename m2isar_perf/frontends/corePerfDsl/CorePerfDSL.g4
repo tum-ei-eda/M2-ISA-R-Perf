@@ -5,9 +5,9 @@ top : (corePerfModel_sec
     )* EOF
 ;
 
-corePerfModel_sec : virtual_def | connector_def | resource_def | microaction_def | stage_def | pipeline_def | corePerfModel_def ;
+corePerfModel_sec : virtual_def | connector_def | resource_def | microaction_def | stage_def | pipeline_def | variant_def | architecture_def;
 externModel_sec : traceValue_def | connectorModel_def | resourceModel_def | model_def ;
-instruction_sec : instrGroup_def | microactionMapping_def | traceValueMapping_def | traceConfig_def ;
+instruction_sec : instrGroup_def | microactionMapping_def | traceValueMapping_def ;
 
 //////////////////////////// CONNECTOR_MODEL ////////////////////////////
 // NOTE: Replaced by generic MODEL. Kept for backwards compatibility
@@ -40,7 +40,9 @@ model_def : 'Model' (model | model_list);
 
 model_list : '{' model (',' model)* '}';
 
-model : name=ID '(' (
+model : name=ID 
+('[' attributes+=model_attr (',' attributes+=model_attr)* ']')? // Optional list of attributes
+'(' (
       'link' ':' link=STRING
       | 'trace' ':' (traceVals+=traceValue_ref | '{' traceVals+=traceValue_ref (',' traceVals+=traceValue_ref)* '}')
       | 'connectorIn' ':' (inCons+=connector_ref | '{' inCons+=connector_ref (',' inCons+=connector_ref)* '}')
@@ -48,13 +50,7 @@ model : name=ID '(' (
 )* ')'
 ;
 
-//////////////////////////// TRACE_CONFIG ////////////////////////////
-
-traceConfig_def : 'TraceConfig' '(' (
- 		'name' ':' name=STRING
-		| 'core' ':' core=STRING
-)* ')'
-;
+model_attr : 'config' ;
 
 //////////////////////////// TRACE_VALUE_MAPPING ////////////////////////////
 
@@ -80,13 +76,24 @@ instrGroup_def : 'InstrGroup' (instrGroup | '{' instrGroup (',' instrGroup)* '}'
 
 instrGroup : name=ID '(' instructions+=(ID|KEYWORD_REST) (',' instructions+=(ID|KEYWORD_REST))* ')';
 
-//////////////////////////// CORE_PERFORMANCE_MODEL ////////////////////////////
+//////////////////////////// ARCHITECTURE ////////////////////////////
 
-corePerfModel_def : 'CorePerfModel' (corePerfModel | '{' corePerfModel (',' corePerfModel)* '}');
+architecture_def : 'Architecture' architecture;
 
-corePerfModel : name=ID '(' (
-	      'core' ':' core=STRING
-	      | 'use' 'Pipeline' ':' use_pipeline=pipeline_ref
+architecture : '(' (
+	     'name' ':' name=STRING
+	     | 'isa' ':' isa=STRING
+	     )* ')'
+;
+
+//////////////////////////// VARIANT ////////////////////////////
+
+variant_def : 'Variant' (variant | variant_list);
+
+variant_list : '{' variant (',' variant)* '}';
+
+variant : name=ID '(' (
+	      'use' 'Pipeline' ':' use_pipeline=pipeline_ref
 	      | 'use' 'ConnectorModel' ':' (conModels+=model_ref | '{' conModels+=model_ref (',' conModels+=model_ref)* '}')
 	      | 'assign' 'Resource' ':' (resAssigns+=resource_assign | '{' resAssigns+=resource_assign (',' resAssigns+=resource_assign)* '}')
 	      | 'assign' 'Microaction' ':' (uActionAssigns+=microaction_assign | '{' uActionAssigns+=microaction_assign (',' uActionAssigns+=microaction_assign)* '}')

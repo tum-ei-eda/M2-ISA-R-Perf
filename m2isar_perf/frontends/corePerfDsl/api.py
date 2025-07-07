@@ -46,7 +46,7 @@ def execute(description_, outdir_=None):
     parser = CorePerfDSLParser(stream)
     tree = parser.top()
 
-    # Use parse tree for model-2-model transformation according to meta-model
+    # Use parse tree to generate structural model
     print(" > Generating structural model")
     modelGen = ModelGen()
     modelGen.extractInstances(tree)

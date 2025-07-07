@@ -9,6 +9,7 @@ ${builder_.getFileHeader()}
 
 #include "PerformanceModel.h"
 #include "Channel.h"
+#include "Configuration.h"
 
 %for model_i in variant_.getAllExternalModels():
 #include "${model_i.link}"
@@ -22,12 +23,16 @@ class ${variant_.name}_PerformanceModel : public PerformanceModel
 {
 public:
 
-  ${variant_.name}_PerformanceModel() : PerformanceModel("${variant_.name}", ${variant_.name}_SchedulingFunctionSet)
+  ${variant_.name}_PerformanceModel(SwEvalBackends::Configuration& cfg_) : PerformanceModel("${variant_.name}", ${variant_.name}_SchedulingFunctionSet)
     % for tVar_i in variant_.getAllMultiElementTimingVariables():
     ,${tVar_i.name}(${tVar_i.getNumElements()},0)
     %endfor
     % for model_i in variant_.getAllExternalModels():
+    %if model_i.isConfigurable():
+    ,${model_i.name}(this, cfg_)
+    %else :
     ,${model_i.name}(this)
+    %endif
     %endfor
   {};
 

@@ -36,7 +36,7 @@ class SchedulingModelViewer:
             print(f" > Creating output directories for {variant_i.name}")
             tempDir = (self.tempDirBase) / variant_i.name
             dirUtils.createOrReplaceDir(tempDir, suppress_warning=True)
-            outDir = dirUtils.getDocDirPath(outDir_, variant_i.name)
+            outDir = dirUtils.getDocDirPath(outDir_, variant_i)
             # Generate sub-dirs for each instr/sched.function
             for schedFunc_i in variant_i.getAllSchedulingFunctions():
                 (outDir / schedFunc_i.name).mkdir(parents=True, exist_ok=True) # Do not over-write: Could delete output for structure_viewer

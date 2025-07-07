@@ -101,3 +101,6 @@ class CodeBuilder:
             return ("perfModel->" + node_.getResourceModel().name + ".getDelay()")
         else:
             return str(node_.getDelay())
+
+    def getChannelName(self):
+        return self.variant.getParentModel().name

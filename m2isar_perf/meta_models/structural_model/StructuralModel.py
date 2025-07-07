@@ -19,45 +19,54 @@ from meta_models.common.FrozenBase import FrozenBase
 class StructuralModel(FrozenBase):
 
     def __init__(self):
+        self.name = ""
+        self.isa = ""
         self.variants = []
+        self.traceValues = []
+        self.instructions = []
         
         super().__init__()
+        
+    def setArchitecture(self, archInfo_):
+        self.name = archInfo_[0]
+        self.isa = archInfo_[1]
+    
+    def assignTraceValues(self, trValList_):
+        self.traceValues.extend(trValList_)
 
+    def assignInstructions(self, instrList_):
+        self.instructions.extend(instrList_)
+
+    def addVariant(self, var_):
+        self.variants.append(var_)
+        var_.parent = self
+        
     def getAllVariants(self):
         return self.variants
+        
+    def getAllTraceValues(self):
+        return self.traceValues
 
-class TraceConfig(FrozenBase):
-
-    def __init__(self):
-        self.name = ""
-        self.core = ""
-    
+    def getAllInstructions(self):
+        return self.instructions
+            
 class Variant(FrozenBase):
 
     def __init__(self):
         self.name = ""
+        self.parent = None # Parent Strut.Model
         self.pipeline = None # TopPipeline
-        self.core = ""
-
         self.models = []
-        
-        self.instructions = []
 
         super().__init__()
 
-    def addModel(self, model_):
-        if model_ not in self.models:
-            self.models.append(model_)
-
-    # TODO: Is this of any use?
     def addConnectorModel(self, model_):
         model_.isConnectorModel = True
-        self.addModel(model_)
-
-    # TODO: Is this of any use?
+        self.__addModel(model_)
+    
     def addResourceModel(self, model_):
         model_.isResourceModel = True
-        self.addModel(model_)
+        self.__addModel(model_)
         
     # Link stage and pipeline elements
     def resolvePipelineStructure(self):
@@ -91,44 +100,32 @@ class Variant(FrozenBase):
             if m_i.isResourceModel:
                 ret.append(m_i)
         return ret
-        
-    def getAllInstructions(self):
-        return self.instructions
 
-    def getPipeline(self):
-        return self.pipeline
-    
-    def getPipelineUsageDict(self):
-        pipelineUsageDict = {}
-        
-        for instr in self.instructions:
-            pipelineUsage = {}
-   
-            for st in self.getAllStages():
-                usedMicroactions = []
-                for uA in st.microactions:
-                    if uA in instr.getUsedMicroactions():
-                        usedMicroactions.append(uA)
-
-                pipelineUsage[st.name] = usedMicroactions
-
-            pipelineUsageDict[instr.name] = pipelineUsage
-        return pipelineUsageDict                
+    def getAllUsedInstructions(self):
+        usedInstr = []
+        for uA_i in self.getAllMicroactions():
+            for instr_i in uA_i.instructions:
+                if instr_i not in usedInstr:
+                    usedInstr.append(instr_i)
+        return usedInstr
 
     def getAllUsedTraceValues(self):
         usedTrVals = []
-
-        for conM_i in self.getAllConnectorModels():
-            for trVal_i in conM_i.getTraceValues():
+        for model_i in self.getAllModels():
+            for trVal_i in model_i.getTraceValues():
                 if trVal_i not in usedTrVals:
                     usedTrVals.append(trVal_i)
-
-        for resM_i in self.getAllResourceModels():
-            for trVal_i in resM_i.getTraceValues():
-                if trVal_i not in usedTrVals:
-                    usedTrVals.append(trVal_i)
-
         return usedTrVals
+    
+    def getPipeline(self):
+        return self.pipeline
+
+    def getParentModel(self):
+        return self.parent
+
+    def __addModel(self, model_):
+        if model_ not in self.models:
+            self.models.append(model_)
     
 class Pipeline(FrozenBase):
 
@@ -340,10 +337,9 @@ class Stage(FrozenBase):
         return self.parent.getNextStages(self)
 
     # Returns True if this stage (or any of its substages) contains a microaction mapped to instr_
-    def isUsedBy(self, instr_):
-        uActions = self.getAllMicroactions()
-        for uA_i in instr_.getUsedMicroactions():
-            if uA_i in uActions:
+    def isUsedByInstr(self, instr_):
+        for uA_i in self.getAllMicroactions():
+            if uA_i.isUsedByInstr(instr_):
                 return True
         return False
 
@@ -362,9 +358,13 @@ class Microaction(FrozenBase):
         self.inConnectors = []
         self.resources = []
         self.outConnectors = []
-         
+        self.instructions = []
+        
         super().__init__()
 
+    def linkInstruction(self, instr_):
+        self.instructions.append(instr_)
+        
     def getInConnectors(self):
         return self.inConnectors
 
@@ -387,7 +387,10 @@ class Microaction(FrozenBase):
         self.inConnectors = uA_.inConnectors
         self.resources = uA_.resources
         self.outConnectors = uA_.outConnectors
-    
+
+    def isUsedByInstr(self, instr_):
+        return (instr_ in self.instructions)
+        
 class Resource(FrozenBase):
 
     def __init__(self):
@@ -434,6 +437,7 @@ class Model(FrozenBase):
         self.traceValues = []
         self.inConnectors = []
         self.outConnectors = []
+        self.isConfig = False
 
         # TODO: Is this info ever required?
         self.isConnectorModel = False
@@ -449,6 +453,9 @@ class Model(FrozenBase):
 
     def getOutConnectors(self):
         return self.outConnectors
+
+    def isConfigurable(self):
+        return self.isConfig
         
 class TraceValue(FrozenBase):
 
@@ -463,13 +470,9 @@ class Instruction(FrozenBase):
         self.name = ""
         self.identifier = -1 # TODO: Does it make more sense to handle instruction groups instead of each instruction individually?
         self.group = []
-        self.microactions = []
         self.traceValueAssignments = []
                 
         super().__init__()
-
-    def getUsedMicroactions(self):
-        return self.microactions
 
     def getTraceValueAssignments(self):
         return self.traceValueAssignments

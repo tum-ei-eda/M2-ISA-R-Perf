@@ -27,7 +27,7 @@ class ExtractLevel:
     __MICROACTIONS = 3
     __STAGES_AND_MICROACTION_MAPPING = 4
     __PIPELINES = 5
-    __CORE_PERF_MODEL = 6
+    __VARIANT = 6
 
     def __init__(self):
         self.__currentLevel = self.__BASE_COMPONENTS
@@ -39,7 +39,7 @@ class ExtractLevel:
         self.__currentLevel += 1
 
     def isMax(self):
-        return (self.__currentLevel == self.__CORE_PERF_MODEL)
+        return (self.__currentLevel == self.__VARIANT)
 
     def isLevel(self, name_):
         val = self.__lookupLevelValue(name_)
@@ -59,8 +59,8 @@ class ExtractLevel:
             return self.__STAGES_AND_MICROACTION_MAPPING
         elif name_ == "PIPELINES":
             return self.__PIPELINES
-        elif name_ == "CORE_PERF_MODEL":
-            return self.__CORE_PERF_MODEL
+        elif name_ == "VARIANT":
+            return self.__VARIANT
     
 class Extractor(CorePerfDSLVisitor):
      
@@ -113,19 +113,19 @@ class Extractor(CorePerfDSLVisitor):
             instrs = [instr.text for instr in ctx.instructions]
             self.dictionary.addInstructionGroup(ctx.name.text, instrs)
 
-    def visitTraceConfig_def(self, ctx):
+    def visitArchitecture(self, ctx):
         if self.level.isLevel("BASE_COMPONENTS"):
             failed = False
             if ctx.name is None:
-                print(f"ERROR [Line {ctx.start.line}]: TraceConfig defined without a name")
+                print(f"ERROR [Line {ctx.start.line}]: Architecture defined without a name")
                 failed = True
-            if ctx.core is None:
-                print(f"ERROR [Line {ctx.start.line}]: TraceConfig defined without a core")
+            if ctx.isa is None:
+                print(f"ERROR [Line {ctx.start.line}]: Architecture defined without a core")
                 failed = True
 
             if not failed:
-                self.dictionary.addTraceConfig(ctx.name.text, ctx.core.text)
-            
+                self.dictionary.addArchitecture(ctx.name.text, ctx.isa.text)
+                
     # Level:MODELS_AND_TRACE_VALUE_MAPPING definitions
  
     def visitConnectorModel(self, ctx):
@@ -151,8 +151,16 @@ class Extractor(CorePerfDSLVisitor):
             trRefs = [self.visit(tr) for tr in ctx.traceVals]
             inConRefs = [self.visit(inCon) for inCon in ctx.inCons]
             outConRefs = [self.visit(outCon) for outCon in ctx.outCons]
+            
+            # Check for attributes
+            isConfigurable = False
+            if ctx.attributes:
+                for attr_i in ctx.attributes:
+                    if attr_i.getText():
+                        isConfigurable = True
+                    
             if ctx.link is not None:
-                self.dictionary.addModel(ctx.name.text, ctx.link.text, trRefs, inConRefs, outConRefs)
+                self.dictionary.addModel(ctx.name.text, ctx.link.text, trRefs, inConRefs, outConRefs, isConfigurable)
             else:
                 print(f"ERROR [Line {ctx.start.line}]: Model {ctx.name.text} defined without a link")
                 
@@ -263,10 +271,10 @@ class Extractor(CorePerfDSLVisitor):
         if self.level.isLevel("PIPELINES"):
             return [self.visit(comp) for comp in ctx.components]
             
-    # Level:CORE_PERF_MODEL definitinons
+    # Level:VARIANT definitinons
              
-    def visitCorePerfModel(self, ctx):
-        if self.level.isLevel("CORE_PERF_MODEL"):
+    def visitVariant(self, ctx):
+        if self.level.isLevel("VARIANT"):
             conModelRefs = [self.visit(cM) for cM in ctx.conModels]
             resAssigns = [self.visit(resAss) for resAss in ctx.resAssigns]
             uActionAssigns = [self.visit(uAAss) for uAAss in ctx.uActionAssigns]
@@ -276,11 +284,8 @@ class Extractor(CorePerfDSLVisitor):
                 raise RuntimeError(f"CorePerfModel {ctx.name.text} does not specify a pipeline [Line: {ctx.start.line}]") # TODO: Unify error handling
             pipeRef = self.visit(ctx.use_pipeline)
 
-            if ctx.core is None:
-                raise RuntimeError(f"CorePerfModel {ctx.name.text} does not specify a core [Line: {ctx.start.line}]") # TODO: Unify error handling
-
             # Add model to dictionary
-            self.dictionary.addVariant(ctx.name.text, pipeRef, ctx.core.text, conModelRefs, resAssigns, uActionAssigns)
+            self.dictionary.addVariant(ctx.name.text, pipeRef, conModelRefs, resAssigns, uActionAssigns)
             
                 
     # Assignments
@@ -319,12 +324,6 @@ class Extractor(CorePerfDSLVisitor):
     def visitResourceModel_ref(self, ctx):
         return self.__resolveReference(ctx.name.text, "ResourceModel", ctx.start.line)
 
-    #def visitConnectorModel_ref(self, ctx):
-    #    return self.__resolveReference(ctx.name.text, "ConnectorModel", ctx.start.line)
-    #
-    #def visitResource_ref(self, ctx):
-    #    return self.__resolveReference(ctx.name.text, "Resource", ctx.start.line)
-
     def visitModel_ref(self, ctx):
         return self.__resolveReference(ctx.name.text, "Model", ctx.start.line)
     
@@ -355,7 +354,7 @@ class Extractor(CorePerfDSLVisitor):
             if type(ref) is UnresolvedReference:
                 ref = self.dictionary.getInstance(ctx.name.text, "Instruction", ctx.start.line)
                 if type(ref) is UnresolvedReference:
-                    self.dictionary.addInstruction(ctx.name.text)
+                    self.dictionary.addInstruction(ctx.name.text) # TODO: Creating new instruction from reference!? Remove this?
                     ref = self.dictionary.getInstance(ctx.name.text, "Instruction", ctx.start.line)
         return ref
 

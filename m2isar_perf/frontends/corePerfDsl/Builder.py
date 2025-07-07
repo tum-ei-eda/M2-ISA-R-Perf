@@ -28,37 +28,37 @@ class Builder():
     def buildTopModel(self):
 
         top = StructuralModel.StructuralModel()
+        top.setArchitecture(self.dictionary.getArchitectureInfo())
+        top.assignTraceValues(self.dictionary.traceValues.values())
+        top.assignInstructions(self.dictionary.instructions.values())
         
         # Assign microactions and trace-value-assignments which are defined via the ALL and REST keywords
+        # Assign unique ID to every instruction
         instrId = 0
         for instr_name, instr in self.dictionary.instructions.items():
 
-            instr.microactions.extend(self.dictionary.ALL_Instruction.microactions)
-            instr.traceValueAssignments.extend(self.dictionary.ALL_Instruction.traceValueAssignments)
+            # ALL
+            [uA_i.linkInstruction(instr) for uA_i in self.dictionary.ALL_microactions]
+            instr.traceValueAssignments.extend(self.dictionary.ALL_traceValueAssignments)
 
+            # REST
             if instr_name not in self.dictionary.instrMicroactionMapped:
-                instr.microactions.extend(self.dictionary.REST_Instruction.microactions)
+                [uA_i.linkInstruction(instr) for uA_i in self.dictionary.REST_microactions]
             if instr_name not in self.dictionary.instrTraceValueMapped:
-                instr.traceValueAssignments.extend(self.dictionary.REST_Instruction.traceValueAssignments)
+                instr.traceValueAssignments.extend(self.dictionary.REST_traceValueAssignments)
 
+            # Switch name of default instruction
             if instr_name == Defs.KEYWORD_REST:
                 instr.name = Defs.DEFAULT_INSTR_NAME
-                instr_name = instr.name # TODO: Only used for the opcode/mask assignment below. Remove?
-
+                
             # Assign unique identifier to every instruction
             instr.identifier = instrId
             instrId += 1
-                
+            
         # Finalize the variants and add to top (structural model)
         for model_name in self.dictionary.variants.keys():
-
-            # Assign all instructions to each variant
-            for instr_i in self.dictionary.instructions.values():
-                self.dictionary.variants[model_name].instructions.append(instr_i)
                 
-            # Create variant instance with unique child objects
-            # NOTE: Make deep copy of dictionary, as we also need to copy non-virtual resources/microactions that are assigned to the current model later on
-            dictionary_cpy = copy.deepcopy(self.dictionary)
+            dictionary_cpy = self.dictionary.getVariantCopy()            
             variant = dictionary_cpy.variants[model_name]
             
             # Resolve virtual microactions
@@ -105,8 +105,8 @@ class Builder():
             variant.resolvePipelineStructure()
                 
             # Add finalized variant to TopModel
-            top.variants.append(variant)
-
+            top.addVariant(variant)
+            
         return top
                     
     # Helper Functions

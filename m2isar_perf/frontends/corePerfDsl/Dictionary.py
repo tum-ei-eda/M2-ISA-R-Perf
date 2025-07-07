@@ -14,6 +14,8 @@
 # limitations under the License.
 #
 
+import copy
+
 from meta_models.structural_model import StructuralModel
 from . import Defs
 
@@ -46,43 +48,94 @@ class InstructionGroup:
 
     def addInstruction(self, instr):
         self.instructions.append(instr)
+
+class Architecture:
+
+    def __init__(self):
+        self.name = ""
+        self.isa = ""
         
 class Dictionary():
     
     def __init__(self):
 
-        self.nameList = []
+        ## COMPONENT DICTIONARIES: Components directly related to the StructuralModel ##
         
-        self.connectors = {}
-        self.traceValues = {}
-        self.resources = {}
-        self.microactions = {}
-        self.stages = {}
-        self.pipelines = {}
+        # Components owned by variants
         self.variants = {}
-        self.resourceModels = {}
-        self.connectorModels = {}
+        self.pipelines = {}
+        self.stages = {}
+        self.microactions = {}
+        self.connectors = {}
+        self.resources = {}
         self.models = {}
+        #self.resourceModels = {}
+        #self.connectorModels = {}        
         
+        # Common components
+        self.traceValues = {}
         self.instructions = {}
-        self.instructionsGroups = {}
 
-        self.instrMicroactionMapped = []
-        self.instrTraceValueMapped = []
+        
+        ## SUPPORT MEMBERS: Objects, list, dicts used during construction of StructuralModel ##
+        
+        # List of used component names, to avoid dublicates
+        self.nameList = []
 
-        self.ALL_Instruction = StructuralModel.Instruction()
-        self.ALL_Instruction.name = Defs.KEYWORD_ALL
-
-        self.REST_Instruction = StructuralModel.Instruction()
-        self.REST_Instruction.name = Defs.KEYWORD_REST
-
+        # Alias assignments
         self.microactionAssignments = {}
         self.resourceAssignments = {}
 
-        self.traceConfig = None
+        # Instruction container to fit CorePerfDSL references
+        self.instructionsGroups = {}
+
+        # Container to keep architecture information
+        self.architecture = None
         
-    ## Interface functions
+        # Lists of mapped instructions (used to map REST instructions)
+        self.instrMicroactionMapped = []
+        self.instrTraceValueMapped = []
+
+        # Lists to track microactions + traceValueAssignments assigned to ALL/REST instructions 
+        self.ALL_microactions = []
+        self.ALL_traceValueAssignments = []
+        self.REST_microactions = []
+        self.REST_traceValueAssignments = []
+
+        # Dummy instructions for reference look-up to ALL and REST keyword
+        self.ALL_Instruction = StructuralModel.Instruction()
+        self.ALL_Instruction.name = Defs.KEYWORD_ALL
+        self.REST_Instruction = StructuralModel.Instruction()
+        self.REST_Instruction.name = Defs.KEYWORD_REST
+
         
+    ## INTERFACE FUNCTIONS: BUILDER ##
+
+    def getVariantCopy(self):
+        """
+        Creates a deep-copy of the dictionary.
+        Common components (i.e.: TraceValues, Instructions) are excluded.
+        NOTE: Support members are indeed copied. Use at your own risk.
+
+        Returns:
+        Dictionary: New instance of the dictionary.
+        """
+
+        # Exclude common components from deep-copy
+        memo_instr = {id(obj): obj for obj in self.instructions.values()}
+        memo_trVals = {id(obj): obj for obj in self.traceValues.values()}
+
+        memo = {**memo_instr, **memo_trVals}
+        return copy.deepcopy(self, memo)
+
+    def getArchitectureInfo(self):
+        if self.architecture is not None:
+            return (self.architecture.name, self.architecture.isa)
+        print(f"WARNING: No Architecture component defined!")
+        return ("","") 
+
+    ## INTERFACE FUNCTIONS: EXTRACTOR ##
+    
     def addConnector(self, name_):
         con = StructuralModel.Connector()
         con.name = name_
@@ -109,13 +162,15 @@ class Dictionary():
         model.traceValues = trVals_
         self.__addInstance(model, "Model")
         
-    def addModel(self, name_, link_, trVals_=[], inCons_=[], outCons_=[]):
+    def addModel(self, name_, link_, trVals_=[], inCons_=[], outCons_=[], isConfigurable_=False):
         model = StructuralModel.Model()
         model.name = name_
         model.link = self.__convertString(link_)
         model.traceValues = trVals_
         model.inConnectors = inCons_
         model.outConnectors = outCons_
+        model.isConfig = isConfigurable_
+
         self.__addInstance(model, "Model")
         
     def addResource(self, name_, delay_=0, model_=None):
@@ -211,11 +266,10 @@ class Dictionary():
         pipe.blockPipelines = blockPipelines_
         self.__addInstance(pipe, "Pipeline")
 
-    def addVariant(self, name_, pipe_, core_, conModels_, resAssigns_, uActionAssigns_):
+    def addVariant(self, name_, pipe_, conModels_, resAssigns_, uActionAssigns_):
         variant = StructuralModel.Variant()
         variant.name = name_
         variant.pipeline = pipe_
-        variant.core = self.__convertString(core_)
         for model_i in conModels_:
             variant.addConnectorModel(model_i)
         self.__addInstance(variant, "Variant")
@@ -243,20 +297,20 @@ class Dictionary():
         instr.name = name_
         self.__addInstance(instr, "Instruction")
 
-    def addTraceConfig(self, name_, core_):
-        if self.traceConfig is None:
-            self.traceConfig = StructuralModel.TraceConfig()
-            self.traceConfig.name = self.__convertString(name_)
-            self.traceConfig.core = self.__convertString(core_)
+    def addArchitecture(self, name_, isa_):
+        if self.architecture is None:
+            self.architecture = Architecture()
+            self.architecture.name = self.__convertString(name_)
+            self.architecture.isa = self.__convertString(isa_)
         else:
-            print(f"WARNING: Re-definition of TraceConfig (name:{name_}, core:{core_}) is ignored!")
+            print(f"WARNING: Re-definition of Architecture (name:{name_}, isa:{isa_}) is ignored!")
         
     def mapMicroactions(self, instrOrGroup_, microactions_):
         if type(instrOrGroup_) is InstructionGroup:
-            for instr in instrOrGroup_.instructions:
-                self.__addMicroactionsToInstruction(instr, microactions_)
+            for instr_i in instrOrGroup_.instructions:
+                self.__linkMicroactionsToInstruction(instr_i, microactions_)
         elif type(instrOrGroup_) is StructuralModel.Instruction:
-            self.__addMicroactionsToInstruction(instrOrGroup_, microactions_)
+            self.__linkMicroactionsToInstruction(instrOrGroup_, microactions_)
         else:
             raise TypeError("Function mapMicroactions called with illegal instance of type %s" % type(instrOrGroup_))
 
@@ -282,17 +336,15 @@ class Dictionary():
         return subDict[name_]
     
     def isVirtual(self, inst_):
-
         if not hasattr(inst_, "virtualAlias"):
             return False
-
         else:
             if inst_.name == "" and inst_.virtualAlias != "":
                 return True
             else:
                 return False
         
-    ## Helper functions
+    ## SUPPORT FUNCTIONS ##
 
     def __resolveReferenceList(self, list_):
         for i in range(len(list_)):
@@ -310,10 +362,6 @@ class Dictionary():
             return self.connectors
         elif(type_ == "TraceValue"):
             return self.traceValues
-        elif(type_ == "ConnectorModel"):
-            return self.connectorModels
-        elif(type_ == "ResourceModel"):
-            return self.resourceModels
         elif(type_ == "Model"):
             return self.models
         elif(type_ == "Resource"):
@@ -357,24 +405,49 @@ class Dictionary():
         return 0
 
 
-    def __addMicroactionsToInstruction(self, instr_, microactions_):
-        instr_.microactions.extend(microactions_)
-        if (instr_.name != Defs.KEYWORD_ALL) and (instr_.name != Defs.KEYWORD_REST):
+    #def __addMicroactionsToInstruction(self, instr_, microactions_):
+    #    instr_.microactions.extend(microactions_)
+    #    if (instr_.name != Defs.KEYWORD_ALL) and (instr_.name != Defs.KEYWORD_REST):
+    #        self.instrMicroactionMapped.append(instr_.name)
+
+    def __linkMicroactionsToInstruction(self, instr_, microactions_):
+        if instr_.name == Defs.KEYWORD_ALL:
+            self.ALL_microactions.extend(microactions_)
+        elif instr_.name == Defs.KEYWORD_REST:
+            self.REST_microactions.extend(microactions_)
+        else:
             self.instrMicroactionMapped.append(instr_.name)
+            for uA_i in microactions_:
+                uA_i.linkInstruction(instr_)
 
+    # def __addTraceValuesToInstruction(self, instr_, traceValueAssigns_):
+    # 
+    #     for trValAss_i in traceValueAssigns_:
+    #         assignment = StructuralModel.TraceValueAssignment()
+    #         assignment.traceValue = trValAss_i[0]
+    #         assignment.description = self.__convertString(trValAss_i[1])
+    #         instr_.traceValueAssignments.append(assignment)
+    #     
+    #     #instr_.traceValueAssignments.extend(traceValueAssigns_)
+    #     if (instr_.name != Defs.KEYWORD_ALL) and (instr_.name != Defs.KEYWORD_REST):
+    #         self.instrTraceValueMapped.append(instr_.name)
 
-    def __addTraceValuesToInstruction(self, instr_, traceValueAssigns_):
-
-        for trValAss_i in traceValueAssigns_:
+    def __addTraceValuesToInstruction(self, instr_, trValueAssigns_):
+        for trValAss_i in trValueAssigns_:
             assignment = StructuralModel.TraceValueAssignment()
             assignment.traceValue = trValAss_i[0]
             assignment.description = self.__convertString(trValAss_i[1])
-            instr_.traceValueAssignments.append(assignment)
-        
-        #instr_.traceValueAssignments.extend(traceValueAssigns_)
-        if (instr_.name != Defs.KEYWORD_ALL) and (instr_.name != Defs.KEYWORD_REST):
-            self.instrTraceValueMapped.append(instr_.name)
 
+            if instr_.name == Defs.KEYWORD_ALL:
+                self.ALL_traceValueAssignments.append(assignment)
+            elif instr_.name == Defs.KEYWORD_REST:
+                # TODO: Is this even legal in the CorePerfDSL?
+                self.REST_traceValueAssignments.append(assignment)
+            else:
+                instr_.traceValueAssignments.append(assignment)
+                self.instrTraceValueMapped.append(instr_.name)
+            
+    
     def __convertString(self, str_):
         return str_.strip('\"')
             

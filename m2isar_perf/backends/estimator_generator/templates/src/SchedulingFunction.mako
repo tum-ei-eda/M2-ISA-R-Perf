@@ -19,6 +19,8 @@ static SchedulingFunction *schedulingFunction_${schedFunc_i.name} = new Scheduli
   [](PerformanceModel* perfModel_){
   ${variant_.name}_PerformanceModel* perfModel = static_cast<${variant_.name}_PerformanceModel*>(perfModel_);
   ${codeBodyDict_[schedFunc_i.name]}
+  // Dump Entrance point for info print (tracing)
+  perfModel->entrancePoint = n_Enter;
   }
 );
 

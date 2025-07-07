@@ -40,17 +40,16 @@ model_def : 'Model' (model | model_list);
 
 model_list : '{' model (',' model)* '}';
 
-model : name=ID 
+model : name=ID
 ('[' attributes+=model_attr (',' attributes+=model_attr)* ']')? // Optional list of attributes
-'(' (
-      'link' ':' link=STRING
+'(' ( 'link' ':' link=STRING
       | 'trace' ':' (traceVals+=traceValue_ref | '{' traceVals+=traceValue_ref (',' traceVals+=traceValue_ref)* '}')
       | 'connectorIn' ':' (inCons+=connector_ref | '{' inCons+=connector_ref (',' inCons+=connector_ref)* '}')
       | 'connectorOut' ':' (outCons+=connector_ref | '{' outCons+=connector_ref (',' outCons+=connector_ref)* '}')
 )* ')'
 ;
 
-model_attr : 'config' ;
+model_attr : 'config' | 'info-trace' ;
 
 //////////////////////////// TRACE_VALUE_MAPPING ////////////////////////////
 

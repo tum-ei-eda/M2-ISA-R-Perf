@@ -162,7 +162,7 @@ class Dictionary():
         model.traceValues = trVals_
         self.__addInstance(model, "Model")
         
-    def addModel(self, name_, link_, trVals_=[], inCons_=[], outCons_=[], isConfigurable_=False):
+    def addModel(self, name_, link_, trVals_=[], inCons_=[], outCons_=[], isConfigurable_=False, infoTrace_=False):
         model = StructuralModel.Model()
         model.name = name_
         model.link = self.__convertString(link_)
@@ -170,7 +170,7 @@ class Dictionary():
         model.inConnectors = inCons_
         model.outConnectors = outCons_
         model.isConfig = isConfigurable_
-
+        model.hasInfoTrace = infoTrace_
         self.__addInstance(model, "Model")
         
     def addResource(self, name_, delay_=0, model_=None):

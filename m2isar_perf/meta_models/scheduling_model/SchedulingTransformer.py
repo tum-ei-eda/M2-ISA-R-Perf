@@ -35,7 +35,7 @@ class SchedulingTransformer:
 
     def __generateExternalModels(self, structVariant_, schedVariant_):
         for model_i in structVariant_.getAllModels():
-            extModel = schedVariant_.createExternalModel(model_i.name, model_i.link, model_i.isConnectorModel, model_i.isResourceModel, model_i.isConfigurable())
+            extModel = schedVariant_.createExternalModel(model_i.name, model_i.link, model_i.isConnectorModel, model_i.isResourceModel, model_i.isConfigurable(), model_i.hasInfoTrace)
             extModel.addTraceValues([t.name for t in model_i.getTraceValues()])
     
     def __generateTimingVariables(self, structVariant_, schedVariant_):

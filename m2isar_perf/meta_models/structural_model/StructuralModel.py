@@ -438,7 +438,7 @@ class Model(FrozenBase):
         self.inConnectors = []
         self.outConnectors = []
         self.isConfig = False
-
+        self.hasInfoTrace = False
         # TODO: Is this info ever required?
         self.isConnectorModel = False
         self.isResourceModel = False

@@ -148,19 +148,24 @@ class Extractor(CorePerfDSLVisitor):
 
     def visitModel(self, ctx):
         if self.level.isLevel("MODELS_AND_TRACE_VALUE_MAPPING"):
-            trRefs = [self.visit(tr) for tr in ctx.traceVals]
-            inConRefs = [self.visit(inCon) for inCon in ctx.inCons]
-            outConRefs = [self.visit(outCon) for outCon in ctx.outCons]
-            
+
             # Check for attributes
+            hasInfoTrace = False
             isConfigurable = False
             if ctx.attributes:
                 for attr_i in ctx.attributes:
-                    if attr_i.getText():
+                    if attr_i.getText() == "info-trace":
+                        hasInfoTrace = True
+                    if attr_i.getText() == "config":
                         isConfigurable = True
-                    
+                        
+
+            trRefs = [self.visit(tr) for tr in ctx.traceVals]
+            inConRefs = [self.visit(inCon) for inCon in ctx.inCons]
+            outConRefs = [self.visit(outCon) for outCon in ctx.outCons]
+
             if ctx.link is not None:
-                self.dictionary.addModel(ctx.name.text, ctx.link.text, trRefs, inConRefs, outConRefs, isConfigurable)
+                self.dictionary.addModel(ctx.name.text, ctx.link.text, trRefs, inConRefs, outConRefs, isConfigurable, hasInfoTrace)
             else:
                 print(f"ERROR [Line {ctx.start.line}]: Model {ctx.name.text} defined without a link")
                 

@@ -49,10 +49,10 @@ class Variant(FrozenBase):
         
         super().__init__()
 
-    def createExternalModel(self, name_:str, link_:str, isConModel_:bool, isResModel_:bool, isConfigurable_:bool) -> 'ExternalModel':
+    def createExternalModel(self, name_:str, link_:str, isConModel_:bool, isResModel_:bool, isConfigurable_:bool, hasInfoTrace_:bool) -> 'ExternalModel':
         if name_ in self.externalModels:
             raise RuntimeError(f"ExternalModel {name_} was already created!")
-        model = ExternalModel(name_, link_, isConModel_, isResModel_, isConfigurable_)
+        model = ExternalModel(name_, link_, isConModel_, isResModel_, isConfigurable_, hasInfoTrace_)
         self.externalModels[name_] = model
         return model
         
@@ -116,6 +116,13 @@ class Variant(FrozenBase):
         for tVar_i in self.getAllTimingVariables():
             if tVar_i.isTraced():
                 ret.append(tVar_i)
+        return ret
+
+    def getExternalModelsWithInfoTrace(self) -> List['ExternalModels']:
+        ret = []
+        for model_i in self.getAllExternalModels():
+            if model_i.hasInfoTrace:
+                ret.append(model_i)
         return ret
     
     def getAllSchedulingFunctions(self) -> List['SchedulingFunction']:
@@ -192,10 +199,11 @@ class TimingVariable(FrozenBase):
     # TODO: Is this still required somewhere?
     def setEndStage(self):
         self.isEndStage = True
+
         
 class ExternalModel(FrozenBase):
 
-    def __init__(self, name_:str, link_:str, isConModel_:bool, isResModel_:bool, isConfigurable_:bool):
+    def __init__(self, name_:str, link_:str, isConModel_:bool, isResModel_:bool, isConfigurable_:bool, hasInfoTrace_:bool):
         self.name = name_
         self.link = link_
         self.traceValues:List[str] = []
@@ -203,7 +211,8 @@ class ExternalModel(FrozenBase):
         self.isConnectorModel = isConModel_
         self.isResourceModel = isResModel_
         self.isConfig = isConfigurable_
-
+        self.hasInfoTrace = hasInfoTrace_
+        
     def addTraceValues(self, trVal_:List[str]):
         self.traceValues.extend(trVal_)
 

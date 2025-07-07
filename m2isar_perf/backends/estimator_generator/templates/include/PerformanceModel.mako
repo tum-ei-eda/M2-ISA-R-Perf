@@ -36,6 +36,9 @@ public:
     %endfor
   {};
 
+  // Entrance-point "timing variable" (only used for info-stream)
+  uint64_t entrancePoint = 0;
+
   %if variant_.getAllSingleElementTimingVariables():
   // Single-Element Timing Variables
   %endif

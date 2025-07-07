@@ -46,13 +46,12 @@ uint64_t ${variant_.name}_PerformanceModel::getCycleCount(void)
 std::string ${variant_.name}_PerformanceModel::getPipelineStream(void)
 {
   std::stringstream ret_strs;
-  <% firstIt = True%>
+  ret_strs << entrancePoint;
   %for var_i in variant_.getAllTracedTimingVariables():
-  %if firstIt:
-  ret_strs << ${builder_.getTimingVariableCnt(var_i)}; <% firstIt = False%>
-  %else:
   ret_strs << "," << ${builder_.getTimingVariableCnt(var_i)};
-  %endif
+  %endfor
+  %for mod_i in variant_.getExternalModelsWithInfoTrace():
+  ret_strs << "," << ${mod_i.name}.getInfoStream();
   %endfor
   ret_strs << std::endl;
   return ret_strs.str();
@@ -61,13 +60,12 @@ std::string ${variant_.name}_PerformanceModel::getPipelineStream(void)
 std::string ${variant_.name}_PerformanceModel::getPrintHeader(void)
 {
   std::stringstream ret_strs;
-  <% firstIt = True %>
+  ret_strs << "Enter";
   %for var_i in variant_.getAllTracedTimingVariables():
-  %if firstIt:
-  ret_strs << "${var_i.name}"; <% firstIt = False %>
-  %else:
   ret_strs << "," << "${var_i.name}";
-  %endif
+  %endfor
+  %for mod_i in variant_.getExternalModelsWithInfoTrace():
+  ret_strs << "," << ${mod_i.name}.getInfoHeader();
   %endfor
   ret_strs << std::endl;
   return ret_strs.str();

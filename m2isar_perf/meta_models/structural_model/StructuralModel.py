@@ -84,6 +84,14 @@ class Variant(FrozenBase):
     def getAllStages(self):
         return self.pipeline.getAllStages()
 
+    def getAllResources(self):
+        resources = []
+        for uA_i in self.getAllMicroactions():
+            for res_i in uA_i.getResources():
+                if res_i not in resources:
+                    resources.append(res_i)
+        return resources
+    
     def getAllModels(self):
         return self.models
         
@@ -120,6 +128,11 @@ class Variant(FrozenBase):
     def getPipeline(self):
         return self.pipeline
 
+    def getAllPipelines(self):
+        pipes = self.pipeline.getAllSubPipelines()
+        pipes.append(self.pipeline)
+        return pipes
+        
     def getParentModel(self):
         return self.parent
 
@@ -152,7 +165,10 @@ class Pipeline(FrozenBase):
             
     def isTopPipeline(self):
         return self.parent is None
-        
+
+    def getComponents(self):
+        return self.components
+    
     # Return all microactions located in (sub-) stages of this pipeline
     def getAllMicroactions(self):
         uActions = []
@@ -390,6 +406,12 @@ class Microaction(FrozenBase):
 
     def isUsedByInstr(self, instr_):
         return (instr_ in self.instructions)
+
+    def isVirtual(self):
+        return self.virtualAlias != ""
+
+    def getVirtualAlias(self):
+        return self.virtualAlias
         
 class Resource(FrozenBase):
 
@@ -416,7 +438,13 @@ class Resource(FrozenBase):
 
     def getResourceModelName(self):
         return self.resourceModel.name
-        
+
+    def isVirtual(self):
+        return self.virtualAlias != ""
+
+    def getVirtualAlias(self):
+        return self.virtualAlias
+    
 class Connector(FrozenBase):
 
     def __init__(self):

@@ -28,9 +28,10 @@ from frontends.corePerfDsl import api as Frontend # TODO: Change from API to Cla
 from meta_models.scheduling_model.SchedulingTransformer import SchedulingTransformer
 
 from backends.monitor_extractor import api as backend_monitor_extractor # TODO: Change from API to Class format 
-from backends.structure_viewer.StructuralModelViewer import StructuralModelViewer
+#from backends.structure_viewer.StructuralModelViewer import StructuralModelViewer
 from backends.schedule_viewer.SchedulingModelViewer import SchedulingModelViewer
 from backends.estimator_generator.EstimatorGenerator import EstimatorGenerator
+from backends.description_writer.DescriptionWriter import DescriptionWriter
 
 # Read command line arguments
 argParser = argparse.ArgumentParser()
@@ -39,6 +40,7 @@ argParser.add_argument("-o", "--output_dir", help="Directory to store generated 
 argParser.add_argument("-c", "--code_gen", action="store_true", help="Generate estimator code")
 argParser.add_argument("-m", "--monitor_description", action="store_true", help="Generate monitor description")
 argParser.add_argument("-i", "--info_print", action="store_true", help="Generate info/debug/doc prints")
+argParser.add_argument("-w", "--write_description", action="store_true", help="Write a CorePerfDSL description (WiP)")
 argParser.add_argument("-d", "--dump_dir", help="Directory to dump intermediatly generated models.")
 args = argParser.parse_args()
 
@@ -63,3 +65,5 @@ if args.code_gen:
 if args.info_print :
     #StructuralModelViewer().execute(structModel, outDir)
     SchedulingModelViewer().execute(schedModel, outDir)
+if args.write_description:
+    DescriptionWriter().execute(structModel, outDir, "testFile")

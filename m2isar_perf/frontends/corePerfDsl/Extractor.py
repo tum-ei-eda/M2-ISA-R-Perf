@@ -318,8 +318,8 @@ class Extractor(CorePerfDSLVisitor):
     #def visitConnectorModel_ref(self, ctx):
     #    return self.__resolveReference(ctx.name.text, "ConnectorModel", ctx.start.line)
     #
-    #def visitResource_ref(self, ctx):
-    #    return self.__resolveReference(ctx.name.text, "Resource", ctx.start.line)
+    def visitResource_ref(self, ctx):
+        return self.__resolveReference(ctx.name.text, "Resource", ctx.start.line)
 
     def visitModel_ref(self, ctx):
         return self.__resolveReference(ctx.name.text, "Model", ctx.start.line)

@@ -141,8 +141,8 @@ class SchedulingFunction(FrozenBase):
         
         # Owned instances
         self.nodes:List[Node] = []
-        self.inEdges:List[Edge] = []
-        self.outEdges:List[Edge] = []
+        self.inEdges:List[Edge] = [] # TODO: Not used? Not updated? Remove!?
+        self.outEdges:List[Edge] = [] # TODO: Not used? Not updated? Remove!?
 
         # Referenced instances
         self.rootNode:Optional[Node] = None
@@ -169,6 +169,18 @@ class SchedulingFunction(FrozenBase):
 
     def getAllNodes(self) -> List['Node']:
         return self.nodes
+
+    def getAllOutEdges(self) -> List['Edge']:
+        outEdges = []
+        for node_i in self.nodes:
+            for edge_i in node_i.getAllOutEdges():
+                if edge_i not in outEdges:
+                    outEdges.append(edge_i)
+        return outEdges
+
+    def getTracedTimingVariables(self) -> List['TimingVariable']:
+        timingVars = [e.getTimingVariable() for e in self.getAllOutEdges() if not e.isDynamic()]
+        return [tv for tv in timingVars if tv.isTraced()]
 
 class TimingVariable(FrozenBase):
 

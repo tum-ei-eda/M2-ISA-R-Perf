@@ -44,6 +44,7 @@ class EstimatorGenerator:
             self.builder = Builder(variant_i)
             self.__generatePerformanceModel(variant_i, outDir)
             self.__generateSchedulingFunctions(variant_i, outDir)
+            self.__generateSchedulingPrinters(variant_i, outDir)
             
 
     def __generatePerformanceModel(self, variant_, outDir_):
@@ -73,6 +74,15 @@ class EstimatorGenerator:
         template = Template(filename = str(self.templateDir) + "/src/SchedulingFunction.mako")
         code = template.render(**{"variant_": variant_, "codeBodyDict_": codeBodyDict, "builder_": self.builder})
         outFile = outDir_ / "src" / (variant_.name + "_SchedulingFunction.cpp")
+        with outFile.open('w') as f:
+            f.write(code)
+
+    def __generateSchedulingPrinters(self, variant_, outDir_):
+    
+        # Generate SchedulingPrinter file
+        template = Template(filename = str(self.templateDir) + "/src/SchedulingPrinter.mako")
+        code = template.render(**{"variant_": variant_, "builder_": self.builder})
+        outFile = outDir_ / "src" / (variant_.name + "_SchedulingPrinter.cpp")
         with outFile.open('w') as f:
             f.write(code)
         

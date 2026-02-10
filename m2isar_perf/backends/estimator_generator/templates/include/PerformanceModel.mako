@@ -17,12 +17,13 @@ ${builder_.getFileHeader()}
 namespace ${variant_.name}{
 
 extern SchedulingFunctionSet* ${variant_.name}_SchedulingFunctionSet;
+extern SchedulingPrinterSet* ${variant_.name}_SchedulingPrinterSet;
 
 class ${variant_.name}_PerformanceModel : public PerformanceModel
 {
 public:
 
-  ${variant_.name}_PerformanceModel() : PerformanceModel("${variant_.name}", ${variant_.name}_SchedulingFunctionSet)
+  ${variant_.name}_PerformanceModel() : PerformanceModel("${variant_.name}", ${variant_.name}_SchedulingFunctionSet, ${variant_.name}_SchedulingPrinterSet)
     % for tVar_i in variant_.getAllMultiElementTimingVariables():
     ,${tVar_i.name}(${tVar_i.getNumElements()},0)
     %endfor
@@ -57,7 +58,7 @@ public:
 
   virtual void connectChannel(Channel*);
   virtual uint64_t getCycleCount(void);
-  virtual std::string getPipelineStream(void);
+  std::string getPipelineStream() override;
   virtual std::string getPrintHeader(void);
 
 };

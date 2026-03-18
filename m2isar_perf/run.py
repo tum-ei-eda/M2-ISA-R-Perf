@@ -32,6 +32,8 @@ from backends.monitor_extractor import api as backend_monitor_extractor # TODO: 
 #from backends.structure_viewer.StructuralModelViewer import StructuralModelViewer
 from backends.schedule_viewer.SchedulingModelViewer import SchedulingModelViewer
 from backends.estimator_generator.EstimatorGenerator import EstimatorGenerator
+from backends.block_extractor_generator.BlockExtractorGenerator import BlockExtractorGenerator
+from backends.block_schedule_generator.BlockScheduleGenerator import BlockScheduleGenerator
 
 # Read command line arguments
 argParser = argparse.ArgumentParser()
@@ -41,7 +43,8 @@ argParser.add_argument("-c", "--code_gen", action="store_true", help="Generate e
 argParser.add_argument("-m", "--monitor_description", action="store_true", help="Generate monitor description")
 argParser.add_argument("-i", "--info_print", action="store_true", help="Generate info/debug/doc prints")
 
-argParser.add_argument("-t", "--test", action="store_true", help="Flag to trigger test environment [TODO: REPLACE]")
+argParser.add_argument("-e", "--block_ext", action="store_true", help="Generate block extractor")
+argParser.add_argument("-b", "--block_gen", help="Generate block-scheduling-functions")
 
 argParser.add_argument("-d", "--dump_dir", help="Directory to dump intermediatly generated models.")
 args = argParser.parse_args()
@@ -55,43 +58,48 @@ if args.description.endswith('.corePerfDsl'):
 else:
     sys.exit("FATAL: Description format is not supported. Currently only supporting files of type .corePerfDsl")
 
-# Call model transformer (structural -> scheduling model) if applicable
-if args.code_gen or args.info_print or args.test:
+# Call model transformers if applicable
+if args.code_gen or args.info_print or (args.block_gen is not None):
     schedModel = SchedulingTransformer().transform(structModel)
+    if args.block_gen is not None:
+        matrixModel = MatrixTransformer().transform(schedModel)
 
-if args.test:
-    matrixModel = MatrixTransformer().transform(schedModel)
+    
 
-    instrDescript = {
-        "typeId": 0,
-        "rs1": 5,
-        "rs2": 8,
-        "rd": 9
-    }
-
-    instrDescript2 = {
-        "typeId": 0,
-        "rs1": 3,
-        "rs2": 9,
-        "rd": 9
-    }
-
-    print()
-    for var_i in matrixModel.getAllVariants():
-        matrix = var_i.getMatrix(instrDescript)
-        matrix2 = var_i.mulMatrix_full(matrix, instrDescript2)
-
-        matrix3 = var_i.mulMatrix(matrix, instrDescript2)
-        
-        var_i.compareMatrix(matrix2, matrix3, True)
-
-        var_i.showMatrix(matrix3)
+#    instrDescript = {
+#        "typeId": 0,
+#        "rs1": 5,
+#        "rs2": 8,
+#        "rd": 9
+#    }
+#
+#    instrDescript2 = {
+#        "typeId": 0,
+#        "rs1": 3,
+#        "rs2": 9,
+#        "rd": 9
+#    }
+#
+#    print()
+#    for var_i in matrixModel.getAllVariants():
+#        matrix = var_i.getMatrix(instrDescript)
+#        matrix2 = var_i.mulMatrix_full(matrix, instrDescript2)
+#
+#        matrix3 = var_i.mulMatrix(matrix, instrDescript2)
+#        
+#        var_i.compareMatrix(matrix2, matrix3, True)
+#
+#        var_i.showMatrix(matrix3)
 
 # Call applicable backends
 if args.monitor_description:
     backend_monitor_extractor.execute(structModel, outDir)
 if args.code_gen:
     EstimatorGenerator().execute(schedModel, outDir)
+if args.block_ext:
+    BlockExtractorGenerator().execute(structModel, outDir)
+if args.block_gen is not None:
+    BlockScheduleGenerator().execute(matrixModel, args.block_gen, outDir)
 if args.info_print :
     #StructuralModelViewer().execute(structModel, outDir)
     SchedulingModelViewer().execute(schedModel, outDir)

@@ -39,16 +39,11 @@ class MatrixTransformer:
 
             for schedFunc_i in schedVar_i.getAllSchedulingFunctions():
 
+                skipInstr = False # TODO: This should be removed as soon as we can cover all features (e.g. dynamic delays)
+
+                # Generate Scheduling-Graph (networkx)
                 schedGraph = nx.DiGraph()
-
                 openNodes = [schedFunc_i.getRootNode()]
-                #inputs = []
-                #outputs = []
-
-                skipInstr = False
-
-                verbose = True if schedFunc_i.name == "add" else False
-
                 while openNodes:
                     curNode = openNodes.pop(0)
 
@@ -72,9 +67,11 @@ class MatrixTransformer:
 
                 if skipInstr:
                     continue
-
+                
+                # Create compressed Instruction-Matrix object
                 cInstrMatrix = matrixVar.createCompInstrMatrix(schedFunc_i.name, schedFunc_i.identifier)
 
+                # Calculate longest path between all out- and in-variable pairs
                 for outVar_i in matrixVar.getAllOutVariables():
                     
                     if outVar_i.getGraphName() not in schedGraph:                        
@@ -102,10 +99,6 @@ class MatrixTransformer:
                                 maxWeight = max(maxWeight, weight)
 
                         cInstrMatrix.addElement(inVar_i, outVar_i, maxWeight)
-
-                if verbose:
-                    cInstrMatrix.show()
-                    print()
 
         return matrixModel
 

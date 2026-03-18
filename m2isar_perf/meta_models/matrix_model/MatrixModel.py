@@ -30,7 +30,7 @@ class MatrixModel(FrozenBase):
         super().__init__()
 
     def createVariant(self, name_:str) -> 'Variant':
-        variant = Variant(name_)
+        variant = Variant(name_, self)
         self.variants.append(variant)
         return variant
     
@@ -39,8 +39,9 @@ class MatrixModel(FrozenBase):
     
 class Variant(FrozenBase):
 
-    def __init__(self, name_:str):
+    def __init__(self, name_:str, parent_:'MatrixModel'):
         self.name = name_
+        self.parent = parent_
 
         # TODO: Add control-flow to make sure the sets are created in-order!
         #self.timingVarSetCreated = False
@@ -58,6 +59,9 @@ class Variant(FrozenBase):
         self.outVariables:Dict[OutVariable] = {}
 
         super().__init__()
+
+    def getParentModel(self):
+        return self.parent
 
     def createCompInstrMatrix(self, name_:str, typeId_:int) -> 'CompressedInstructionMatrix':
         cInstrMatrix = CompressedInstructionMatrix(name_, typeId_, self)

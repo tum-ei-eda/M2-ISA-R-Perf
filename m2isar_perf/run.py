@@ -26,6 +26,7 @@ from common import common as cf
 from frontends.corePerfDsl import api as Frontend # TODO: Change from API to Class format 
 
 from meta_models.scheduling_model.SchedulingTransformer import SchedulingTransformer
+from meta_models.matrix_model.MatrixTransformer import MatrixTransformer
 
 from backends.monitor_extractor import api as backend_monitor_extractor # TODO: Change from API to Class format 
 #from backends.structure_viewer.StructuralModelViewer import StructuralModelViewer
@@ -39,6 +40,9 @@ argParser.add_argument("-o", "--output_dir", help="Directory to store generated 
 argParser.add_argument("-c", "--code_gen", action="store_true", help="Generate estimator code")
 argParser.add_argument("-m", "--monitor_description", action="store_true", help="Generate monitor description")
 argParser.add_argument("-i", "--info_print", action="store_true", help="Generate info/debug/doc prints")
+
+argParser.add_argument("-t", "--test", action="store_true", help="Flag to trigger test environment [TODO: REPLACE]")
+
 argParser.add_argument("-d", "--dump_dir", help="Directory to dump intermediatly generated models.")
 args = argParser.parse_args()
 
@@ -52,8 +56,36 @@ else:
     sys.exit("FATAL: Description format is not supported. Currently only supporting files of type .corePerfDsl")
 
 # Call model transformer (structural -> scheduling model) if applicable
-if args.code_gen or args.info_print:
+if args.code_gen or args.info_print or args.test:
     schedModel = SchedulingTransformer().transform(structModel)
+
+if args.test:
+    matrixModel = MatrixTransformer().transform(schedModel)
+
+    instrDescript = {
+        "typeId": 0,
+        "rs1": 5,
+        "rs2": 8,
+        "rd": 9
+    }
+
+    instrDescript2 = {
+        "typeId": 0,
+        "rs1": 3,
+        "rs2": 9,
+        "rd": 9
+    }
+
+    print()
+    for var_i in matrixModel.getAllVariants():
+        matrix = var_i.getMatrix(instrDescript)
+        matrix2 = var_i.mulMatrix_full(matrix, instrDescript2)
+
+        matrix3 = var_i.mulMatrix(matrix, instrDescript2)
+        
+        var_i.compareMatrix(matrix2, matrix3, True)
+
+        var_i.showMatrix(matrix3)
 
 # Call applicable backends
 if args.monitor_description:

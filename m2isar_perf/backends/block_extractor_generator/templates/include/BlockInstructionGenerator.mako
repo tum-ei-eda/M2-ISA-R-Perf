@@ -31,7 +31,7 @@ public:
         ret_strs << offset_ << "{\n";
         ret_strs << offset_ << "\t\"typeId\": " << typeId;
         % for (key_i, val_i) in builder_.getTraceValuePairs(instr_i):
-        ret_strs << offset_ << "\t\"${key_i}\": " << ${val_i};
+        ret_strs << ",\n" << offset_ << "\t\"${key_i}\": " << ${val_i};
         % endfor
         ret_strs << "\n" << offset_ << "}";
         return ret_strs.str();

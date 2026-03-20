@@ -256,15 +256,15 @@ class Variant(FrozenBase):
                 colsWidths[col_i] = max(colsWidths[col_i], len(str(matrix_[row_i][col_i])))
 
         e = ""
-        print(f"{e:{rowNameWidth}} ", end="")
+        print(f"{e:{rowNameWidth}}", end="")
         for col_i in range(dim):
-            print(f"| {names[col_i]:{colsWidths[col_i]}} ", end="")
+            print(f"|{names[col_i]:{colsWidths[col_i]}}", end="")
         print()
         
         for row_i in range(dim):
-            print(f"{names[row_i]:{rowNameWidth}} ", end="")
+            print(f"{names[row_i]:{rowNameWidth}}", end="")
             for col_i in range(dim):
-                print(f"| {matrix_[row_i][col_i]:{colsWidths[col_i]}} ", end="")
+                print(f"|{matrix_[row_i][col_i]:{colsWidths[col_i]}}", end="")
             print()
         print()
 

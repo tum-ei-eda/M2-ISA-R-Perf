@@ -20,6 +20,7 @@ import argparse
 import pathlib
 import pickle
 import sys
+import time
 
 from common import common as cf
 
@@ -36,6 +37,7 @@ from backends.block_extractor_generator.BlockExtractorGenerator import BlockExtr
 from backends.block_schedule_generator.BlockScheduleGenerator import BlockScheduleGenerator
 
 # Read command line arguments
+startTime = time.time()
 argParser = argparse.ArgumentParser()
 argParser.add_argument("description", help="File containing the description of the performance model.")
 argParser.add_argument("-o", "--output_dir", help="Directory to store generated files")
@@ -103,3 +105,7 @@ if args.block_gen is not None:
 if args.info_print :
     #StructuralModelViewer().execute(structModel, outDir)
     SchedulingModelViewer().execute(schedModel, outDir)
+
+# Calculate run-time
+endTime = time.time()
+print(f"Total execution time M2ISAR-Perf: {float(endTime-startTime)}s")

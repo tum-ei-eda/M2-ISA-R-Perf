@@ -127,8 +127,11 @@ class Variant(FrozenBase):
         colVarPairs.extend(self.branchSet.getColumnVariablePairs())
         return colVarPairs
 
-    def getMatrix(self, instrDescription_:Dict):
+    def getMatrix(self, instrDescription_:Dict, verbose_=False):
         cInstrMatrix = self.compInstrMatrixes[instrDescription_["typeId"]]
+
+        if verbose_:
+            print(f"Getting matrix: {cInstrMatrix.name}")
 
         dim = self.getDimension()
         matrix = [[-1 for _ in range(dim)] for _ in range(dim)]
@@ -147,7 +150,7 @@ class Variant(FrozenBase):
                 row += self.regSet.getRowOffset()
                 regUnitRows.remove(row)
                 for (col_i, iVar_i) in colVarPairs:
-                    matrix[row_i][col_i] = cInstrMatrix.getElement(iVar_i, oVar_i)
+                    matrix[row][col_i] = cInstrMatrix.getElement(iVar_i, oVar_i)
 
         # Set remaining register out-variables to unit-row
         for row_i in regUnitRows:
@@ -161,10 +164,57 @@ class Variant(FrozenBase):
 
         return matrix
     
-    def mulMatrix(self, matrix_, instrDescription_:Dict):
+#    def mulMatrix(self, matrix_, instrDescription_:Dict, verbose_=False):
+#        cInstrMatrix = self.compInstrMatrixes[instrDescription_["typeId"]]
+#
+#        if verbose_:
+#            print(f"Multiplying matrix: {cInstrMatrix.name}")
+#
+#        newMatrix = copy.deepcopy(matrix_)
+#
+#        def updateVal(val_, iVar_, oVar_, j_, col_):
+#            if ((a := cInstrMatrix.getElement(iVar_, oVar_)) != -1) and ((b := matrix_[j_][col_]) != -1):
+#                val_ = max(val_, a + b)
+#            return val_
+#
+#        colVarPairs = self.getAllColumnVariablePairs(instrDescription_)
+#
+#        for col_i in range(self.getDimension()):
+#
+#            # Compute rows associated with timing variables
+#            for row_i, oVar_i in enumerate(self.timingVarSet.getAllOutVariables()):
+#                val = -1
+#                for (j, iVar_i) in colVarPairs:
+#                    val = updateVal(val, iVar_i, oVar_i, j, col_i)
+#                newMatrix[row_i][col_i] = val
+#
+#            # Compute rows associated with register variables
+#            for oVar_i in self.regSet.getAllOutVariables():
+#                if(row := oVar_i.map2Row(instrDescription_)) is not None:
+#                    row += self.regSet.getRowOffset()
+#                    val = -1
+#                    for (j, iVar_i) in colVarPairs:
+#                        val = updateVal(val, iVar_i, oVar_i, j, col_i)
+#                    newMatrix[row][col_i] = val
+#
+#            # Compute rows associated with branch variables
+#            for row_i, oVar_i in enumerate(self.branchSet.getAllOutVariables()):
+#                row_i += self.branchSet.getRowOffset()
+#                val = -1
+#                for (j, iVar_i) in colVarPairs:
+#                    val = updateVal(val, iVar_i, oVar_i, j, col_i)
+#                newMatrix[row_i][col_i] = val
+#
+#        return newMatrix
+    
+    def mulMatrix(self, matrix_, instrDescription_:Dict, verbose_=False):
         cInstrMatrix = self.compInstrMatrixes[instrDescription_["typeId"]]
 
-        newMatrix = copy.deepcopy(matrix_)
+        if verbose_:
+            print(f"Multiplying matrix: {cInstrMatrix.name}")
+
+        dim = self.getDimension()
+        newMatrix = [[None]*dim for _ in range(dim)]
 
         def updateVal(val_, iVar_, oVar_, j_, col_):
             if ((a := cInstrMatrix.getElement(iVar_, oVar_)) != -1) and ((b := matrix_[j_][col_]) != -1):
@@ -172,67 +222,76 @@ class Variant(FrozenBase):
             return val_
 
         colVarPairs = self.getAllColumnVariablePairs(instrDescription_)
+        remainingRows = list(range(dim))
 
-        for col_i in range(self.getDimension()):
-            
-            # Compute rows associated with timing variables
-            for row_i, oVar_i in enumerate(self.timingVarSet.getAllOutVariables()):
+        # Compute rows associated with timing variables
+        for row_i, oVar_i in enumerate(self.timingVarSet.getAllOutVariables()):
+            remainingRows.remove(row_i)
+            for col_i in range(dim):
                 val = -1
                 for (j, iVar_i) in colVarPairs:
                     val = updateVal(val, iVar_i, oVar_i, j, col_i)
                 newMatrix[row_i][col_i] = val
 
-            # Compute rows associated with register variables
-            for oVar_i in self.regSet.getAllOutVariables():
-                if(row := oVar_i.map2Row(instrDescription_)) is not None:
-                    row += self.regSet.getRowOffset()
+        # Compute rows associated with register variables
+        for oVar_i in self.regSet.getAllOutVariables():
+            if(row := oVar_i.map2Row(instrDescription_)) is not None:
+                row += self.regSet.getRowOffset()
+                remainingRows.remove(row)
+                for col_i in range(dim):
                     val = -1
                     for (j, iVar_i) in colVarPairs:
                         val = updateVal(val, iVar_i, oVar_i, j, col_i)
                     newMatrix[row][col_i] = val
 
-            # Compute rows associated with branch variables
-            for row_i, oVar_i in enumerate(self.branchSet.getAllOutVariables()):
-                row_i += self.branchSet.getRowOffset()
+        # Compute rows associated with branch variables
+        for row_i, oVar_i in enumerate(self.branchSet.getAllOutVariables()):
+            row_i += self.branchSet.getRowOffset()
+            remainingRows.remove(row_i)
+            for col_i in range(dim):
                 val = -1
                 for (j, iVar_i) in colVarPairs:
                     val = updateVal(val, iVar_i, oVar_i, j, col_i)
                 newMatrix[row_i][col_i] = val
 
-        return newMatrix
-
-
-    # TODO: DELETE? DEBUG
-    def mulMatrix_full(self, matrix_, instrDescription_:Dict):
-        instrMatrix = self.getMatrix(instrDescription_)
-
-        dim = self.getDimension()
-
-        newMatrix = [[-1 for _ in range(dim)] for _ in range(dim)]
-
-        for row_i in range(dim):
-            for col_i in range(dim):
-                val = -1
-                for j in range(dim):
-                    if instrMatrix[row_i][j] != -1 and matrix_[j][col_i] != -1:
-                        val = max(val, instrMatrix[row_i][j] + matrix_[j][col_i])
-                newMatrix[row_i][col_i] = val
+        # Handle other rows (unit rows)
+        for row_i in remainingRows:
+            newMatrix[row_i] = matrix_[row_i]  
 
         return newMatrix
+
+
+#    # TODO: DELETE? DEBUG
+#    def mulMatrix_full(self, matrix_, instrDescription_:Dict):
+#        instrMatrix = self.getMatrix(instrDescription_)
+#
+#        dim = self.getDimension()
+#
+#        newMatrix = [[-1 for _ in range(dim)] for _ in range(dim)]
+#
+#        for row_i in range(dim):
+#            for col_i in range(dim):
+#                val = -1
+#                for j in range(dim):
+#                    if instrMatrix[row_i][j] != -1 and matrix_[j][col_i] != -1:
+#                        val = max(val, instrMatrix[row_i][j] + matrix_[j][col_i])
+#                newMatrix[row_i][col_i] = val
+#
+#        return newMatrix
     
-    # TODO: DELETE? DEBUG
-    def compareMatrix(self, matrixA_, matrixB_, verbose_=False) -> bool:
-        dim = self.getDimension()
-        passed = True
-        
-        for row_i in range(dim):
-            for col_i in range(dim):
-                if matrixA_[row_i][col_i] != matrixB_[row_i][col_i]:
-                    passed = False
-                    if verbose_:
-                        print(f"Mismatch [{row_i}][{col_i}]: {matrixA_[row_i][col_i]} vs. {matrixB_[row_i][col_i]}")
-        
-        return passed
+#    # TODO: DELETE? DEBUG
+#    def compareMatrix(self, matrixA_, matrixB_, verbose_=False) -> bool:
+#        dim = self.getDimension()
+#        passed = True
+#        
+#        for row_i in range(dim):
+#            for col_i in range(dim):
+#                if matrixA_[row_i][col_i] != matrixB_[row_i][col_i]:
+#                    passed = False
+#                    if verbose_:
+#                        print(f"Mismatch [{row_i}][{col_i}]: {matrixA_[row_i][col_i]} vs. {matrixB_[row_i][col_i]}")
+#        
+#        return passed
     
     # TODO: Debug. Delete?
     def showMatrix(self, matrix_):

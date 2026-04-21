@@ -36,7 +36,7 @@ class EstimatorGenerator:
         for variant_i in model_.getAllVariants():
 
             print(f" > Creating output directory for {variant_i.name}")
-            outDir = dirUtils.getCodeDirPath(outDir_, variant_i, "perf_models")
+            outDir = dirUtils.getCodeDirPath(outDir_, variant_i, "perf_estimator")
             dirUtils.createOrReplaceDir(outDir / "src")
             dirUtils.createOrReplaceDir(outDir / "include")
             

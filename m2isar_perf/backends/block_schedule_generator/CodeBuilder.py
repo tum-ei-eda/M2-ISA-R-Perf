@@ -46,3 +46,18 @@ class CodeBuilder:
     
     def getHeaderGuardPrefix(self):
         return ("SWEVAL_BACKENDS_" + self.getName().upper())
+    
+    def getResourceGroupClassName(self, resGr_):
+        return (self.getName() + "_" + resGr_.name + "_ResourceGroup")
+    
+    # TODO: This is very hacky and not consistent with generation of PerformanceSimulator.... Find a better way
+    def getModelClassName(self, mod_):
+        retStr = mod_.link.replace('.h','')
+        retStr = retStr.replace('/','::')
+        return retStr
+    
+    def getBranchGroupClassName(self):
+        return (self.getName() + "_BranchGroup")
+    
+    def getChannelClassName(self):
+        return (self.getName() + "_Channel")

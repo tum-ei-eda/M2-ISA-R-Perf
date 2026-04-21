@@ -66,33 +66,6 @@ if args.code_gen or args.info_print or (args.block_gen is not None):
     if args.block_gen is not None:
         matrixModel = MatrixTransformer().transform(schedModel)
 
-    
-
-#    instrDescript = {
-#        "typeId": 0,
-#        "rs1": 5,
-#        "rs2": 8,
-#        "rd": 9
-#    }
-#
-#    instrDescript2 = {
-#        "typeId": 0,
-#        "rs1": 3,
-#        "rs2": 9,
-#        "rd": 9
-#    }
-#
-#    print()
-#    for var_i in matrixModel.getAllVariants():
-#        matrix = var_i.getMatrix(instrDescript)
-#        matrix2 = var_i.mulMatrix_full(matrix, instrDescript2)
-#
-#        matrix3 = var_i.mulMatrix(matrix, instrDescript2)
-#        
-#        var_i.compareMatrix(matrix2, matrix3, True)
-#
-#        var_i.showMatrix(matrix3)
-
 # Call applicable backends
 if args.monitor_description:
     backend_monitor_extractor.execute(structModel, outDir)
@@ -101,10 +74,15 @@ if args.code_gen:
 if args.block_ext:
     BlockExtractorGenerator().execute(structModel, outDir)
 if args.block_gen is not None:
+    #pass
     BlockScheduleGenerator().execute(matrixModel, args.block_gen, outDir)
 if args.info_print :
     #StructuralModelViewer().execute(structModel, outDir)
     SchedulingModelViewer().execute(schedModel, outDir)
+
+#print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+#
+#print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
 # Calculate run-time
 endTime = time.time()

@@ -15,6 +15,14 @@
 #
 
 from meta_models.common.FrozenBase import FrozenBase
+#from .MaxPlusLib import SumOfProducts as SoP
+#from .MaxPlusLib import mp_mul
+
+#from .MaxPlusLib2 import SumOfProducts as SoP
+#from .MaxPlusLib2 import mp_mul, mp_add
+
+from .MaxPlusLib import SumOfProducts as SoP
+from .MaxPlusLib import mp_mul, mp_add, mp_create_sop
 
 from typing import List, Dict, Tuple
 import copy
@@ -49,10 +57,13 @@ class Variant(FrozenBase):
         #self.branchSetCreated = False
 
         # Owned instances
-        self.compInstrMatrixes:Dict[int, CompressedInstructionMatrix] = {}
+        self.instructions:Dict[int, Instruction] = {}
         self.timingVarSet = TimingVariableSet(self)
         self.regSet = RegisterSet(self)
         self.branchSet = BranchSet(self)
+        self.resourceGroups:Dict[str, ResourceGroup] = {}
+        self.branchGroup = None
+        self.combinations:List[Combination] = []
 
         # Look-up
         self.inVariables:Dict[InVariable] = {}
@@ -63,12 +74,28 @@ class Variant(FrozenBase):
     def getParentModel(self):
         return self.parent
 
-    def createCompInstrMatrix(self, name_:str, typeId_:int) -> 'CompressedInstructionMatrix':
-        cInstrMatrix = CompressedInstructionMatrix(name_, typeId_, self)
-        if typeId_ in self.compInstrMatrixes:
-            raise RuntimeError(f"Cannot add compressed-instruction-matrix {name_} with type-ID {typeId_}. Type-ID is already registered.")
-        self.compInstrMatrixes[typeId_] = cInstrMatrix
-        return cInstrMatrix
+    def createInstruction(self, name_:str, typeId_:int) -> 'Instruction':
+        instr = Instruction(name_, typeId_, self)
+        if typeId_ in self.instructions:
+            raise RuntimeError(f"Cannot add instruction {name_} with type-ID {typeId_}. Type-ID is already registered.")
+        self.instructions[typeId_] = instr
+        return instr
+    
+    def createResourceGroup(self, name_:str) -> 'ResourceGroup':
+        resGr = ResourceGroup(name_, len(self.resourceGroups))
+        if name_ in self.resourceGroups:
+            raise RuntimeError(f"Cannot add resource-group {name_}. Name is already registered.")
+        self.resourceGroups[name_] = resGr
+        return resGr
+    
+    def createBranchGroup(self) -> 'BranchGroup':
+        self.branchGroup = BranchGroup()
+        return self.branchGroup
+    
+    def createCombination(self, brMod_:'BranchModel', resMods_:List['ResourceModel']) -> 'Combination':
+        comb = Combination(len(self.combinations), brMod_, resMods_)
+        self.combinations.append(comb)
+        return comb
     
     def addInVariable(self, var_:'InVariable'):
         if var_.name in self.inVariables:
@@ -127,50 +154,80 @@ class Variant(FrozenBase):
         colVarPairs.extend(self.branchSet.getColumnVariablePairs())
         return colVarPairs
 
-    def getMatrix(self, instrDescription_:Dict, verbose_=False):
-        cInstrMatrix = self.compInstrMatrixes[instrDescription_["typeId"]]
-
-        if verbose_:
-            print(f"Getting matrix: {cInstrMatrix.name}")
-
-        dim = self.getDimension()
-        matrix = [[-1 for _ in range(dim)] for _ in range(dim)]
-
-        colVarPairs = self.getAllColumnVariablePairs(instrDescription_)
-
-        # Assign rows associated with timing variables
-        for row_i, oVar_i in enumerate(self.timingVarSet.getAllOutVariables()):
-            for (col_i, iVar_i) in colVarPairs:
-                matrix[row_i][col_i] = cInstrMatrix.getElement(iVar_i, oVar_i)
-
-        # Assign rows associated with registers
-        regUnitRows = list(range(self.regSet.getRowOffset(), self.regSet.getRowOffset() + self.regSet.size))
-        for oVar_i in self.regSet.getAllOutVariables():
-            if(row := oVar_i.map2Row(instrDescription_)) is not None:
-                row += self.regSet.getRowOffset()
-                regUnitRows.remove(row)
-                for (col_i, iVar_i) in colVarPairs:
-                    matrix[row][col_i] = cInstrMatrix.getElement(iVar_i, oVar_i)
-
-        # Set remaining register out-variables to unit-row
-        for row_i in regUnitRows:
-            matrix[row_i][row_i] = 0
-        
-        # Assign rows associated with branch-variables
-        for row_i, oVar_i in enumerate(self.branchSet.getAllOutVariables()):
-            row_i += self.branchSet.getRowOffset()
-            for (col_i, iVar_i) in colVarPairs:
-                matrix[row_i][col_i] = cInstrMatrix.getElement(iVar_i, oVar_i)
-
-        return matrix
+    def getInstruction(self, typeId_:int) -> 'Instruction':
+        return self.instructions[typeId_]
     
-#    def mulMatrix(self, matrix_, instrDescription_:Dict, verbose_=False):
-#        cInstrMatrix = self.compInstrMatrixes[instrDescription_["typeId"]]
+    def getAllInstructions(self) -> List['Instruction']:
+        return sorted(self.instructions.values(), key=lambda x: x.typeId)
+    
+    def getResourceGroup(self, resGrName_) -> 'ResourceGroup':
+        if resGrName_ not in self.resourceGroups:
+            raise RuntimeError(f"Cannot find resource-group {resGrName_}. Name not registered with variant {self.name}")
+        return self.resourceGroups[resGrName_]
+    
+    def getAllResourceGroups(self) -> List['ResourceGroup']:
+        return sorted(self.resourceGroups.values(), key=lambda x: x.id)
+    
+    def getBranchGroup(self) -> 'BranchGroup':
+        return self.branchGroup
+    
+    def getAllCombinations(self) -> List['Combination']:
+        return self.combinations
+    
+    def getNumInstructions(self) -> int:
+        return len(self.instructions)
+
+    def getNumResourceGroups(self) -> int:
+        return len(self.resourceGroups)
+
+    def getNumCombinations(self) -> int:
+        return len(self.combinations)
+    
+#    def getNumMaxDynamicDelays(self) -> int:
+#        # TODO: Currently hard-coded. Derive automatically!
+#        return 50
+
+#    # TODO: Cleaner if this would be a member-function of Instruction-class?
+#    def getMatrix(self, instrDescription_:Dict, dynDelayCnt_:int=0):
+#        cInstrMatrix = self.getInstruction(instrDescription_["typeId"]).getCompressedInstructionMatrix()
 #
-#        if verbose_:
-#            print(f"Multiplying matrix: {cInstrMatrix.name}")
+#        dim = self.getDimension()
+#        matrix = [[-1 for _ in range(dim)] for _ in range(dim)]
 #
-#        newMatrix = copy.deepcopy(matrix_)
+#        colVarPairs = self.getAllColumnVariablePairs(instrDescription_)
+#
+#        # Assign rows associated with timing variables
+#        for row_i, oVar_i in enumerate(self.timingVarSet.getAllOutVariables()):
+#            for (col_i, iVar_i) in colVarPairs:
+#                matrix[row_i][col_i] = cInstrMatrix.getResolvedElement(iVar_i, oVar_i, dynDelayCnt_)
+#
+#        # Assign rows associated with registers
+#        regUnitRows = list(range(self.regSet.getRowOffset(), self.regSet.getRowOffset() + self.regSet.size))
+#        for oVar_i in self.regSet.getAllOutVariables():
+#            if(row := oVar_i.map2Row(instrDescription_)) is not None:
+#                row += self.regSet.getRowOffset()
+#                regUnitRows.remove(row)
+#                for (col_i, iVar_i) in colVarPairs:
+#                    matrix[row][col_i] = cInstrMatrix.getResolvedElement(iVar_i, oVar_i, dynDelayCnt_)
+#
+#        # Set remaining register out-variables to unit-row
+#        for row_i in regUnitRows:
+#            matrix[row_i][row_i] = 0
+#        
+#        # Assign rows associated with branch-variables
+#        for row_i, oVar_i in enumerate(self.branchSet.getAllOutVariables()):
+#            row_i += self.branchSet.getRowOffset()
+#            for (col_i, iVar_i) in colVarPairs:
+#                matrix[row_i][col_i] = cInstrMatrix.getResolvedElement(iVar_i, oVar_i, dynDelayCnt_)
+#
+#        return matrix
+
+#    # TODO: Cleaner if this would be a member-function of Instruction-class?
+#    def mulMatrix(self, matrix_, instrDescription_:Dict):
+#        cInstrMatrix = self.getInstruction(instrDescription_["typeId"]).getCompressedInstructionMatrix()
+#
+#        dim = self.getDimension()
+#        newMatrix = [[None]*dim for _ in range(dim)]
 #
 #        def updateVal(val_, iVar_, oVar_, j_, col_):
 #            if ((a := cInstrMatrix.getElement(iVar_, oVar_)) != -1) and ((b := matrix_[j_][col_]) != -1):
@@ -178,87 +235,43 @@ class Variant(FrozenBase):
 #            return val_
 #
 #        colVarPairs = self.getAllColumnVariablePairs(instrDescription_)
+#        remainingRows = list(range(dim))
 #
-#        for col_i in range(self.getDimension()):
-#
-#            # Compute rows associated with timing variables
-#            for row_i, oVar_i in enumerate(self.timingVarSet.getAllOutVariables()):
+#        # Compute rows associated with timing variables
+#        for row_i, oVar_i in enumerate(self.timingVarSet.getAllOutVariables()):
+#            remainingRows.remove(row_i)
+#            for col_i in range(dim):
 #                val = -1
 #                for (j, iVar_i) in colVarPairs:
 #                    val = updateVal(val, iVar_i, oVar_i, j, col_i)
 #                newMatrix[row_i][col_i] = val
 #
-#            # Compute rows associated with register variables
-#            for oVar_i in self.regSet.getAllOutVariables():
-#                if(row := oVar_i.map2Row(instrDescription_)) is not None:
-#                    row += self.regSet.getRowOffset()
+#        # Compute rows associated with register variables
+#        for oVar_i in self.regSet.getAllOutVariables():
+#            if(row := oVar_i.map2Row(instrDescription_)) is not None:
+#                row += self.regSet.getRowOffset()
+#                remainingRows.remove(row)
+#                for col_i in range(dim):
 #                    val = -1
 #                    for (j, iVar_i) in colVarPairs:
 #                        val = updateVal(val, iVar_i, oVar_i, j, col_i)
 #                    newMatrix[row][col_i] = val
 #
-#            # Compute rows associated with branch variables
-#            for row_i, oVar_i in enumerate(self.branchSet.getAllOutVariables()):
-#                row_i += self.branchSet.getRowOffset()
+#        # Compute rows associated with branch variables
+#        for row_i, oVar_i in enumerate(self.branchSet.getAllOutVariables()):
+#            row_i += self.branchSet.getRowOffset()
+#            remainingRows.remove(row_i)
+#            for col_i in range(dim):
 #                val = -1
 #                for (j, iVar_i) in colVarPairs:
 #                    val = updateVal(val, iVar_i, oVar_i, j, col_i)
 #                newMatrix[row_i][col_i] = val
 #
+#        # Handle other rows (unit rows)
+#        for row_i in remainingRows:
+#            newMatrix[row_i] = matrix_[row_i]  
+#
 #        return newMatrix
-    
-    def mulMatrix(self, matrix_, instrDescription_:Dict, verbose_=False):
-        cInstrMatrix = self.compInstrMatrixes[instrDescription_["typeId"]]
-
-        if verbose_:
-            print(f"Multiplying matrix: {cInstrMatrix.name}")
-
-        dim = self.getDimension()
-        newMatrix = [[None]*dim for _ in range(dim)]
-
-        def updateVal(val_, iVar_, oVar_, j_, col_):
-            if ((a := cInstrMatrix.getElement(iVar_, oVar_)) != -1) and ((b := matrix_[j_][col_]) != -1):
-                val_ = max(val_, a + b)
-            return val_
-
-        colVarPairs = self.getAllColumnVariablePairs(instrDescription_)
-        remainingRows = list(range(dim))
-
-        # Compute rows associated with timing variables
-        for row_i, oVar_i in enumerate(self.timingVarSet.getAllOutVariables()):
-            remainingRows.remove(row_i)
-            for col_i in range(dim):
-                val = -1
-                for (j, iVar_i) in colVarPairs:
-                    val = updateVal(val, iVar_i, oVar_i, j, col_i)
-                newMatrix[row_i][col_i] = val
-
-        # Compute rows associated with register variables
-        for oVar_i in self.regSet.getAllOutVariables():
-            if(row := oVar_i.map2Row(instrDescription_)) is not None:
-                row += self.regSet.getRowOffset()
-                remainingRows.remove(row)
-                for col_i in range(dim):
-                    val = -1
-                    for (j, iVar_i) in colVarPairs:
-                        val = updateVal(val, iVar_i, oVar_i, j, col_i)
-                    newMatrix[row][col_i] = val
-
-        # Compute rows associated with branch variables
-        for row_i, oVar_i in enumerate(self.branchSet.getAllOutVariables()):
-            row_i += self.branchSet.getRowOffset()
-            remainingRows.remove(row_i)
-            for col_i in range(dim):
-                val = -1
-                for (j, iVar_i) in colVarPairs:
-                    val = updateVal(val, iVar_i, oVar_i, j, col_i)
-                newMatrix[row_i][col_i] = val
-
-        # Handle other rows (unit rows)
-        for row_i in remainingRows:
-            newMatrix[row_i] = matrix_[row_i]  
-
-        return newMatrix
 
 
 #    # TODO: DELETE? DEBUG
@@ -294,6 +307,7 @@ class Variant(FrozenBase):
 #        return passed
     
     # TODO: Debug. Delete?
+    # TODO: Cleaner if this would be a member-function of Instruction-class?
     def showMatrix(self, matrix_):
 
         names = [v.name for v in self.timingVarSet.getAllInVariables()]
@@ -312,10 +326,15 @@ class Variant(FrozenBase):
         for col_i in range(dim):
             colsWidths[col_i] = len(names[col_i])
             for row_i in range(dim):
-                colsWidths[col_i] = max(colsWidths[col_i], len(str(matrix_[row_i][col_i])))
+                length = 0
+                if isinstance((e := matrix_[row_i][col_i]), SoP):
+                    length = len(self.__stringSoP(e))
+                else:
+                    length = len(str(e))
+                colsWidths[col_i] = max(colsWidths[col_i], length)
 
-        e = ""
-        print(f"{e:{rowNameWidth}}", end="")
+        x = ""
+        print(f"{x:{rowNameWidth}}", end="")
         for col_i in range(dim):
             print(f"|{names[col_i]:{colsWidths[col_i]}}", end="")
         print()
@@ -323,9 +342,44 @@ class Variant(FrozenBase):
         for row_i in range(dim):
             print(f"{names[row_i]:{rowNameWidth}}", end="")
             for col_i in range(dim):
-                print(f"|{matrix_[row_i][col_i]:{colsWidths[col_i]}}", end="")
+                if isinstance((e := matrix_[row_i][col_i]), SoP):
+                    print(f"|{self.__stringSoP(e):{colsWidths[col_i]}}", end="")
+                else:
+                    print(f"|{str(e):{colsWidths[col_i]}}", end="")
             print()
         print()
+
+    # TODO: Helper function to print List-style SoP. Remove later?
+    # TODO: If keep, move to MaxPlusLib
+    def __stringSoP(self, sop_):
+        retStr = ""
+        if len(sop_) > 1:
+            retStr += "("
+            skipOperand = True
+            for p_i in sop_:
+                if skipOperand:
+                    skipOperand = False
+                else:
+                    retStr += "+"
+                retStr += self.__stringProduct(p_i)
+            retStr += ")"
+        else:
+            retStr += self.__stringProduct(sop_[0])
+        return retStr
+    
+    # TODO: Sub-Helper function to print List-style SoP. Remove later?
+    # TODO: If keep, move to MaxPlusLib
+    def __stringProduct(self, prod_):
+        #val, symMask, _ = prod_
+        val = prod_[0]
+        symMask = prod_[1]
+        retStr = ""
+        if val != 0:
+            retStr += str(val)
+        symIdxs = [i for i in range(symMask.bit_length()) if (symMask >> i) & 1]
+        for s_i in symIdxs:
+            retStr += f"d{s_i}"
+        return retStr
 
 class TimingVariableSet(FrozenBase):
 
@@ -388,6 +442,9 @@ class RegisterSet(FrozenBase):
         self.outVariables[name_] = outVar
         return self.outVariables[name_]
     
+    def getAllRegisterRows(self):
+        return list(range(self.getRowOffset(), self.getRowOffset() + self.size))
+
     def getAllInVariables(self) -> List['InVariable']:
         return self.inVariables.values()
     
@@ -499,14 +556,132 @@ class OutVariable(Variable):
             row[self.defaultSetCol] = 0
         return row
 
-class CompressedInstructionMatrix(FrozenBase):
+class Instruction(FrozenBase):
 
     def __init__(self, name_:str, typeId_:int, parent_:'Variant'):
         self.name = name_
         self.typeId = typeId_
         self.parent = parent_
+        self.compInstrMatrix = CompressedInstructionMatrix(self, self.parent)
+        self.dynamicDelays:List[DynamicDelay] = []
 
-        self.data = [[-1 for _ in range(self.parent.getNumInVariables())] for _ in range(self.parent.getNumOutVariables())]
+    def getCompressedInstructionMatrix(self):
+        return self.compInstrMatrix
+    
+    def createDynamicDelay(self, resGrName_:str):
+        dynDelay = DynamicDelay(len(self.dynamicDelays), self.parent.getResourceGroup(resGrName_))
+        self.dynamicDelays.append(dynDelay)
+        return dynDelay
+    
+    def getNumDynDelays(self):
+        return len(self.dynamicDelays)
+    
+    def getMatrix(self, instrDescription_:Dict, dynDelayCnt_:int=0):
+        cInstrMatrix = self.getCompressedInstructionMatrix()
+        variant = self.parent
+
+        dim = variant.getDimension()
+        matrix = [[-1 for _ in range(dim)] for _ in range(dim)]
+
+        colVarPairs = variant.getAllColumnVariablePairs(instrDescription_)
+
+        # Assign rows associated with timing variables
+        for row_i, oVar_i in enumerate(variant.timingVarSet.getAllOutVariables()):
+            for (col_i, iVar_i) in colVarPairs:
+                matrix[row_i][col_i] = cInstrMatrix.getResolvedElement(iVar_i, oVar_i, dynDelayCnt_)
+
+        # Assign rows associated with registers
+        regUnitRows = variant.regSet.getAllRegisterRows()
+        for oVar_i in variant.regSet.getAllOutVariables():
+            if(row := oVar_i.map2Row(instrDescription_)) is not None:
+                row += variant.regSet.getRowOffset()
+                regUnitRows.remove(row)
+                for (col_i, iVar_i) in colVarPairs:
+                    matrix[row][col_i] = cInstrMatrix.getResolvedElement(iVar_i, oVar_i, dynDelayCnt_)
+
+        # Set remaining register out-variables to unit-row
+        for row_i in regUnitRows:
+            matrix[row_i][row_i] = 0
+        
+        # Assign rows associated with branch-variables
+        for row_i, oVar_i in enumerate(variant.branchSet.getAllOutVariables()):
+            row_i += variant.branchSet.getRowOffset()
+            for (col_i, iVar_i) in colVarPairs:
+                matrix[row_i][col_i] = cInstrMatrix.getResolvedElement(iVar_i, oVar_i, dynDelayCnt_)
+
+        return matrix
+    
+    def mulMatrix(self, matrix_, instrDescription_:Dict, dynDelayCnt_:int):
+        variant = self.parent
+        cInstrMatrix = self.getCompressedInstructionMatrix()
+
+        dim = variant.getDimension()
+        newMatrix = [[None]*dim for _ in range(dim)]
+
+        def updateVal(val_, iVar_, oVar_, j_, col_):
+            if ((a := cInstrMatrix.getResolvedElement(iVar_, oVar_, dynDelayCnt_)) != -1) and ((b := matrix_[j_][col_]) != -1):
+                #val_ = max(val_, a+b)
+                temp = mp_mul(a, b)
+                val_ = mp_add(val_, temp)
+            return val_
+
+        colVarPairs = variant.getAllColumnVariablePairs(instrDescription_)
+        remainingRows = list(range(dim))
+
+        # Compute rows associated with timing variables
+        for row_i, oVar_i in enumerate(variant.timingVarSet.getAllOutVariables()):
+            remainingRows.remove(row_i)
+            for col_i in range(dim):
+                val = -1
+                for (j, iVar_i) in colVarPairs:
+                    val = updateVal(val, iVar_i, oVar_i, j, col_i)
+                newMatrix[row_i][col_i] = val
+
+        # Compute rows associated with register variables
+        for oVar_i in variant.regSet.getAllOutVariables():
+            if(row := oVar_i.map2Row(instrDescription_)) is not None:
+                row += variant.regSet.getRowOffset()
+                remainingRows.remove(row)
+                for col_i in range(dim):
+                    val = -1
+                    for (j, iVar_i) in colVarPairs:
+                        val = updateVal(val, iVar_i, oVar_i, j, col_i)
+                    newMatrix[row][col_i] = val
+
+        # Compute rows associated with branch variables
+        for row_i, oVar_i in enumerate(variant.branchSet.getAllOutVariables()):
+            row_i += variant.branchSet.getRowOffset()
+            remainingRows.remove(row_i)
+            for col_i in range(dim):
+                val = -1
+                for (j, iVar_i) in colVarPairs:
+                    val = updateVal(val, iVar_i, oVar_i, j, col_i)
+                newMatrix[row_i][col_i] = val
+
+        # Handle other rows (unit rows)
+        for row_i in remainingRows:
+            newMatrix[row_i] = matrix_[row_i]  
+
+        return newMatrix
+    
+    def getRequiredResourceGroups(self) -> List['ResourceGroup']:
+        return [d.resourceGroup for d in self.dynamicDelays]
+
+class DynamicDelay(FrozenBase):
+
+    def __init__(self, id_:int, resGr_:'ResourceGroup'):
+        self.id = id_
+        self.resourceGroup = resGr_
+
+        super().__init__()
+
+class CompressedInstructionMatrix(FrozenBase):
+
+    def __init__(self, parent_:'Instruction', parentVar_:'Variant'):
+        self.parent = parent_
+        self.parentVariant = parentVar_
+
+        self.data = [[-1 for _ in range(self.parentVariant.getNumInVariables())] for _ in range(self.parentVariant.getNumOutVariables())]
 
         super().__init__()
 
@@ -514,15 +689,21 @@ class CompressedInstructionMatrix(FrozenBase):
         self.data[outVar_.idx][inVar_.idx] = elem_
 
     def addDefaultRow(self, outVar_:'OutVariable'):
-        self.data[outVar_.idx] = outVar_.getDefaultRow(self.parent.getNumInVariables())
+        self.data[outVar_.idx] = outVar_.getDefaultRow(self.parentVariant.getNumInVariables())
 
     def getElement(self, inVar_:'InVariable', outVar_:'OutVariable'):
         return self.data[outVar_.idx][inVar_.idx]
+    
+    def getResolvedElement(self, inVar_:'InVariable', outVar_:'OutVariable', dynDelayCnt_:int):
+        elem = self.data[outVar_.idx][inVar_.idx]
+        if isinstance(elem, DynamicElement):
+            return elem.resolve(dynDelayCnt_)
+        return elem
 
     # TODO: DELETE
     def show(self):
-        inVars = sorted(self.parent.inVariables.values(), key=lambda x: x.idx)
-        outVars = sorted(self.parent.outVariables.values(), key=lambda x: x.idx)
+        inVars = sorted(self.parentVariant.inVariables.values(), key=lambda x: x.idx)
+        outVars = sorted(self.parentVariant.outVariables.values(), key=lambda x: x.idx)
 
         rowNameWidth = 0
         for oVar_i in outVars:
@@ -530,17 +711,222 @@ class CompressedInstructionMatrix(FrozenBase):
         rowNameWidth = int(rowNameWidth)
 
         colWidths = []
-        for iVar_i in inVars:
-            colWidths.append(len(iVar_i.name))
+        for i, iVar_i in enumerate(inVars):
+            w = len(iVar_i.name)
+            for row_i in self.data:
+                w = max(w, len(str(row_i[i])))
+            colWidths.append(w)
 
-        e = ""
-        print(f"{e:{rowNameWidth}} ", end="")
-        for iVar_i in inVars:
-            print(f"| {iVar_i.name} ", end="")
+        x = ""
+        print(f"{x:{rowNameWidth}} ", end="")
+        for i, iVar_i in enumerate(inVars):
+            print(f"| {iVar_i.name:{colWidths[i]}} ", end="")
         print("")
 
         for oVar_i in outVars:
             print(f"{oVar_i.name:{rowNameWidth}} ", end="")
             for i, iVar_i in enumerate(inVars):
-                print(f"| {self.data[oVar_i.idx][iVar_i.idx]:{colWidths[i]}} ", end="")
+                print(f"| {str(self.data[oVar_i.idx][iVar_i.idx]):{colWidths[i]}} ", end="")
             print("")
+
+class DynamicElement(FrozenBase):
+
+    def __init__(self, orig_=None):
+        fixedAddend = 0
+        dynamicAddends:List[DynamicDelay] = []
+        if orig_ is not None:
+            if isinstance(orig_, int):
+                fixedAddend += orig_
+            elif isinstance(orig_, DynamicDelay):
+                dynamicAddends.append(orig_)
+            else:
+                raise RuntimeError("Unsupported object-type for generation of DynamicElement")
+        
+        symbolMask = 0
+        for dynDelay_i in dynamicAddends:
+            symbolMask |= 1 << dynDelay_i.id
+        self.sop = mp_create_sop([[fixedAddend, symbolMask]])
+
+        super().__init__()
+
+    def __str__(self):
+        retStr = ""
+        skipOp = True
+        for prod_i in self.sop:
+            val, mask, _ = prod_i
+            if skipOp:
+                skipOp = False
+            else:
+                retStr += " + "
+            if val != 0:
+                retStr += str(val)
+            for s_i in [i for i in range(mask.bit_length()) if (mask >> i) & 1]:
+                retStr += f"d_{s_i}"
+        return retStr
+
+    def add(self, elem_):
+        if isinstance(elem_, int):
+            self.sop = mp_mul(self.sop, elem_)
+        elif isinstance(elem_, DynamicElement):
+            self.sop = mp_mul(self.sop, elem_.sop)
+        else:
+            raise RuntimeError("Unsupported object-type for addition with DynamicElement")
+        
+    def max(self, elem_):     
+        if isinstance(elem_, int):
+            self.sop = mp_add(self.sop, elem_)
+        elif isinstance(elem_, DynamicElement):
+            self.sop = mp_add(self.sop, elem_.sop)
+        else:
+            raise RuntimeError("Unsupported object-type for max-operation with DynamicElement")
+    
+    def resolve(self, dynDelayCnt_:int) -> SoP:
+        products = []
+        for prod_i in self.sop:
+            val, symMask, _ = prod_i
+            symMask = symMask << dynDelayCnt_
+            products.append([val, symMask])
+        return mp_create_sop(products)
+
+
+#class DynamicElement(FrozenBase):
+#
+#    def __init__(self, orig_=None):
+#        self.fixedAddend = 0
+#        self.dynamicAddends:List[DynamicDelay] = []
+#        if orig_ is not None:
+#            if isinstance(orig_, int):
+#                self.fixedAddend += orig_
+#            elif isinstance(orig_, DynamicDelay):
+#                self.dynamicAddends.append(orig_)
+#            else:
+#                raise RuntimeError("Unsupported object-type for generation of DynamicElement")
+#
+#        super().__init__()
+#
+#    def __str__(self):
+#        retStr = ""
+#        if self.fixedAddend != 0:
+#            retStr += str(self.fixedAddend)
+#        for d in self.dynamicAddends:
+#            retStr += f"d{d.id}"
+#        return retStr
+#
+#    def add(self, elem_):
+#        if isinstance(elem_, int):
+#            self.fixedAddend += elem_
+#        elif isinstance(elem_, DynamicElement):
+#            self.fixedAddend += elem_.fixedAddend
+#            self.dynamicAddends.extend(elem_.dynamicAddends)
+#        else:
+#            raise RuntimeError("Unsupported object-type for addition with DynamicElement")
+#        
+#    def compare(self, elem_):
+#        if isinstance(elem_, int):
+#            if elem_ <= self.getMinValue():
+#                return self
+#            else:
+#                raise RuntimeError("Unexpected use-case from DynamicElement.compare() [1]")
+#        elif isinstance(elem_, DynamicElement):
+#            if self.isIdentical(elem_):
+#                return self
+#            elif self.dynamicAddends == elem_.dynamicAddends:
+#                if self.fixedAddend < elem_.fixedAddend:
+#                    return elem_
+#                else:
+#                    return self
+#            else:
+#                print(str(self))
+#                print(str(elem_))
+#                raise RuntimeError("Unexpected use-case from DynamicElement.compare() [2]")
+#        else:
+#            print(elem_)
+#            raise RuntimeError("Unsupported object-type for comparison with DynamicElement")
+#
+#    def isIdentical(self, dynElem_):
+#        return (self.fixedAddend == dynElem_.fixedAddend) and (self.dynamicAddends == dynElem_.dynamicAddends)
+#
+#    def getMinValue(self):
+#        return self.fixedAddend + len(self.dynamicAddends)
+#    
+#    def resolve(self, dynDelayCnt_:int) -> SoP:
+#        # TODO: Move the creation specifics of SoP to MaxPlusLib
+#        symbolMask = 0
+#        for dynDelay_i in self.dynamicAddends:
+#            symbolMask |= 1 << (dynDelay_i.id + dynDelayCnt_)
+#        #return SoP([[self.fixedAddend, symbolMask, bin(symbolMask).count('1') + self.fixedAddend]])
+#        return mp_create_sop([[self.fixedAddend, symbolMask]])
+    
+class Group(FrozenBase):
+
+    def __init__(self):
+        self.models = []
+
+        super().__init__()
+
+    def getNumModels(self):
+        return len(self.models)
+    
+    def getAllModels(self):
+        return self.models
+
+class ResourceGroup(Group):
+
+    def __init__(self, name_:str, id_:int):
+        self.name = name_
+        self.id = id_
+
+        super().__init__()
+
+    def createResourceModel(self, name_:str, link_:str, trVals_:List[str]):
+        model = ResourceModel(name_, len(self.models), link_, trVals_)
+        self.models.append(model)
+        return model
+
+class BranchGroup(Group):
+
+    def __init__(self):
+        super().__init__()
+
+    def createBranchModel(self, name_:str, link_:str, trVals_:List[str]):
+        model = BranchModel(name_, len(self.models), link_, trVals_)
+        self.models.append(model)
+        return model
+
+class Model(FrozenBase):
+
+    def __init__(self, name_:str, id_:int, link_:str, trVals_:List[str]):
+        self.name = name_
+        self.id = id_
+        self.link = link_
+        self.traceValues:List[str] = trVals_
+
+        super().__init__()
+
+    def getAllTraceValues(self):
+        return self.traceValues
+
+class ResourceModel(Model):
+
+    def __init__(self, name_:str, id_:int, link_:str, trVals_:List[str]):
+        super().__init__(name_, id_, link_, trVals_)
+
+class BranchModel(Model):
+
+    def __init__(self, name_:str, id_:int, link_:str, trVals_:List[str]):
+        super().__init__(name_, id_, link_, trVals_)
+
+class Combination(FrozenBase):
+
+    def __init__(self, id_:int, brMod_:'BranchModel', resMods_:List['ResourceModel']):
+        self.id = id_
+        self.branchModel = brMod_
+        self.resourceModels = resMods_
+
+        super().__init__()
+
+    def getAllResourceModels(self):
+        return self.resourceModels
+    
+    def getBranchModel(self):
+        return self.branchModel

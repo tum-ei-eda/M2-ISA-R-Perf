@@ -12,19 +12,19 @@ namespace ${builder_.getName()}{
 class ${builder_.getName()}_BlockDictionary : public MAP_Explorer::BlockDictionary{
 
 public:
-    ${builder_.getName()}_BlockDictionary(const std::array<MAP_Explorer::Block, ${size_}>& blocks_) : blocks(blocks_) {};
+    ${builder_.getName()}_BlockDictionary(const std::array<const MAP_Explorer::Block*, ${size_}>& blocks_) : blocks(blocks_) {};
 
     const MAP_Explorer::Block* getBlock(uint64_t pc_) const override {
         for (const auto& blk_i : blocks){
-            if(blk_i.startPc == pc_){
-                return &blk_i;
+            if(blk_i->startPc == pc_){
+                return blk_i;
             }
         }
         return nullptr;
     };
 
 private:
-    std::array<MAP_Explorer::Block, ${size_}> blocks;
+    std::array<const MAP_Explorer::Block*, ${size_}> blocks;
 
 };
 

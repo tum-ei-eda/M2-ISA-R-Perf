@@ -14,10 +14,11 @@
 #  limitations under the License.
 #
 
-from .MatrixModel import MatrixModel
+from .MatrixModel import MatrixModel, DynamicElement
 from meta_models.scheduling_model.SchedulingModel import SchedulingModel
 
 import networkx as nx
+from itertools import product
 
 class MatrixTransformer:
 
@@ -30,6 +31,29 @@ class MatrixTransformer:
         for schedVar_i in schedulingModel_.getAllVariants():
             matrixVar = matrixModel.createVariant(schedVar_i.name)
 
+            # TODO: Hack to create resource-groups. Need to get this information from SchedModel / CorePerfDSL
+            for rMod_i in schedVar_i.getAllResourceModels():
+                rGroup = matrixVar.createResourceGroup(rMod_i.name.upper())
+                
+                if rMod_i.name == "iCache":
+                    rGroup.createResourceModel(rMod_i.name, "map_models/ICacheModel.h", rMod_i.getAllTraceValues())
+                elif rMod_i.name == "divider":
+                    rGroup.createResourceModel(rMod_i.name, "map_models/Divider_CV32E40P.h", rMod_i.getAllTraceValues())
+                elif rMod_i.name == "divider_u":
+                    rGroup.createResourceModel(rMod_i.name, "map_models/DividerUnsigned_CV32E40P.h", rMod_i.getAllTraceValues())
+                else:
+                    print(f"WARNING: Currently no idea how to handle resource-model {rMod_i.name}...EXPAND HACK!")
+
+            # TODO: Hack to create branch-group
+            brGroup = matrixVar.createBranchGroup()
+            brGroup.createBranchModel("branch_ant", "map_models/Branch_ant.h", ["pc", "brTarget"])
+
+            # Create combinations for all involved models
+            for brMod_i in matrixVar.getBranchGroup().getAllModels():
+                for resModComb_i in product(*(g.getAllModels() for g in matrixVar.getAllResourceGroups())):
+                    matrixVar.createCombination(brMod_i, resModComb_i)
+
+
             for timingVar_i in schedVar_i.getAllTimingVariables():
                 matrixVar.addTimingVariable(timingVar_i.name, timingVar_i.numElements)
 
@@ -39,7 +63,9 @@ class MatrixTransformer:
 
             for schedFunc_i in schedVar_i.getAllSchedulingFunctions():
 
-                skipInstr = False # TODO: This should be removed as soon as we can cover all features (e.g. dynamic delays)
+                #skipInstr = False # TODO: This should be removed as soon as we can cover all features (e.g. dynamic delays)
+
+                instr = matrixVar.createInstruction(schedFunc_i.name, schedFunc_i.identifier)
 
                 # Generate Scheduling-Graph (networkx)
                 schedGraph = nx.DiGraph()
@@ -48,30 +74,38 @@ class MatrixTransformer:
                     curNode = openNodes.pop(0)
 
                     if curNode.hasDynamicDelay():
-                        print(f"{schedVar_i.name}::{schedFunc_i.name}::{curNode.name} has dynamic delay. I cannot handle that yet!")
-                        skipInstr = True
-                        break
-                    delay = curNode.getDelay()
+
+                        # TODO: Hack to find a resource-group
+                        resModel = curNode.getResourceModel()
+
+                        weight = DynamicElement(instr.createDynamicDelay(resModel.name.upper()))
+                    else:
+                        weight = curNode.getDelay()
+
+#                    if curNode.hasDynamicDelay():
+#                        print(f"{schedVar_i.name}::{schedFunc_i.name}::{curNode.name} has dynamic delay. I cannot handle that yet!")
+#                        skipInstr = True
+#                        break
+#                    delay = curNode.getDelay()
 
                     for inEdge_i in curNode.getAllInEdges():
                         inVar = matrixVar.getInVariable(self.__getEdgeName(inEdge_i))
                         schedGraph.add_edge(inVar.getGraphName(), curNode.name, weight=0)
 
                     for outNode_i in curNode.getAllOutNodes():
-                        openNodes.append(outNode_i)
-                        schedGraph.add_edge(curNode.name, outNode_i.name, weight=delay)
+                        if outNode_i not in openNodes:
+                            openNodes.append(outNode_i)
+                        schedGraph.add_edge(curNode.name, outNode_i.name, weight=weight)
 
                     for outEdge_i in curNode.getAllOutEdges():
                         outVar = matrixVar.getOutVariable(self.__getEdgeName(outEdge_i))
-                        schedGraph.add_edge(curNode.name, outVar.getGraphName(), weight=delay)
+                        schedGraph.add_edge(curNode.name, outVar.getGraphName(), weight=weight)
 
-                if skipInstr:
-                    continue
+                #if skipInstr:
+                #    continue
                 
-                # Create compressed Instruction-Matrix object
-                cInstrMatrix = matrixVar.createCompInstrMatrix(schedFunc_i.name, schedFunc_i.identifier)
-
-                # Calculate longest path between all out- and in-variable pairs
+                # Calculate longest path between all out- and in-variable pairs to create the compressed Instr-Matrix
+                cInstrMatrix = instr.getCompressedInstructionMatrix()
                 for outVar_i in matrixVar.getAllOutVariables():
                     
                     if outVar_i.getGraphName() not in schedGraph:                        
@@ -96,20 +130,37 @@ class MatrixTransformer:
                             if maxWeight == -1:
                                 maxWeight = weight
                             else:
-                                maxWeight = max(maxWeight, weight)
+                                if isinstance(maxWeight, DynamicElement):
+                                    #maxWeight = maxWeight.compare(weight)
+                                    maxWeight.max(weight)
+                                else:
+                                    if isinstance(weight, DynamicElement):
+                                        maxWeight = DynamicElement(maxWeight)
+                                        #maxWeight = maxWeight.compare(weight)
+                                        maxWeight.max(weight)
+                                    else:
+                                        maxWeight = max(maxWeight, weight)                            
 
                         cInstrMatrix.addElement(inVar_i, outVar_i, maxWeight)
 
         return matrixModel
 
     def __getPathWeight(self, schedGraph_, path_):
-        w = 0
+        weight = 0
         for i, j in zip(path_[:-1], path_[1:]):
-            w += schedGraph_[i][j]["weight"]
-        return w
+            w = schedGraph_[i][j]["weight"]
+            if isinstance(weight, DynamicElement):
+                weight.add(w)
+            else:
+                if isinstance(w, DynamicElement):
+                    weight = DynamicElement(weight)
+                    weight.add(w)
+                else:
+                    weight += w
+        return weight
 
     def __getEdgeName(self, edge_):
         if not edge_.isDynamic():
             if edge_.depth > 1:
-                raise RuntimeError(f"Edge-depth is {egde_.depth} (>1). I cannot handle this yet!")
+                raise RuntimeError(f"Edge-depth is {edge_.depth} (>1). I cannot handle this yet!")
         return edge_.name if edge_.isDynamic() else edge_.getTimingVariable().name

@@ -17,15 +17,18 @@
 import pathlib
 import json
 from mako.template import Template
-import copy # TODO: Test. REMOVE!
 
 from .CodeBuilder import CodeBuilder
 from backends.common import dirUtils
+
+from meta_models.matrix_model.MaxPlusLib import MaxPlusTerm
 
 class BlockScheduleGenerator:
 
     def __init__(self):
         self.templateDir = pathlib.Path(__file__).parents[0] / "templates"
+
+        self.maxDynDelayCnt = 0 # Max number of dynamic delays per block
 
     def execute(self, model_, blockList_, outDir_):
 
@@ -41,32 +44,66 @@ class BlockScheduleGenerator:
             print(f" > Creating output directory for {variant_i.name}")
             outDir = dirUtils.getCodeDirPath(outDir_, variant_i, "block_sched")
             dirUtils.createOrReplaceDir(outDir / "src")
+            dirUtils.createOrReplaceDir(outDir / "src/block_schedules")
             dirUtils.createOrReplaceDir(outDir / "include")
 
             self.builder = CodeBuilder(variant_i)
 
             print(f" > Generating block-schedules for {variant_i.name}")
-            self.__generateMAPExplorer(variant_i, outDir)
             self.__generateBlockScheduleFunctions(variant_i, outDir)
+            self.__generateMAPExplorer(variant_i, outDir)
 
     def __generateMAPExplorer(self, variant_, outDir_):
 
         template_header = Template(filename = str(self.templateDir) + "/include/MAPExplorer.mako")
-        code_header = template_header.render(**{'builder_': self.builder})
+        code_header = template_header.render(**{'variant_': variant_, 'builder_': self.builder, 'maxDynDelayCnt_': self.maxDynDelayCnt})
         outFile_header = outDir_ / "include" / (self.builder.getName() + "_MAPExplorer.h")
         with outFile_header.open('w') as f:
             f.write(code_header)
+
+        template_src = Template(filename = str(self.templateDir) + "/src/MAPExplorer.mako")
+        code_src = template_src.render(**{'variant_': variant_, 'builder_': self.builder})
+        outFile_src = outDir_ / "src" / (self.builder.getName() + "_MAPExplorer.cpp")
+        with outFile_src.open('w') as f:
+            f.write(code_src)
     
     def __generateBlockScheduleFunctions(self, variant_, outDir_):
 
         blocks = self.__getBlocks(variant_)
 
+        # Create Header
         template_header = Template(filename = str(self.templateDir) + "/include/BlockSchedulingFunctions.mako")
         code_header = template_header.render(**{'size_': len(blocks), 'builder_': self.builder})
         outFile_header = outDir_ / "include" / (self.builder.getName() + "_BlockSchedulingFunctions.h")
         with outFile_header.open('w') as f:
             f.write(code_header)
 
+        # Create block schedules (splitted to keep file-size manageable)
+        template_src = Template(filename = str(self.templateDir) + "/src/block_schedules/BlockSchedules_.mako")
+        curBlocks = []
+        splitCnt = 0
+        blkCnt = 0
+        numBlocks = len(blocks)
+        for i, block_i in enumerate(blocks):
+            curBlocks.append(block_i)
+            blkCnt += 1
+            if (blkCnt == 20) or (i == numBlocks-1):
+                code_src = template_src.render(**{'blocks_': curBlocks, 'builder_': self.builder})
+                outFile_src = outDir_ / "src" / "block_schedules" / (self.builder.getName() + "_BlockSchedules_" + str(splitCnt) + ".cpp")
+                with outFile_src.open('w') as f:
+                    f.write(code_src)
+                curBlocks = []
+                blkCnt = 0
+                splitCnt += 1
+        
+        # Create CMakeLists
+        template_cmake = Template(filename = str(self.templateDir) + "/src/block_schedules/CMakeLists.mako")
+        code_cmake = template_cmake.render(**{'splitCnt_': splitCnt, 'builder_': self.builder})
+        outFile_cmake = outDir_ / "src" / "block_schedules" / "CMakeLists.txt"
+        with outFile_cmake.open('w') as f:
+            f.write(code_cmake)
+
+        # Create main source file
         template_src = Template(filename = str(self.templateDir) + "/src/BlockSchedulingFunctions.mako")
         code_src = template_src.render(**{'blocks_': blocks, 'builder_': self.builder})
         outFile_src = outDir_ / "src" / (self.builder.getName() + "_BlockSchedulingFunctions.cpp")
@@ -76,32 +113,45 @@ class BlockScheduleGenerator:
     def __getBlocks(self, variant_):
         blocks = []
 
-        # TODO: Remove
-        self.variant = variant_
-
-
         for block_i in self.blockDict["blocks"]:
 
             block = Block(block_i['id'], block_i['startPc'], block_i['endPc'], block_i['callCnt'])
+            dynDelayCnt = 0
 
             blockMatrix = None
             for instr_i in block_i["instrs"]:
                 
+                instr = variant_.getInstruction(instr_i["typeId"])
+
+#                if block_i['id'] == 311:
+#                    #blockMatrix = variant_.getMatrix(instr_i, dynDelayCnt)
+#                    blockMatrix = instr.getMatrix(instr_i, dynDelayCnt)
+#                    variant_.showMatrix(blockMatrix)
+#                    print()
+
                 if blockMatrix is None:
-                    blockMatrix = variant_.getMatrix(instr_i)
+                    blockMatrix = instr.getMatrix(instr_i, dynDelayCnt) 
                 else:
-                    blockMatrix = variant_.mulMatrix(blockMatrix, instr_i)
+                    blockMatrix = instr.mulMatrix(blockMatrix, instr_i, dynDelayCnt)
 
+                dynDelayCnt += instr.getNumDynDelays()
 
-            verbose = (block.id == 266)
+            #if block_i['id'] == 311:
+            #    variant_.showMatrix(blockMatrix)
+            #    print()
 
-            block.code = self.__getScheduleFunctionCode(blockMatrix, verbose)
+            block.code = self.__getScheduleFunctionCode(blockMatrix)
             blocks.append(block)
+
+            self.maxDynDelayCnt = max(self.maxDynDelayCnt, dynDelayCnt)
+
+            #if block_i['id'] == 311:
+            #    print(block.code)
 
         blocks.sort(key=lambda x: x.callCnt, reverse=True)
         return blocks
 
-    def __getScheduleFunctionCode(self, matrix_, verbose_=False):
+    def __getScheduleFunctionCode(self, matrix_):
         
         code = ""
         handledRowIdxs = []
@@ -128,11 +178,17 @@ class BlockScheduleGenerator:
                                 isFirst = False
                             else:
                                 code += ", "
-                            code += f"vec_[{colIdx_i}] + {elem_i}"
+                            if type(elem_i) is int:
+                                code += f"vec_[{colIdx_i}] + {elem_i}"
+                            else:
+                                code += f"vec_[{colIdx_i}] {elem_i.getExpression()}"
                         code += "});"
                     else:
                         colIdx, elem = rowExp_i.dimensions[0]
-                        code += f"vec_[{colIdx}] + {elem}"
+                        if type(elem) is int:
+                            code += f"vec_[{colIdx}] + {elem}"
+                        else:
+                            code += f"vec_[{colIdx}] {elem.getExpression()}"
                     handledRowIdxs.append(rowExp_i.idx)
 
                 elif rowExp_i.refIdx in handledRowIdxs:
@@ -141,12 +197,18 @@ class BlockScheduleGenerator:
                     if rowExp_i.isDimShiftRow():
                         code += "\n\t" + f"uint64_t out_{rowExp_i.idx}" + " = std::max({"
                         code += f"out_{rowExp_i.refIdx}"
-                        if (offset := rowExp_i.offset) > 0:
-                            code += f" + {offset}"
-                        elif offset < 0:
-                            code += f" - {abs(offset)}"
+                        if type((offset := rowExp_i.offset)) is int:
+                            if offset > 0:
+                                code += f" + {offset}"
+                            elif offset < 0:
+                                code += f" - {abs(offset)}"
+                        else:
+                            code += offset.getExpression()
                         for (colIdx_i, elem_i) in rowExp_i.dimensions:
-                            code += f", vec_[{colIdx_i}] + {elem_i}"
+                            if type(elem_i) is int:
+                                code += f", vec_[{colIdx_i}] + {elem_i}"
+                            else:
+                                code += f", vec_[{colIdx_i}] {elem_i.getExpression()}"
                         code += "});"
                         handledRowIdxs.append(rowExp_i.idx)
 
@@ -155,10 +217,13 @@ class BlockScheduleGenerator:
                     # NOTE: Might be necessary: vec_[5] = out_4, vec_[6] = out_5, but out_5 never defined
                     elif rowExp_i.isOffsetRow() or rowExp_i.isIdenticalRow():
                         code += "\n\t" + f"uint64_t out_{rowExp_i.idx} = out_{rowExp_i.refIdx}"
-                        if (offset := rowExp_i.offset) > 0:
-                            code += f" + {offset}"
-                        elif offset < 0:
-                            code += f" - {abs(offset)}"
+                        if type((offset := rowExp_i.offset)) is int:
+                            if offset > 0:
+                                code += f" + {offset}"
+                            elif offset < 0:
+                                code += f" - {abs(offset)}"
+                        else:
+                            code += offset.getExpression()
                         code += ";"
                         handledRowIdxs.append(rowExp_i.idx)
 
@@ -170,48 +235,6 @@ class BlockScheduleGenerator:
             code += "\n\t" + f"vec_[{idx_i}] = out_{idx_i};"
 
         return code
-
-#    def __getScheduleFunctionCode(self, matrix_):
-#        code = ""
-#
-#        assignRowIdxs = []
-#        
-#        #rowExpressions = self.__getRowExpressions(matrix_)
-#
-#        for i, row_i in enumerate(matrix_):
-#            if self.__isUnitOrEmpty(i, row_i):
-#                continue
-#
-#            assignRowIdxs.append(i)
-#
-#            code += "\n\t" + f"int out_{i} = "
-#
-#            elements = []
-#            for j, elem_i in enumerate(row_i):
-#                if elem_i != -1:
-#                    elements.append(f"vec_[{j}] + {elem_i}")
-#
-#            if len(elements) < 1:
-#                raise RuntimeError("Number of elements is less than 1. This should never happen!")
-#            elif len(elements) == 1:
-#                code += elements[0] + ";"
-#            else:
-#                code += "std::max({"
-#                isFirst = True
-#                for elem_i in elements:
-#                    if isFirst:
-#                        isFirst = False
-#                    else:
-#                        code += ", "
-#                    code += elem_i
-#                code += "});"
-#
-#        code += "\n"
-#
-#        for idx_i in assignRowIdxs:
-#            code += "\n\t" + f"vec_[{idx_i}] = out_{idx_i};"
-#
-#        return code
 
     
     def __getRowExpressions(self, matrix_):
@@ -225,34 +248,47 @@ class BlockScheduleGenerator:
         # Find:
         #   1) Unit and empty rows
         #   2) Identical rows (offset = 0)
-        #   3) Rows with constant offset
         for idx_i in range(dim -1, -1, -1):
             row_i = matrix_[idx_i]
             
+            # Identify unit and empty rows
             if self.__isUnitOrEmpty(idx_i, row_i):
                 unhandledIdxs.remove(idx_i)
                 continue
-            
-            offset = None
-            refIdx = None
 
-            for idx_ii in range(idx_i -1, -1, -1): 
+            # Convert SoPs to MaxPlusTerm
+            # TODO: Evaluate how costly that is? Alternatively do it on a need-to-do basis in the following analysis?
+            for i in range(len(row_i)):
+                if type((e := row_i[i])) is not int:
+                    row_i[i] = MaxPlusTerm(e)
+
+            # Identify indentical rows
+            for idx_ii in range(idx_i-1, -1, -1):
                 row_ii = matrix_[idx_ii]
-                if (tempOffset := self.__checkOffsetRow(row_i, row_ii)) is not None:
-                    if (offset is None) or (tempOffset == 0):
-                        offset = tempOffset
-                        refIdx = idx_ii
-                    # TODO: For dynamic delays, consider to check if addend is dynamic or fixed
-                    
-                    # Rows are identical (doesn't get better than this). Abort search
-                    if offset == 0:
-                        break
-                
-            if offset is not None:
-                rowExp = RowExpression(idx_i)
-                rowExp.setOffsetRow(refIdx, offset)
-                rowExpressions.append(rowExp)
-                unhandledIdxs.remove(idx_i)
+                if self.__checkIdenticalRow(row_i, row_ii):
+                    rowExp = RowExpression(idx_i)
+                    rowExp.setOffsetRow(idx_ii, 0)
+                    rowExpressions.append(rowExp)
+                    unhandledIdxs.remove(idx_i)
+                    break
+
+        # Find offset-rows
+        addedHandledIdxs = []
+        for idx_i in unhandledIdxs:
+            for idx_ii in unhandledIdxs:
+                if idx_i == idx_ii or (idx_ii in addedHandledIdxs):
+                    continue
+
+                row_i = matrix_[idx_i]
+                row_ii = matrix_[idx_ii]
+
+                if (offset := self.__checkOffsetRow(row_i, row_ii)) is not None:
+                    rowExp = RowExpression(idx_i)
+                    rowExp.setOffsetRow(idx_ii, offset)
+                    rowExpressions.append(rowExp)
+                    addedHandledIdxs.append(idx_i)
+                    break
+        unhandledIdxs = [i for i in unhandledIdxs if not i in addedHandledIdxs]
 
         # Compare every remaining row with every remaining row
         # Find:
@@ -286,6 +322,8 @@ class BlockScheduleGenerator:
 
         return rowExpressions
 
+    # TODO: These functions are only called from one callee? Move functionality there!?
+
     def __isUnitOrEmpty(self, i_, row_):
         unitOrEmpty = True
         for j, elem_i in enumerate(row_):
@@ -295,6 +333,12 @@ class BlockScheduleGenerator:
                     break
         return unitOrEmpty
     
+    def __checkIdenticalRow(self, row_i_, row_ii_):
+        for elem_i, elem_ii in zip(row_i_, row_ii_):
+            if not self.__identicalElement(elem_i, elem_ii):
+                return False
+        return True
+    
     def __checkOffsetRow(self, row_i_, row_ii_):
         offset = None
         for elem_i, elem_ii in zip(row_i_, row_ii_):
@@ -303,11 +347,13 @@ class BlockScheduleGenerator:
             if (elem_i == -1) or (elem_ii == -1):
                 return None
 
-            if offset is None:
-                offset = elem_i - elem_ii
+            if (o := self.__getOffset(elem_i, elem_ii)) is None:
+                return None
             else:
-                if offset != (elem_i - elem_ii):
-                    return None
+                if offset is None:
+                    offset = o
+                elif not self.__identicalElement(o, offset):
+                    return None 
 
         if offset is None:
             raise RuntimeError(f"Cannot find valid offset for these rows\n{row_i_}\n{row_ii_}")
@@ -327,10 +373,13 @@ class BlockScheduleGenerator:
                 if (elem_ii == -1):
                     dimensions.append((i, elem_i))
                 else:
-                    if offset is None:
-                        offset = elem_i - elem_ii
-                    elif offset != (elem_i - elem_ii):
+                    if (o := self.__getOffset(elem_i, elem_ii)) is None:
                         return None
+                    else:
+                        if offset is None:
+                            offset = o
+                        elif not self.__identicalElement(o, offset):
+                            return None
 
         if offset is None:
             raise RuntimeError(f"Cannot find valid offset for these rows\n{row_i_}\n{row_ii_}")
@@ -338,6 +387,27 @@ class BlockScheduleGenerator:
             raise RuntimeError(f"Cannot find any \"free dimensions\" for these rows\n{row_i_}\n{row_ii_}")
         
         return (offset, dimensions)
+    
+    def __getOffset(self, elem_a_, elem_b_):
+        
+        if type(elem_a_) is int:
+            if type(elem_b_) is int:
+                return elem_a_ - elem_b_
+            return None 
+            
+        elif type(elem_a_) is MaxPlusTerm:
+            return elem_a_.getOffset(elem_b_)
+        
+        else:
+            raise RuntimeError(f"Unexpected type for element elem_a_ ({elem_a_})")
+        
+    def __identicalElement(self, elem_a_, elem_b_):
+        if (type(elem_a_) is int) and (type(elem_b_) is int):
+            return (elem_a_ == elem_b_)
+        elif (type(elem_a_) is MaxPlusTerm) and (type(elem_b_) is MaxPlusTerm):
+            return elem_a_.isIdentical(elem_b_)
+        return False
+                
 
 class Block:
 

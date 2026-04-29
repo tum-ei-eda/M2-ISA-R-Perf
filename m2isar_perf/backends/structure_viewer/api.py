@@ -22,8 +22,8 @@ import pickle
 # from backends.metaMathModel.ModelTransformer import ModelTransformer
 from .StructuralModelPrinter import StructuralModelPrinter
 # from .MathModelPrinter import MathModelPrinter
-from backends.common import dirUtils
-from common import common as cf # common functions
+from ...backends.common import dirUtils
+from ...common import common as cf # common functions
 
 def execute(model_, outDir_):
 

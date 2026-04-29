@@ -22,8 +22,8 @@ import pickle
 import sys
 import json
 
-from backends.common import dirUtils
-from common import common as cf # common functions
+from ...backends.common import dirUtils
+from ...common import common as cf # common functions
 
 ##### API-FUNCTIONS (called by m2isar_perf/run.py) #####
 

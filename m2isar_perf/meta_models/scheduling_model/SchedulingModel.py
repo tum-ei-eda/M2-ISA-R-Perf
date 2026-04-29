@@ -16,7 +16,7 @@
 
 from typing import List, Optional, Union
 
-from meta_models.common.FrozenBase import FrozenBase
+from ...meta_models.common.FrozenBase import FrozenBase
 
 class SchedulingModel(FrozenBase):
 

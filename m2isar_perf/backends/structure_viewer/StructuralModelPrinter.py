@@ -20,7 +20,7 @@ import os
 
 from mako.template import Template
 
-from backends.common import dirUtils
+from ...backends.common import dirUtils
 from .PrintHelper import PrintHelper
 
 class StructuralModelPrinter:

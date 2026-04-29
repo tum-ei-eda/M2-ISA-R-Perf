@@ -16,9 +16,9 @@
 
 from datetime import datetime
 
-from meta_models.scheduling_model.SchedulingModel import DynamicEdge
-from meta_models.scheduling_model.SchedulingModel import StaticEdge
-from meta_models.scheduling_model.SchedulingModel import Node
+from ...meta_models.scheduling_model.SchedulingModel import DynamicEdge
+from ...meta_models.scheduling_model.SchedulingModel import StaticEdge
+from ...meta_models.scheduling_model.SchedulingModel import Node
 
 class CodeBuilder:
 

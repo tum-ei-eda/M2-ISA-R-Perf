@@ -21,16 +21,18 @@ import pathlib
 import pickle
 import sys
 
-from common import common as cf
+from .common import common as cf
 
-from frontends.corePerfDsl import api as Frontend # TODO: Change from API to Class format 
+from .frontends.corePerfDsl import api as Frontend # TODO: Change from API to Class format 
 
-from meta_models.scheduling_model.SchedulingTransformer import SchedulingTransformer
+from .meta_models.scheduling_model.SchedulingTransformer import SchedulingTransformer
 
-from backends.monitor_extractor import api as backend_monitor_extractor # TODO: Change from API to Class format 
-from backends.structure_viewer.StructuralModelViewer import StructuralModelViewer
-from backends.schedule_viewer.SchedulingModelViewer import SchedulingModelViewer
-from backends.estimator_generator.EstimatorGenerator import EstimatorGenerator
+from .backends.monitor_extractor import api as backend_monitor_extractor # TODO: Change from API to Class format 
+from .backends.structure_viewer.StructuralModelViewer import StructuralModelViewer
+from .backends.structure_viewer.StructuralModelPrinter import StructuralModelPrinter
+from .backends.structure_viewer import api as apiii
+from .backends.schedule_viewer.SchedulingModelViewer import SchedulingModelViewer
+from .backends.estimator_generator.EstimatorGenerator import EstimatorGenerator
 
 # Read command line arguments
 argParser = argparse.ArgumentParser()

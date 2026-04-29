@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-from meta_models.common.FrozenBase import FrozenBase
+from ...meta_models.common.FrozenBase import FrozenBase
 
 class StructuralModel(FrozenBase):
 

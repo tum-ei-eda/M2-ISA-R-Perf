@@ -15,7 +15,7 @@
 #
 
 from .SchedulingModel import SchedulingModel
-from meta_models.structural_model.StructuralModel import StructuralModel
+from ...meta_models.structural_model.StructuralModel import StructuralModel
 
 class SchedulingTransformer:
 

@@ -16,7 +16,7 @@
 
 import copy
 
-from meta_models.structural_model import StructuralModel
+from ...meta_models.structural_model import StructuralModel
 from . import Defs
 
 class Builder():

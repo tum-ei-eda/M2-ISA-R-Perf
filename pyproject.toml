@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# This file is part of the M2-ISA-R-Perf project: https://github.com/tum-ei-eda/M2-ISA-R-Perf
+#
+# Copyright (C) 2026
+# Chair of Electrical Design Automation
+# Technical University of Munich
+
+[build-system]
+requires = ["setuptools>=64", "setuptools-scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "m2isar_perf"
+dynamic = ["version"]
+requires-python = ">=3.8"
+license = {text = "Apache-2.0"}
+dependencies = [
+	"mako",
+	"antlr4-python3-runtime == 4.13.1",
+	"tqdm"
+]
+
+[project.scripts]
+m2isar_perf = "m2isar_perf.api"
+
+[tool.setuptools.package-data]
+"*" = ["*.mako"]
+
+[tool.setuptools_scm]

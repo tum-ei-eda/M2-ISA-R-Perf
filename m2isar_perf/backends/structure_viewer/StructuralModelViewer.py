@@ -18,7 +18,7 @@ import graphviz
 import pathlib
 import os
 
-from backends.common import dirUtils
+from ...backends.common import dirUtils
 
 class StructuralModelViewer:
 

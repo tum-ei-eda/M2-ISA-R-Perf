@@ -24,26 +24,38 @@ import pickle
 import antlr4
 from .parser_gen import CorePerfDSLLexer
 from .parser_gen import CorePerfDSLParser
+from antlr4.error.ErrorStrategy import BailErrorStrategy
+from antlr4.error.ErrorListener import ErrorListener
+
+
+class ThrowingErrorListener(ErrorListener):
+    def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
+        raise Exception(f"Syntax error at {line}:{column}: {msg}")
+
 
 from .ModelGen import ModelGen
+
 
 def execute(description_, outdir_=None):
 
     print()
     print("-- FRONTEND: CORE_PERF_DSL --")
-    
+
     # Find pathes for description and output-directory
     description = pathlib.Path(description_).resolve()
     if outdir_ is not None:
         outdir = pathlib.Path(outdir_).resolve()
     else:
         outdir = None
-        
+
     # Create parse-tree from description file
     print(" > Generating parser tree")
     lexer = CorePerfDSLLexer(antlr4.FileStream(description))
     stream = antlr4.CommonTokenStream(lexer)
     parser = CorePerfDSLParser(stream)
+    parser.removeErrorListeners()
+    parser.addErrorListener(ThrowingErrorListener())
+    # parser._errHandler = BailErrorStrategy()
     tree = parser.top()
 
     # Use parse tree for model-2-model transformation according to meta-model

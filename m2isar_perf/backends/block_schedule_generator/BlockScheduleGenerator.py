@@ -21,6 +21,7 @@ from mako.template import Template
 from .CodeBuilder import CodeBuilder
 from backends.common import dirUtils
 
+from meta_models.matrix_model.MaxPlusLib_NEW import MaxPlusLib, MaxPlusElement
 from meta_models.matrix_model.MaxPlusLib import MaxPlusTerm
 
 class BlockScheduleGenerator:
@@ -118,38 +119,234 @@ class BlockScheduleGenerator:
             block = Block(block_i['id'], block_i['startPc'], block_i['endPc'], block_i['callCnt'])
             dynDelayCnt = 0
 
+            mpLib = MaxPlusLib()
+
             blockMatrix = None
             for instr_i in block_i["instrs"]:
                 
+                #if block_i['id'] == 29:
+                #    print(f">>>> Handling instr: {instr_i['typeId']}")
+
                 instr = variant_.getInstruction(instr_i["typeId"])
-
-#                if block_i['id'] == 311:
-#                    #blockMatrix = variant_.getMatrix(instr_i, dynDelayCnt)
-#                    blockMatrix = instr.getMatrix(instr_i, dynDelayCnt)
-#                    variant_.showMatrix(blockMatrix)
-#                    print()
-
+                    
                 if blockMatrix is None:
                     blockMatrix = instr.getMatrix(instr_i, dynDelayCnt) 
                 else:
-                    blockMatrix = instr.mulMatrix(blockMatrix, instr_i, dynDelayCnt)
+                    blockMatrix = instr.mulMatrix(blockMatrix, instr_i, dynDelayCnt, mpLib)
+
+                #if block_i['id'] == 29:
+                #    print()
+                #    variant_.showMatrix(blockMatrix)
+                #    print()
 
                 dynDelayCnt += instr.getNumDynDelays()
 
-            #if block_i['id'] == 311:
+            #if block_i['id'] == 29:
+            #    print()
             #    variant_.showMatrix(blockMatrix)
             #    print()
+            #    raise RuntimeError("Catch program...")
 
-            block.code = self.__getScheduleFunctionCode(blockMatrix)
+            #if block_i['id'] == 29:
+            #    self.__tempCheck_HACK(mpLib.getTempList())
+            #    raise RuntimeError("Catch the program...")
+
+            #block.code = self.__getScheduleFunctionCode(blockMatrix)
+            block.code = self.__getScheduleFunctionCode_HACK(blockMatrix, mpLib.getTempList())
             blocks.append(block)
 
             self.maxDynDelayCnt = max(self.maxDynDelayCnt, dynDelayCnt)
 
-            #if block_i['id'] == 311:
-            #    print(block.code)
-
         blocks.sort(key=lambda x: x.callCnt, reverse=True)
         return blocks
+
+    def __tempCheck_HACK(self, temps_):
+
+        print("START HACK")
+        print()
+        print("+++ TEMPS +++")
+        print()
+
+        unrolledTemps = []
+
+        for x, temp_i in enumerate(temps_):
+            #print(f"Handling temp_{x}")
+
+            #print(f"temp_{x}: {temp_i.getExpression()}")
+
+            newElements = {
+                0: [],
+                1: []
+            }      
+            for i, elem_i in enumerate(temp_i.elements):
+                
+                if len(elem_i.temps) == 0:
+                    newElements[i].append(elem_i)
+
+                else:
+                    buffer = []
+                    for subTemp_i in elem_i.temps:
+                        buffer = newElements[i][:]
+                        newElements[i] = []
+                        for e_i in unrolledTemps[subTemp_i]:
+
+                            if len(buffer) == 0:
+                                newElement = MaxPlusElement()
+                                newElement.value = elem_i.value + e_i.value
+                                newElement.symbols = elem_i.symbols + e_i.symbols
+                                newElements[i].append(newElement)
+
+                            else:
+                                for e_ii in buffer:
+                                    newElement = MaxPlusElement()
+                                    newElement.value = e_ii.value + e_i.value
+                                    newElement.symbols = e_ii.symbols + e_i.symbols
+                                    newElements[i].append(newElement)
+
+#                elif len(e_i.temps) == 1:
+#                    unrolledSubTemp = unrolledTemps[e_i.temps[0]]
+#                    for e_ii in unrolledSubTemp:
+#                        if len(e_ii.temps) != 0:
+#                            raise RuntimeError("Element of unrolled-sub-temp has a temp. This should never happen")
+#
+#                        newElement = MaxPlusElement()
+#                        newElement.value = e_ii.value + e_i.value
+#                        newElement.symbols = e_ii.symbols + e_i.symbols
+#                        newElements[i].append(newElement)
+#
+#                else:
+#                    raise RuntimeError("More than one temp for an elemet... Cannot handle this yet") 
+
+            #for i in [0,1]:
+            #    print(f"newElements[{i}]: ", end="")
+            #    for e_i in newElements[i]:
+            #        print(f"{e_i.getExpression()} , ", end="")
+            #    print()
+
+            unrolled = []
+            idxs_2ndElement = list(range(len(newElements[1])))
+            for i, e_i in enumerate(newElements[0]):
+                add_e_i = True
+                
+                for ii, e_ii in enumerate(newElements[1]):
+
+                    if ii not in idxs_2ndElement: # This element is already removed
+                        continue
+
+                    e_i_mask = e_i.getSymbolMask()
+                    e_ii_mask = e_ii.getSymbolMask()
+
+                    e_i_minVal = e_i.getMinValue()
+                    e_ii_minVal = e_ii.getMinValue()
+
+                    common_mask = e_i_mask & e_ii_mask
+
+                    if(common_mask == e_i_mask): # e_i covered by e_ii
+                        if(e_ii_minVal >= e_i_minVal):
+                            #print(f"Skipping: {e_i.getExpression()}")
+                            add_e_i = False
+                            break # skip e_i
+
+                    if(common_mask == e_ii_mask): # e_ii covered by e_i
+                        if(e_i_minVal >= e_ii_minVal):
+                            #print(f"Skipping: {e_ii.getExpression()}")
+                            idxs_2ndElement.remove(ii)
+
+                if add_e_i:
+                    unrolled.append(e_i)
+
+            for idx_i in idxs_2ndElement:
+                unrolled.append(newElements[1][idx_i]) 
+
+            unrolledTemps.append(unrolled)
+
+            if x > 300:
+                break
+
+        print(f"Num temps: {x}")
+
+        unrolledTuples = []
+        for temp_i in unrolledTemps:
+            unrolledTuples.append([e.makeTuple() for e in temp_i])
+
+
+        print()
+        print("+++ DUPS +++")
+        print()
+
+        seen = {}
+        dupCnt = 0
+        for i, temp_i in enumerate(unrolledTuples):
+            #print(f"{i}: {temp_i}")
+            
+            key = frozenset(temp_i)
+            if key in seen:
+                print(f"temp_{i} is a duplicate of temp_{seen[key]}")
+                dupCnt += 1
+            else:
+                seen[key] = i
+        print(f"Num duplicates: {dupCnt}")
+        
+
+        #for i, temp_i in enumerate(unrolledTemps):
+        #    show = f"temp_{i} : "
+        #    for e_i in temp_i:
+        #        show += e_i.getExpression()
+        #        show += " , "
+        #    show += "\n"
+        #    print(show)
+
+
+    def __getScheduleFunctionCode_HACK(self, matrix_, temps_, verbose_=False):
+        mp = MaxPlusLib()
+        
+        code = ""
+        footer = ""
+
+        for temp_i in temps_:
+            code += "\n\t" + temp_i.getExpression()
+
+        code += "\n"
+
+        if verbose_:
+            print()
+            print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+            print()
+            print(code)
+            print()
+            print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+            print()
+
+        dim = len(matrix_)
+        for idx_i in range(dim):
+            row = matrix_[idx_i]
+
+            # Ignore unit and empty rows
+            unitOrEmpty = True
+            for j, elem_i in enumerate(row):
+                if elem_i != -1:
+                    if not (idx_i == j and elem_i == 0):
+                        unitOrEmpty = False
+                        break
+            if unitOrEmpty:
+                continue
+
+            code += "\n\t" + f"uint64_t out_{idx_i} = "
+            code += "std::max({"
+            isFirst = True
+            for j, elem_i in enumerate(row):
+                if elem_i != -1:
+                    if isFirst:
+                        isFirst = False
+                    else:
+                        code += ", "
+                    code += f"vec_[{j}] "
+                    code += mp.resloveElement(elem_i).getExpression()
+
+            code += "});"
+            footer += "\n\t" + f"vec_[{idx_i}] = out_{idx_i};"
+
+        return code + "\n" + footer
 
     def __getScheduleFunctionCode(self, matrix_):
         
@@ -160,10 +357,6 @@ class BlockScheduleGenerator:
 
         # Process rowExpressions
         while unhandledRowExps:
-            
-            #print_unhandledRows = [(e.idx, e.refIdx) for e in unhandledRowExps]
-            #print(f"Unhandled rows: {print_unhandledRows}")
-            #print(f"Handled rows: {handledRowIdxs}")
             
             for rowExp_i in unhandledRowExps:
                 
@@ -281,7 +474,7 @@ class BlockScheduleGenerator:
 
                 row_i = matrix_[idx_i]
                 row_ii = matrix_[idx_ii]
-
+ 
                 if (offset := self.__checkOffsetRow(row_i, row_ii)) is not None:
                     rowExp = RowExpression(idx_i)
                     rowExp.setOffsetRow(idx_ii, offset)
@@ -294,20 +487,29 @@ class BlockScheduleGenerator:
         # Find:
         #   1) Dim-Shift rows
         addedHandledRowIdxs = []
-        for rowIdx_i in unhandledIdxs:
+        for rowIdx_i in unhandledIdxs:        
+            numDims = None
+            expressionFound = False
+            rowExp = None
+    
             for rowIdx_ii in unhandledIdxs:
                 if rowIdx_i == rowIdx_ii:
                     continue
-        
+
                 row_i = matrix_[rowIdx_i]
                 row_ii = matrix_[rowIdx_ii]
                 if (res := self.__checkDimShiftRow(row_i, row_ii)) is not None:
                     offset, dims = res
-                    rowExp = RowExpression(rowIdx_i)
-                    rowExp.setDimShiftRow(rowIdx_ii, offset, dims)
-                    rowExpressions.append(rowExp)
-                    addedHandledRowIdxs.append(rowIdx_i)
-                    break
+                    if (numDims is None) or (len(dims) < numDims):
+                        expressionFound = True
+                        rowExp = RowExpression(rowIdx_i)
+                        rowExp.setDimShiftRow(rowIdx_ii, offset, dims)
+
+            if expressionFound:
+                rowExpressions.append(rowExp)
+                addedHandledRowIdxs.append(rowIdx_i)
+
+
         unhandledIdxs = [i for i in unhandledIdxs if not i in addedHandledRowIdxs]
 
 
@@ -397,15 +599,18 @@ class BlockScheduleGenerator:
             
         elif type(elem_a_) is MaxPlusTerm:
             return elem_a_.getOffset(elem_b_)
-        
+
         else:
             raise RuntimeError(f"Unexpected type for element elem_a_ ({elem_a_})")
         
     def __identicalElement(self, elem_a_, elem_b_):
         if (type(elem_a_) is int) and (type(elem_b_) is int):
             return (elem_a_ == elem_b_)
-        elif (type(elem_a_) is MaxPlusTerm) and (type(elem_b_) is MaxPlusTerm):
+        elif type(elem_a_) is MaxPlusTerm:
             return elem_a_.isIdentical(elem_b_)
+        elif type(elem_b_) is MaxPlusTerm:
+            return elem_b_.isIdentical(elem_a_)
+
         return False
                 
 

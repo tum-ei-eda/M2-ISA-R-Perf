@@ -36,7 +36,17 @@ public:
 
 private:
     % for mod_i in variant_.getBranchGroup().getAllModels():
+    % if mod_i.hasConfig():
+    inline static ${builder_.getModelClassName(mod_i)} ${mod_i.name} = []{
+        ${builder_.getModelConfigName(mod_i)} cfg;
+        % for key_i,val_i in mod_i.getAllConfigs():
+        cfg.${key_i} = ${val_i};
+        % endfor
+        return ${builder_.getModelClassName(mod_i)}(cfg);
+    }();
+    % else:
     inline static ${builder_.getModelClassName(mod_i)} ${mod_i.name};
+    % endif
     % endfor
 
     static inline const std::array<const map_models::BranchModel*, ${variant_.getBranchGroup().getNumModels()}> models = {
@@ -61,7 +71,17 @@ private:
     mutable uint64_t delayBuffer[${gr_i.getNumModels()}] = {0};
 
     % for mod_i in gr_i.getAllModels():
+    % if mod_i.hasConfig():
+    inline static ${builder_.getModelClassName(mod_i)} ${mod_i.name} = []{
+        ${builder_.getModelConfigName(mod_i)} cfg;
+        % for key_i,val_i in mod_i.getAllConfigs():
+        cfg.${key_i} = ${val_i};
+        % endfor
+        return ${builder_.getModelClassName(mod_i)}(cfg);
+    }();
+    % else:
     inline static ${builder_.getModelClassName(mod_i)} ${mod_i.name};
+    % endif
     % endfor
 
     static inline const std::array<const map_models::ResourceModel*, ${gr_i.getNumModels()}> models ={
@@ -122,7 +142,7 @@ private:
 
     static inline const std::array<const CombType*, ${variant_.getNumCombinations()}> combs = {
         % for comb_i in variant_.getAllCombinations():
-        &comb_${comb_i.id}
+        &comb_${comb_i.id}${"" if loop.last else ","}
         % endfor
     };
 };

@@ -152,11 +152,11 @@ class MaxPlusTerm:
                 if val==0 and mask==0:
                     continue
                 # TODO: Replace with mask.bit_count() soon as we run with Python 3.10+
-                newProducts.append([val, mask, bin(mask).count('1') + val])
+                self.products.append([val, mask, bin(mask).count('1') + val])
 
             self.value = minVal
             self.symbolMask = minMask
-            self.products = newProducts.sort(key=lambda prod: prod[1]) # Sort according to mask
+            self.products.sort(key=lambda prod: prod[1]) # Sort according to mask
             
 #    def copy(self):
 #        res = MaxPlusTerm()
@@ -166,11 +166,16 @@ class MaxPlusTerm:
 #        return res
     
     def isIdentical(self, term_):
-        if not type(term_) is MaxPlusTerm:
-            return False
+        #if not type(term_) is MaxPlusTerm:
+        #    return False
         
-        if (self.value == term_.value) and (self.symbolMask == term_.symbolMask) and (self.products == term_.products):
-            return True
+        if type(term_) is int:
+            return (self.value == term_ and self.symbolMask == 0 and not self.products)
+        elif type(term_) is MaxPlusTerm:
+            return (self.value == term_.value and self.symbolMask == term_.symbolMask and self.products == term_.products)
+
+        #if (self.value == term_.value) and (self.symbolMask == term_.symbolMask) and (self.products == term_.products):
+        #    return True
         
         return False
 
@@ -178,7 +183,8 @@ class MaxPlusTerm:
 
         if type(term_) is int:
             res = MaxPlusTerm()
-            res.value -= term_
+            #res.value -= term_
+            res.value = self.value - term_
             res.symbolMask = self.symbolMask
             if self.products:
                 res.products = [prod_i[:] for prod_i in self.products]
@@ -187,7 +193,8 @@ class MaxPlusTerm:
         elif type(term_) is MaxPlusTerm:
 
             # Check that term_ covers all common symbols of self
-            if not((self.symbolMask & term_.symbolMask) == self.symbolMask):
+            #if not((self.symbolMask & term_.symbolMask) == self.symbolMask):
+            if not((self.symbolMask & term_.symbolMask) == term_.symbolMask):
                 return None
 
             prod = None
@@ -230,27 +237,60 @@ class MaxPlusTerm:
             
             else:
                 skipDelim = True
-                retStr += "+ std::max({"
+                retStr += "+ std::max<uint64_t>({"
                 for prod_i in self.products:
                     val_i, mask_i, _ = prod_i
                     if skipDelim:
-                        skikDelim = False
+                        skipDelim = False
                     else:
                         retStr += ", "
-                    if val_i != 0:
+                    if val_i > 0:
                         retStr += str(val_i)
-                    retStr += self.__getSymbolExpression(mask_i)
+                    elif val_i < 0:
+                        retStr += "-" + str(abs(val_i))
+                    retStr += self.__getSymbolExpression(mask_i, skipLeadingAdd_=(val_i == 0))
                 retStr += "})"
 
         return retStr
 
-    def __getSymbolExpression(self, symMask_, skipLeadingAdd_=False):
+    def __getSymbolExpression(self, symMask_, skipLeadingAdd_=False, showAdd_=True):
         retStr = ""
         symIdxs = [i for i in range(symMask_.bit_length()) if (symMask_ >> i) & 1]
         for s_i in symIdxs:
             if skipLeadingAdd_:
                 skipLeadingAdd_ = False
             else:
-                retStr += "+"
+                retStr += "+" if showAdd_ else ""
             retStr += f"d_[{s_i}]"
+        return retStr
+    
+    def __str__(self):
+        retStr = ""
+        
+        if self.value > 0:
+            retStr += str(self.value)
+        elif self.value < 0:
+            retStr += "-" + str(abs(self.value))
+
+        if self.symbolMask != 0:
+            retStr += self.__getSymbolExpression(self.symbolMask, showAdd_=False)
+
+        if self.products:
+            retStr += "("
+            skipDelim = True
+            for prod_i in self.products:
+                val_i, mask_i, _ = prod_i
+                if skipDelim:
+                    skipDelim = False
+                else:
+                    retStr += " + "
+
+                if val_i > 0:
+                    retStr += str(val_i)
+                elif val_i < 0:
+                    retStr += "-" + str(abs(val_i))
+
+                retStr += self.__getSymbolExpression(mask_i, showAdd_=False)    
+            retStr += ")"
+
         return retStr

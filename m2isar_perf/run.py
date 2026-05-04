@@ -64,7 +64,9 @@ else:
 if args.code_gen or args.info_print or (args.block_gen is not None):
     schedModel = SchedulingTransformer().transform(structModel)
     if args.block_gen is not None:
+        print(" >> Starting transformation: Sched -> Matrix")
         matrixModel = MatrixTransformer().transform(schedModel)
+        print(" >> Matrix transformation completed")
 
 # Call applicable backends
 if args.monitor_description:

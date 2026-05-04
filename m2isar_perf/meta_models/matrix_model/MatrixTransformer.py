@@ -36,7 +36,19 @@ class MatrixTransformer:
                 rGroup = matrixVar.createResourceGroup(rMod_i.name.upper())
                 
                 if rMod_i.name == "iCache":
-                    rGroup.createResourceModel(rMod_i.name, "map_models/ICacheModel.h", rMod_i.getAllTraceValues())
+                    mod = rGroup.createResourceModel((rMod_i.name + "_1"), "map_models/ICacheModel.h", rMod_i.getAllTraceValues())
+                    mod.addConfig({'CACHE_DELAY': 1, 'MEMORY_DELAY': 5}) # Default
+                    #mod = rGroup.createResourceModel((rMod_i.name + "_2"), "map_models/ICacheModel.h", rMod_i.getAllTraceValues())
+                    #mod.addConfig({'CACHE_DELAY': 1, 'MEMORY_DELAY': 4})
+                    #mod = rGroup.createResourceModel((rMod_i.name + "_3"), "map_models/ICacheModel.h", rMod_i.getAllTraceValues())
+                    #mod.addConfig({'CACHE_DELAY': 1, 'MEMORY_DELAY': 3})
+                    #mod = rGroup.createResourceModel((rMod_i.name + "_4"), "map_models/ICacheModel.h", rMod_i.getAllTraceValues())
+                    #mod.addConfig({'CACHE_DELAY': 1, 'MEMORY_DELAY': 1})
+
+                elif rMod_i.name == "dCache":
+                    mod = rGroup.createResourceModel((rMod_i.name + "_1"), "map_models/DCacheModel.h", rMod_i.getAllTraceValues())
+                    mod.addConfig({'CACHE_DELAY': 1, 'MEMORY_DELAY': 5}) # Default
+
                 elif rMod_i.name == "divider":
                     rGroup.createResourceModel(rMod_i.name, "map_models/Divider_CV32E40P.h", rMod_i.getAllTraceValues())
                 elif rMod_i.name == "divider_u":
@@ -47,6 +59,11 @@ class MatrixTransformer:
             # TODO: Hack to create branch-group
             brGroup = matrixVar.createBranchGroup()
             brGroup.createBranchModel("branch_ant", "map_models/Branch_ant.h", ["pc", "brTarget"])
+            #brGroup.createBranchModel("branch_fnt_bt", "map_models/Branch_fnt_bt.h", ["pc", "brTarget"])
+            #mod = brGroup.createBranchModel("branch_2sat_1", "map_models/Branch_2sat.h", ["pc", "brTarget"])
+            #mod.addConfig({'NUM_PAGES': 2, 'NUM_ROWS': 64})
+            #mod = brGroup.createBranchModel("branch_2sat_2", "map_models/Branch_2sat.h", ["pc", "brTarget"])
+            #mod.addConfig({'NUM_PAGES': 4, 'NUM_ROWS': 32})
 
             # Create combinations for all involved models
             for brMod_i in matrixVar.getBranchGroup().getAllModels():

@@ -24,6 +24,8 @@ from meta_models.common.FrozenBase import FrozenBase
 from .MaxPlusLib import SumOfProducts as SoP
 from .MaxPlusLib import mp_mul, mp_add, mp_create_sop
 
+from .MaxPlusLib_NEW import MaxPlusLib
+
 from typing import List, Dict, Tuple
 import copy
 
@@ -310,6 +312,8 @@ class Variant(FrozenBase):
     # TODO: Cleaner if this would be a member-function of Instruction-class?
     def showMatrix(self, matrix_):
 
+        mp = MaxPlusLib() # TODO: Where to implement this?
+
         names = [v.name for v in self.timingVarSet.getAllInVariables()]
         for r in range(self.regSet.size):
             names.append("R" + str(r))
@@ -326,11 +330,11 @@ class Variant(FrozenBase):
         for col_i in range(dim):
             colsWidths[col_i] = len(names[col_i])
             for row_i in range(dim):
-                length = 0
-                if isinstance((e := matrix_[row_i][col_i]), SoP):
-                    length = len(self.__stringSoP(e))
-                else:
-                    length = len(str(e))
+                length = len(mp.str(matrix_[row_i][col_i]))
+                #if isinstance((e := matrix_[row_i][col_i]), SoP):
+                #    length = len(self.__stringSoP(e))
+                #else:
+                #    length = len(str(e))
                 colsWidths[col_i] = max(colsWidths[col_i], length)
 
         x = ""
@@ -342,10 +346,11 @@ class Variant(FrozenBase):
         for row_i in range(dim):
             print(f"{names[row_i]:{rowNameWidth}}", end="")
             for col_i in range(dim):
-                if isinstance((e := matrix_[row_i][col_i]), SoP):
-                    print(f"|{self.__stringSoP(e):{colsWidths[col_i]}}", end="")
-                else:
-                    print(f"|{str(e):{colsWidths[col_i]}}", end="")
+                print(f"|{mp.str(matrix_[row_i][col_i]):{colsWidths[col_i]}}", end="")
+                #if isinstance((e := matrix_[row_i][col_i]), SoP):
+                #    print(f"|{self.__stringSoP(e):{colsWidths[col_i]}}", end="")
+                #else:
+                #    print(f"|{str(e):{colsWidths[col_i]}}", end="")
             print()
         print()
 
@@ -611,7 +616,60 @@ class Instruction(FrozenBase):
 
         return matrix
     
-    def mulMatrix(self, matrix_, instrDescription_:Dict, dynDelayCnt_:int):
+#    def mulMatrix(self, matrix_, instrDescription_:Dict, dynDelayCnt_:int):
+#        variant = self.parent
+#        cInstrMatrix = self.getCompressedInstructionMatrix()
+#
+#        dim = variant.getDimension()
+#        newMatrix = [[None]*dim for _ in range(dim)]
+#
+#        def updateVal(val_, iVar_, oVar_, j_, col_):
+#            if ((a := cInstrMatrix.getResolvedElement(iVar_, oVar_, dynDelayCnt_)) != -1) and ((b := matrix_[j_][col_]) != -1):
+#                #val_ = max(val_, a+b)
+#                temp = mp_mul(a, b)
+#                val_ = mp_add(val_, temp)
+#            return val_
+#
+#        colVarPairs = variant.getAllColumnVariablePairs(instrDescription_)
+#        remainingRows = list(range(dim))
+#
+#        # Compute rows associated with timing variables
+#        for row_i, oVar_i in enumerate(variant.timingVarSet.getAllOutVariables()):
+#            remainingRows.remove(row_i)
+#            for col_i in range(dim):
+#                val = -1
+#                for (j, iVar_i) in colVarPairs:
+#                    val = updateVal(val, iVar_i, oVar_i, j, col_i)
+#                newMatrix[row_i][col_i] = val
+#
+#        # Compute rows associated with register variables
+#        for oVar_i in variant.regSet.getAllOutVariables():
+#            if(row := oVar_i.map2Row(instrDescription_)) is not None:
+#                row += variant.regSet.getRowOffset()
+#                remainingRows.remove(row)
+#                for col_i in range(dim):
+#                    val = -1
+#                    for (j, iVar_i) in colVarPairs:
+#                        val = updateVal(val, iVar_i, oVar_i, j, col_i)
+#                    newMatrix[row][col_i] = val
+#
+#        # Compute rows associated with branch variables
+#        for row_i, oVar_i in enumerate(variant.branchSet.getAllOutVariables()):
+#            row_i += variant.branchSet.getRowOffset()
+#            remainingRows.remove(row_i)
+#            for col_i in range(dim):
+#                val = -1
+#                for (j, iVar_i) in colVarPairs:
+#                    val = updateVal(val, iVar_i, oVar_i, j, col_i)
+#                newMatrix[row_i][col_i] = val
+#
+#        # Handle other rows (unit rows)
+#        for row_i in remainingRows:
+#            newMatrix[row_i] = matrix_[row_i]  
+#
+#        return newMatrix
+
+    def mulMatrix(self, matrix_, instrDescription_:Dict, dynDelayCnt_:int, mpLib_:'MaxPlusLib'):
         variant = self.parent
         cInstrMatrix = self.getCompressedInstructionMatrix()
 
@@ -621,8 +679,8 @@ class Instruction(FrozenBase):
         def updateVal(val_, iVar_, oVar_, j_, col_):
             if ((a := cInstrMatrix.getResolvedElement(iVar_, oVar_, dynDelayCnt_)) != -1) and ((b := matrix_[j_][col_]) != -1):
                 #val_ = max(val_, a+b)
-                temp = mp_mul(a, b)
-                val_ = mp_add(val_, temp)
+                p = mpLib_.mul(a, b)
+                val_ = mpLib_.add(val_, p)
             return val_
 
         colVarPairs = variant.getAllColumnVariablePairs(instrDescription_)
@@ -733,60 +791,101 @@ class DynamicElement(FrozenBase):
 
     def __init__(self, orig_=None):
         fixedAddend = 0
-        dynamicAddends:List[DynamicDelay] = []
+        symbolicAddends:List[int] = []
         if orig_ is not None:
             if isinstance(orig_, int):
                 fixedAddend += orig_
             elif isinstance(orig_, DynamicDelay):
-                dynamicAddends.append(orig_)
+                symbolicAddends.append(orig_.id)
             else:
                 raise RuntimeError("Unsupported object-type for generation of DynamicElement")
         
-        symbolMask = 0
-        for dynDelay_i in dynamicAddends:
-            symbolMask |= 1 << dynDelay_i.id
-        self.sop = mp_create_sop([[fixedAddend, symbolMask]])
+        self.mpLib = MaxPlusLib(allowTempCreation_=False)
+        self.mpElement = self.mpLib.createElement(fixedAddend, symbolicAddends)
 
         super().__init__()
 
     def __str__(self):
-        retStr = ""
-        skipOp = True
-        for prod_i in self.sop:
-            val, mask, _ = prod_i
-            if skipOp:
-                skipOp = False
-            else:
-                retStr += " + "
-            if val != 0:
-                retStr += str(val)
-            for s_i in [i for i in range(mask.bit_length()) if (mask >> i) & 1]:
-                retStr += f"d_{s_i}"
-        return retStr
+        return "<UNDEFINED>"
 
     def add(self, elem_):
         if isinstance(elem_, int):
-            self.sop = mp_mul(self.sop, elem_)
+            self.mpElement = self.mpLib.mul(self.mpElement, elem_)
         elif isinstance(elem_, DynamicElement):
-            self.sop = mp_mul(self.sop, elem_.sop)
+            self.mpElement = self.mpLib.mul(self.mpElement, elem_.mpElement)
         else:
             raise RuntimeError("Unsupported object-type for addition with DynamicElement")
         
     def max(self, elem_):     
         if isinstance(elem_, int):
-            self.sop = mp_add(self.sop, elem_)
+            self.mpElement = self.mpLib.add(self.mpElement, elem_)
         elif isinstance(elem_, DynamicElement):
-            self.sop = mp_add(self.sop, elem_.sop)
+            self.mpElement = self.mpLib.add(self.mpElement, elem_.mpElement)
         else:
             raise RuntimeError("Unsupported object-type for max-operation with DynamicElement")
     
-    def resolve(self, dynDelayCnt_:int) -> SoP:
-        products = []
-        for prod_i in self.sop:
-            val, symMask, _ = prod_i
-            symMask = symMask << dynDelayCnt_
-            products.append([val, symMask])
-        return mp_create_sop(products)
+    def resolve(self, dynDelayCnt_:int): # Returns an element of the MP-Lib, i.e. tuple
+        e = self.mpElement
+        return (e[0], e[1] << dynDelayCnt_, e[2], e[3])
+
+#class DynamicElement(FrozenBase):
+#
+#    def __init__(self, orig_=None):
+#        fixedAddend = 0
+#        dynamicAddends:List[DynamicDelay] = []
+#        if orig_ is not None:
+#            if isinstance(orig_, int):
+#                fixedAddend += orig_
+#            elif isinstance(orig_, DynamicDelay):
+#                dynamicAddends.append(orig_)
+#            else:
+#                raise RuntimeError("Unsupported object-type for generation of DynamicElement")
+#        
+#        symbolMask = 0
+#        for dynDelay_i in dynamicAddends:
+#            symbolMask |= 1 << dynDelay_i.id
+#        self.sop = mp_create_sop([[fixedAddend, symbolMask]])
+#
+#        super().__init__()
+#
+#    def __str__(self):
+#        retStr = ""
+#        skipOp = True
+#        for prod_i in self.sop:
+#            val, mask, _ = prod_i
+#            if skipOp:
+#                skipOp = False
+#            else:
+#                retStr += " + "
+#            if val != 0:
+#                retStr += str(val)
+#            for s_i in [i for i in range(mask.bit_length()) if (mask >> i) & 1]:
+#                retStr += f"d_{s_i}"
+#        return retStr
+#
+#    def add(self, elem_):
+#        if isinstance(elem_, int):
+#            self.sop = mp_mul(self.sop, elem_)
+#        elif isinstance(elem_, DynamicElement):
+#            self.sop = mp_mul(self.sop, elem_.sop)
+#        else:
+#            raise RuntimeError("Unsupported object-type for addition with DynamicElement")
+#        
+#    def max(self, elem_):     
+#        if isinstance(elem_, int):
+#            self.sop = mp_add(self.sop, elem_)
+#        elif isinstance(elem_, DynamicElement):
+#            self.sop = mp_add(self.sop, elem_.sop)
+#        else:
+#            raise RuntimeError("Unsupported object-type for max-operation with DynamicElement")
+#    
+#    def resolve(self, dynDelayCnt_:int) -> SoP:
+#        products = []
+#        for prod_i in self.sop:
+#            val, symMask, _ = prod_i
+#            symMask = symMask << dynDelayCnt_
+#            products.append([val, symMask])
+#        return mp_create_sop(products)
 
 
 #class DynamicElement(FrozenBase):
@@ -900,11 +999,21 @@ class Model(FrozenBase):
         self.id = id_
         self.link = link_
         self.traceValues:List[str] = trVals_
+        self.config = None
 
         super().__init__()
 
     def getAllTraceValues(self):
         return self.traceValues
+
+    def addConfig(self, config_:Dict):
+        self.config = config_
+
+    def getAllConfigs(self):
+        return list(self.config.items())
+    
+    def hasConfig(self):
+        return self.config is not None
 
 class ResourceModel(Model):
 

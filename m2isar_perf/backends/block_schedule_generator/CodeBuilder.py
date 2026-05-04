@@ -50,14 +50,31 @@ class CodeBuilder:
     def getResourceGroupClassName(self, resGr_):
         return (self.getName() + "_" + resGr_.name + "_ResourceGroup")
     
-    # TODO: This is very hacky and not consistent with generation of PerformanceSimulator.... Find a better way
-    def getModelClassName(self, mod_):
-        retStr = mod_.link.replace('.h','')
-        retStr = retStr.replace('/','::')
-        return retStr
-    
     def getBranchGroupClassName(self):
         return (self.getName() + "_BranchGroup")
     
     def getChannelClassName(self):
         return (self.getName() + "_Channel")
+    
+    # TODO: This is very hacky and not consistent with generation of PerformanceSimulator.... Find a better way
+    #def getModelClassName(self, mod_):
+    #    retStr = mod_.link.replace('.h','')
+    #    retStr = retStr.replace('/','::')
+    #    return retStr
+    def getModelClassName(self, mod_):
+        return self.getModelNamespace(mod_) + self.getModelClass(mod_)
+    
+    def getModelConfigName(self, mod_):
+        return self.getModelNamespace(mod_) + self.getModelClass(mod_) + "_Config"
+
+    def getModelNamespace(self, mod_):
+        split = mod_.link.split('/')
+        retStr = ""
+        if len(split) > 1:
+            for split_i in split[:-1]:
+                retStr += split_i + "::"
+        return retStr
+    
+    def getModelClass(self, mod_):
+        split = mod_.link.replace('.h','').split('/')
+        return split[-1]

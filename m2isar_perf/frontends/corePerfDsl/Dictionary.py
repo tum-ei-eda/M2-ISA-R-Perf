@@ -17,17 +17,20 @@
 from ...meta_models.structural_model import StructuralModel
 from . import Defs
 
+
 class UnresolvedReference:
 
     def __init__(self, name_, type_, line_=0):
-        #self.name = "UNRESOLVED_REFERENCE_" + name_
+        # self.name = "UNRESOLVED_REFERENCE_" + name_
         self.name = name_
         self.instanceType = type_
         self.line = line_
 
     def reportError(self):
         line = "?" if self.line == 0 else self.line
-        print(f"ERROR [Line: {line}]: Could not resolve reference {self.name} of type {self.instanceType}. No such instance.")
+        msg = f"ERROR [Line: {line}]: Could not resolve reference {self.name} of type {self.instanceType}. No such instance."
+        print(msg)
+        raise RuntimeError(msg)
 
     def getName(self):
         return self.name

@@ -208,7 +208,7 @@ class MaxPlusLib:
     def getTempList(self):
         return [MaxPlusTemp(t) for t in self._tempList]
     
-    def resloveElement(self, e_):
+    def resolveElement(self, e_):
         return MaxPlusElement(e_)
 
     def __getTemp(self, op_a_, op_b_):
@@ -302,19 +302,48 @@ class MaxPlusElement:
     def __init__(self, elem_=None):
         
         self.value = 0
-        self.symbols = []
-        self.temps = []
+        self.symbolMask = 0
+        self.tempMask = 0
+
+        self.symbolIdxs = []
+        self.tempIdxs = []
+
+        self.zeroElement = False
 
         if type(elem_) is int:
+            if elem_ == -1:
+                self.zeroElement = True
             self.value = elem_
-
+            
         elif type(elem_) is tuple:
+            
             self.value = elem_[0]
-            self.symbols = [i for i in range(elem_[1].bit_length()) if (elem_[1] >> i) & 1]
-            self.temps = [i for i in range(elem_[2].bit_length()) if (elem_[2] >> i) & 1]
+            self.symbolMask = elem_[1]
+            self.tempMask = elem_[2]
+            
+            self.symbolIdxs = [i for i in range(self.symbolMask.bit_length()) if (self.symbolMask >> i) & 1]
+            self.tempIdxs = [i for i in range(self.tempMask.bit_length()) if (self.tempMask >> i) & 1]
 
         elif elem_ is not None:
             raise RuntimeError(f"Unexpected input {elem_} for MaxPlusElement")
+
+    def isZeroElement(self):
+        return self.zeroElement
+
+    def isIdentical(self, elem_:'MaxPlusElement'):
+        return (self.value == elem_.value) and (self.symbolMask == elem_.symbolMask) and (self.tempMask == elem_.tempMask)
+    
+    def getOffset(self, elem_:'MaxPlusElement'):
+        symMask_common = self.symbolMask & elem_.symbolMask
+        tempMask_common = self.tempMask & elem_.tempMask
+
+        if (symMask_common == elem_.symbolMask) and (tempMask_common == elem_.tempMask):
+            val_ret = self.value - elem_.value
+            symMask_ret = self.symbolMask & ~elem_.symbolMask
+            tempMask_ret = self.tempMask & ~elem_.tempMask
+            return MaxPlusElement((val_ret, symMask_ret, tempMask_ret, -1))
+        
+        return None
 
     def getExpression(self):
         ret = ""
@@ -324,25 +353,23 @@ class MaxPlusElement:
         elif self.value < 0:
             ret += f"-{abs(self.value)}"
 
-        for sym_i in self.symbols:
+        for sym_i in self.symbolIdxs:
             ret += f"+d_[{sym_i}]"
 
-        for temp_i in self.temps:
+        for temp_i in self.tempIdxs:
             ret += f"+t_{temp_i}"
 
         return ret
     
     # TODO: Temporary hack. Remove:
     def getSymbolMask(self):
-        mask = 0
-        for sym_i in self.symbols:
-            mask |= 1 << sym_i
-        return mask
+        return self.symbolMask
     
     # TODO: Temporary hack. Remove:
     def getMinValue(self):
         return self.value + len(self.symbols) # Note: Only true if self.temps == []
     
+    # TODO: Temporary hack? Remove?
     def makeTuple(self):
         return (self.value, self.getSymbolMask(), 0, 0)
 
@@ -352,16 +379,36 @@ class MaxPlusTemp:
         self.id = temp_[0]
         self.elements = [MaxPlusElement(e) for e in temp_[1]]
 
-    def getExpression(self):
-        ret = f"uint64_t t_{self.id} = "
-        ret += "std::max<uint64_t>({"
-        if (e := self.elements[0].getExpression()) == "":
-            ret += "0"
-            print(" >> Temp with empty element!?")
-        else:
-            ret += e
-        ret += ", "
-        ret += self.elements[1].getExpression()
-        ret += "});"
+    def getId(self):
+        return self.id
+
+    def getExpression(self, sep_=","):
+        ret = ""
+        setSep = False
+        for e_i in self.elements:
+            if (e := e_i.getExpression()) == "":
+                raise RuntimeError("MaxPlusTemp with an empty element. This should never happen!")
+            else:
+                if setSep == False:
+                    setSep = True
+                else:
+                    ret += sep_
+                ret += e
         return ret
+    
+    def getSplitExpression(self):
+        return [e.getExpression() for e in self.elements]
+
+#    def getExpression(self, sep_=","):
+#        ret = f"uint64_t t_{self.id} = "
+#        ret += "std::max<uint64_t>({"
+#        if (e := self.elements[0].getExpression()) == "":
+#            ret += "0"
+#            print(" >> Temp with empty element!?")
+#        else:
+#            ret += e
+#        ret += sep_
+#        ret += self.elements[1].getExpression()
+#        ret += "});"
+#        return ret
 

@@ -57,7 +57,7 @@ class BlockScheduleGenerator:
     def __generateMAPExplorer(self, variant_, outDir_):
 
         template_header = Template(filename = str(self.templateDir) + "/include/MAPExplorer.mako")
-        code_header = template_header.render(**{'variant_': variant_, 'builder_': self.builder, 'maxDynDelayCnt_': self.maxDynDelayCnt})
+        code_header = template_header.render(**{'variant_': variant_, 'builder_': self.builder})
         outFile_header = outDir_ / "include" / (self.builder.getName() + "_MAPExplorer.h")
         with outFile_header.open('w') as f:
             f.write(code_header)
@@ -106,7 +106,7 @@ class BlockScheduleGenerator:
 
         # Create main source file
         template_src = Template(filename = str(self.templateDir) + "/src/block_schedules/BlockSchedulingFunctions.mako")
-        code_src = template_src.render(**{'blocks_': blocks, 'builder_': self.builder})
+        code_src = template_src.render(**{'blocks_': blocks, 'builder_': self.builder, 'maxDynDelayCnt_': self.maxDynDelayCnt})
         outFile_src = outDir_ / "src" / "block_schedules" / (self.builder.getName() + "_BlockSchedulingFunctions.cpp")
         with outFile_src.open('w') as f:
             f.write(code_src)

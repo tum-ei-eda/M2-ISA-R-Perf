@@ -116,7 +116,7 @@ ${builder_.getName()}_MAPExplorer::instrResLUT = {{
 }};
 
 % for comb_i in variant_.getAllCombinations():
-static ${builder_.getName()}_MAPExplorer::CombType comb_${comb_i.id} { {${", ".join( str(x.id) for x in comb_i.getAllResourceModels())}}, ${comb_i.getBranchModel().id} };
+static ${builder_.getName()}_MAPExplorer::CombType comb_${comb_i.id} { {${", ".join( str(x.id) for x in comb_i.getAllResourceModels())}}, ${comb_i.getBranchModel().id}, ${builder_.getName()}_blockDict.getDelayVecSize()};
 % endfor 
 
 const std::array<const ${builder_.getName()}_MAPExplorer::CombType*, ${variant_.getNumCombinations()}>
@@ -128,7 +128,7 @@ ${builder_.getName()}_MAPExplorer::combs = {
 
 ${builder_.getName()}_MAPExplorer::${builder_.getName()}_MAPExplorer()
     : MAPExplorerBase(
-        &CV32E40P_DSE_blockDict,
+        &${builder_.getName()}_blockDict,
         instrResLUT,
         resGroups,
         &branchGroup,

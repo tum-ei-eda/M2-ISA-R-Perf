@@ -16,6 +16,6 @@ const std::array<const MAP_Explorer::Block*, ${len(blocks_)}> ${builder_.getName
     %endfor
 }};
 
-extern const MAP_Explorer::BlockDictionary ${builder_.getName()}_blockDict{${builder_.getName()}_blocks.data(), ${builder_.getName()}_blocks.size()};
+extern const MAP_Explorer::BlockDictionary ${builder_.getName()}_blockDict{${builder_.getName()}_blocks.data(), ${builder_.getName()}_blocks.size(), ${maxDynDelayCnt_}};
 
 } // namespace ${builder_.getName()}

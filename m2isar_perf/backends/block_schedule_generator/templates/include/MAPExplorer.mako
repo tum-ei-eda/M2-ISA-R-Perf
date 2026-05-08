@@ -60,7 +60,7 @@ private:
 
 /* MAP EXPLORER */
 
-using MAPExplorerBase = MAP_Explorer::MAPExplorer<${variant_.getNumResourceGroups()}, ${variant_.getNumCombinations()}, ${variant_.getNumInstructions()}, ${variant_.getDimension()}, ${maxDynDelayCnt_}>;
+using MAPExplorerBase = MAP_Explorer::MAPExplorer<${variant_.getNumResourceGroups()}, ${variant_.getNumCombinations()}, ${variant_.getNumInstructions()}, ${variant_.getDimension()}>;
 
 class ${builder_.getName()}_MAPExplorer : public MAPExplorerBase{
 

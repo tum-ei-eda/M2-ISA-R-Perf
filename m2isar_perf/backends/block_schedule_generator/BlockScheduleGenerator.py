@@ -105,9 +105,9 @@ class BlockScheduleGenerator:
             f.write(code_cmake)
 
         # Create main source file
-        template_src = Template(filename = str(self.templateDir) + "/src/BlockSchedulingFunctions.mako")
+        template_src = Template(filename = str(self.templateDir) + "/src/block_schedules/BlockSchedulingFunctions.mako")
         code_src = template_src.render(**{'blocks_': blocks, 'builder_': self.builder})
-        outFile_src = outDir_ / "src" / (self.builder.getName() + "_BlockSchedulingFunctions.cpp")
+        outFile_src = outDir_ / "src" / "block_schedules" / (self.builder.getName() + "_BlockSchedulingFunctions.cpp")
         with outFile_src.open('w') as f:
             f.write(code_src)
 

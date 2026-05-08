@@ -10,6 +10,34 @@ namespace ${builder_.getName()}{
 
 /* BRANCH GROUP */
 
+% for mod_i in variant_.getBranchGroup().getAllModels():
+% if mod_i.hasConfig():
+static ${builder_.getModelClassName(mod_i)} create_${mod_i.name}()
+{
+    ${builder_.getModelConfigName(mod_i)} cfg;
+    % for key_i,val_i in mod_i.getAllConfigs():
+    cfg.${key_i} = ${val_i};
+    % endfor
+    return ${builder_.getModelClassName(mod_i)}(cfg);
+}
+static ${builder_.getModelClassName(mod_i)} ${mod_i.name} = create_${mod_i.name}();
+
+% else:
+static ${builder_.getModelClassName(mod_i)} ${mod_i.name};
+% endif
+% endfor
+
+const std::array<const map_models::BranchModel*, ${variant_.getBranchGroup().getNumModels()}>
+${builder_.getBranchGroupClassName()}::models = {
+    % for mod_i in variant_.getBranchGroup().getAllModels():
+    &${mod_i.name}${"" if loop.last else ","}
+    % endfor
+};
+
+${builder_.getBranchGroupClassName()}::${builder_.getBranchGroupClassName()}()
+    : MAP_Explorer::BranchGroup(models.data(), models.size())
+{}
+
 void ${builder_.getBranchGroupClassName()}::connectChannel(Channel* channel_, int* instrIdx_ptr_){
     ${builder_.getChannelClassName()}* channel = static_cast<${builder_.getChannelClassName()}*>(channel_);
 
@@ -25,6 +53,36 @@ void ${builder_.getBranchGroupClassName()}::connectChannel(Channel* channel_, in
 /* RESOURCE GROUPS */
 
 % for gr_i in variant_.getAllResourceGroups():
+// -- ${builder_.getResourceGroupClassName(gr_i)}
+
+% for mod_i in gr_i.getAllModels():
+% if mod_i.hasConfig():
+static ${builder_.getModelClassName(mod_i)} create_${mod_i.name}()
+{
+    ${builder_.getModelConfigName(mod_i)} cfg;
+    % for key_i,val_i in mod_i.getAllConfigs():
+    cfg.${key_i} = ${val_i};
+    % endfor
+    return ${builder_.getModelClassName(mod_i)}(cfg);
+}
+static ${builder_.getModelClassName(mod_i)} ${mod_i.name} = create_${mod_i.name}();
+
+% else:
+static ${builder_.getModelClassName(mod_i)} ${mod_i.name};
+% endif
+% endfor
+
+const std::array<const map_models::ResourceModel*, ${gr_i.getNumModels()}> 
+${builder_.getResourceGroupClassName(gr_i)}::models = {
+    % for mod_i in gr_i.getAllModels():
+    &${mod_i.name}${"" if loop.last else ","}
+    % endfor
+};
+
+${builder_.getResourceGroupClassName(gr_i)}::${builder_.getResourceGroupClassName(gr_i)}()
+    : MAP_Explorer::ResourceGroup(${gr_i.id}, delayBuffer, models.data(), models.size())
+{}
+
 void ${builder_.getResourceGroupClassName(gr_i)}::connectChannel(Channel* channel_, int* instrIdx_ptr_){
     ${builder_.getChannelClassName()}* channel = static_cast<${builder_.getChannelClassName()}*>(channel_);
 
@@ -40,6 +98,42 @@ void ${builder_.getResourceGroupClassName(gr_i)}::connectChannel(Channel* channe
 % endfor
 
 /* MAP-EXPLORER */
+
+${builder_.getBranchGroupClassName()} ${builder_.getName()}_MAPExplorer::branchGroup;
+
+const std::array<const std::unique_ptr<MAP_Explorer::ResourceGroup>, ${variant_.getNumResourceGroups()}>
+${builder_.getName()}_MAPExplorer::resGroups = {
+    % for gr_i in variant_.getAllResourceGroups():
+    std::make_unique<${builder_.getResourceGroupClassName(gr_i)}>()${"" if loop.last else ","}
+    % endfor
+};
+
+const std::array<const std::vector<int>, ${variant_.getNumInstructions()}>
+${builder_.getName()}_MAPExplorer::instrResLUT = {{
+    % for instr_i in variant_.getAllInstructions():
+    {${", ".join(str(x.id) for x in instr_i.getRequiredResourceGroups())}}${"" if loop.last else ","}
+    % endfor
+}};
+
+% for comb_i in variant_.getAllCombinations():
+static ${builder_.getName()}_MAPExplorer::CombType comb_${comb_i.id} { {${", ".join( str(x.id) for x in comb_i.getAllResourceModels())}}, ${comb_i.getBranchModel().id} };
+% endfor 
+
+const std::array<const ${builder_.getName()}_MAPExplorer::CombType*, ${variant_.getNumCombinations()}>
+${builder_.getName()}_MAPExplorer::combs = {
+    % for comb_i in variant_.getAllCombinations():
+    &comb_${comb_i.id}${"" if loop.last else ","}
+    % endfor
+};
+
+${builder_.getName()}_MAPExplorer::${builder_.getName()}_MAPExplorer()
+    : MAPExplorerBase(
+        &CV32E40P_DSE_blockDict,
+        instrResLUT,
+        resGroups,
+        &branchGroup,
+        combs) 
+{}
 
 void ${builder_.getName()}_MAPExplorer::connectChannel(Channel* channel_){
     ch_instrCnt_ptr = &(channel_->instrCnt);

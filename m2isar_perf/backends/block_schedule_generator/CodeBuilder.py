@@ -50,6 +50,9 @@ class CodeBuilder:
     def getResourceGroupClassName(self, resGr_):
         return (self.getName() + "_" + resGr_.name + "_ResourceGroup")
     
+    def getResourceGroupName(self, resGr_):
+        return ("resGroup_" + resGr_.name)
+    
     def getBranchGroupClassName(self):
         return (self.getName() + "_BranchGroup")
     

@@ -49,6 +49,11 @@ argParser.add_argument("-e", "--block_ext", action="store_true", help="Generate 
 argParser.add_argument("-b", "--block_gen", help="Generate block-scheduling-functions")
 
 argParser.add_argument("-d", "--dump_dir", help="Directory to dump intermediatly generated models.")
+
+argParser.add_argument("-t1", "--test_1", help="Num. of I\$ variants")
+argParser.add_argument("-t2", "--test_2", help="Num. of D\$ variants")
+argParser.add_argument("-t3", "--test_3", help="Num. of Br.Pred variants")
+
 args = argParser.parse_args()
 
 # Resolve outDir
@@ -64,9 +69,10 @@ else:
 if args.code_gen or args.info_print or (args.block_gen is not None):
     schedModel = SchedulingTransformer().transform(structModel)
     if args.block_gen is not None:
-        print(" >> Starting transformation: Sched -> Matrix")
-        matrixModel = MatrixTransformer().transform(schedModel)
-        print(" >> Matrix transformation completed")
+        if (args.test_1 is not None) and (args.test_2 is not None) and (args.test_3 is not None):
+            matrixModel = MatrixTransformer(args.test_1, args.test_2, args.test_3).transform(schedModel)
+        else:
+            matrixModel = MatrixTransformer().transform(schedModel)
 
 # Call applicable backends
 if args.monitor_description:
@@ -81,10 +87,6 @@ if args.block_gen is not None:
 if args.info_print :
     #StructuralModelViewer().execute(structModel, outDir)
     SchedulingModelViewer().execute(schedModel, outDir)
-
-#print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-#
-#print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
 # Calculate run-time
 endTime = time.time()

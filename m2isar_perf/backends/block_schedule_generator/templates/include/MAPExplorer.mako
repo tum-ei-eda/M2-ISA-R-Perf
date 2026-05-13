@@ -9,15 +9,31 @@ ${builder_.getFileHeader()}
 
 #include "${builder_.getName()}_BlockSchedulingFunctions.h"
 
+<% 
+linkList = []
+%>
 % for mod_i in variant_.getBranchGroup().getAllModels():
+% if mod_i.link not in linkList:
 #include "${mod_i.link}"
+<%
+linkList.append(mod_i.link)
+%>
+% endif
 % endfor
 
+<% 
+linkList = []
+%>
 % for gr_i in variant_.getAllResourceGroups():
 % for mod_i in gr_i.getAllModels():
+% if mod_i.link not in linkList:
 #include "${mod_i.link}"
-
+<%
+linkList.append(mod_i.link)
+%>
+% endif
 % endfor
+
 % endfor
 #include <cstdint>
 #include <array>
@@ -27,46 +43,43 @@ namespace ${builder_.getName()}{
 
 /* BRANCH GROUP */
 
-class ${builder_.getBranchGroupClassName()} : public MAP_Explorer::BranchGroup{
+class ${builder_.getBranchGroupClassName()} : public MAP_Explorer::BranchGroupT<
+% for mod_i in variant_.getBranchGroup().getAllModels():
+${builder_.getModelClassName(mod_i)}${"" if loop.last else ","}
+% endfor
+>{
 
 public:
     ${builder_.getBranchGroupClassName()}();
-    ~${builder_.getBranchGroupClassName()}() = default;
-
     void connectChannel(Channel*, int*);
-
-private:
-    static const std::array<const map_models::BranchModel*, ${variant_.getBranchGroup().getNumModels()}> models;
 };
 
 /* RESOURCE GROUPS */
 
 % for gr_i in variant_.getAllResourceGroups():
-class ${builder_.getResourceGroupClassName(gr_i)} : public MAP_Explorer::ResourceGroup{
+class ${builder_.getResourceGroupClassName(gr_i)} : public MAP_Explorer::ResourceGroupT<
+% for mod_i in gr_i.getAllModels():
+${builder_.getModelClassName(mod_i)}${"" if loop.last else ","}
+% endfor
+>{
 
 public:
     ${builder_.getResourceGroupClassName(gr_i)}();
-    ~${builder_.getResourceGroupClassName(gr_i)}() = default;
-
-    virtual void connectChannel(Channel*, int*);
-
-private:
-    mutable uint64_t delayBuffer[${gr_i.getNumModels()}] = {0};
-
-    static const std::array<const map_models::ResourceModel*, ${gr_i.getNumModels()}> models;
+    void connectChannel(Channel*, int*);
 };
 
 % endfor
 
 /* MAP EXPLORER */
 
-using MAPExplorerBase = MAP_Explorer::MAPExplorer<${variant_.getNumResourceGroups()}, ${variant_.getNumCombinations()}, ${variant_.getNumInstructions()}, ${variant_.getDimension()}>;
+using MAPExplorerBase = MAP_Explorer::MAPExplorer<${variant_.getNumResourceGroups()}, ${variant_.getNumCombinations()}, ${variant_.getNumInstructions()}, ${variant_.getDimension()}, ${variant_.getMaxDynDelayPerInstr()}>;
 
 class ${builder_.getName()}_MAPExplorer : public MAPExplorerBase{
 
 public:
 
     using CombType = typename MAPExplorerBase::CombType;
+    using ResGroupEntryType = typename MAPExplorerBase::ResGroupEntryType;
 
     ${builder_.getName()}_MAPExplorer();
     ~${builder_.getName()}_MAPExplorer() = default;
@@ -79,13 +92,13 @@ private:
     static ${builder_.getBranchGroupClassName()} branchGroup;
 
     // Resource-Group
-    static const std::array<const std::unique_ptr<MAP_Explorer::ResourceGroup>, ${variant_.getNumResourceGroups()}> resGroups;
+    static const std::array<MAP_Explorer::ResourceGroup*, ${variant_.getNumResourceGroups()}> resGroups;
 
-    // Instruction -> ResourceGroup LUT
-    static const std::array<const std::vector<int>, ${variant_.getNumInstructions()}> instrResLUT;
+    // Instr -> ResourceGroup LUT
+    static const std::array<const ResGroupEntryType, ${variant_.getNumInstructions()}> resGroupLUT;
 
     // Combinations
-    static const std::array<const CombType*, ${variant_.getNumCombinations()}> combs;
+    static const std::array<CombType*, ${variant_.getNumCombinations()}> combs;
 };
 
 } // namespace ${builder_.getName()}

@@ -22,8 +22,14 @@ from itertools import product
 
 class MatrixTransformer:
 
-    def __init__(self):
-        pass
+    def __init__(self, n_I_="0", n_D_="0", n_BrPred_="0"):
+        
+        # TODO: For quick test. Remove
+        self.n_I = int(n_I_)
+        self.n_D = int(n_D_)
+        self.n_BrPred = int(n_BrPred_)
+
+        #pass
 
     def transform(self, schedulingModel_:SchedulingModel):
         matrixModel = MatrixModel(schedulingModel_.name)
@@ -58,7 +64,7 @@ class MatrixTransformer:
                         {'CACHE_DELAY': 1, 'MEMORY_DELAY': 6, 'NUM_WAYS': 16, 'NUM_ROWS': 128}
                     ]
 
-                    n = 4 # max: 4
+                    n = self.n_I # max: 4
                     for i in range(2**n):
                         mod = rGroup.createResourceModel((rMod_i.name + "_" + str(i)), "map_models/ICacheModel.h", rMod_i.getAllTraceValues())
                         mod.addConfig(iCacheConfigs[i])
@@ -556,7 +562,7 @@ class MatrixTransformer:
                         {'CACHE_DELAY': 1, 'MEMORY_DELAY': 6, 'NUM_WAYS': 16, 'NUM_ROWS': 128}
                     ]
 
-                    n = 4 # max: 4
+                    n = self.n_D # max: 4
                     for i in range(2**n):
                         mod = rGroup.createResourceModel((rMod_i.name + "_" + str(i)), "map_models/DCacheModel.h", rMod_i.getAllTraceValues())
                         mod.addConfig(dCacheConfigs[i])
@@ -585,7 +591,7 @@ class MatrixTransformer:
                 {'NUM_PAGES': 4, 'NUM_ROWS': 16},
             ]
 
-            n = 0 # max: 3
+            n = self.n_BrPred # max: 3
             for i in range(2**n):
                 if i == 0:
                     brGroup.createBranchModel("branch_ant", "map_models/Branch_ant.h", ["pc", "brTarget"]) # always non-taken

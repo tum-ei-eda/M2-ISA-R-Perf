@@ -184,6 +184,15 @@ class Variant(FrozenBase):
 
     def getNumCombinations(self) -> int:
         return len(self.combinations)
+
+    def getMaxDynDelayPerInstr(self) -> int:
+        cnt = None
+        for instr_i in self.instructions.values():
+            if cnt is None:
+                cnt = instr_i.getNumDynDelays()
+            else:
+                cnt = max(cnt, instr_i.getNumDynDelays())
+        return cnt
     
 #    def getNumMaxDynamicDelays(self) -> int:
 #        # TODO: Currently hard-coded. Derive automatically!

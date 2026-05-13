@@ -27,15 +27,12 @@ static ${builder_.getModelClassName(mod_i)} ${mod_i.name};
 % endif
 % endfor
 
-const std::array<const map_models::BranchModel*, ${variant_.getBranchGroup().getNumModels()}>
-${builder_.getBranchGroupClassName()}::models = {
-    % for mod_i in variant_.getBranchGroup().getAllModels():
-    &${mod_i.name}${"" if loop.last else ","}
-    % endfor
-};
-
 ${builder_.getBranchGroupClassName()}::${builder_.getBranchGroupClassName()}()
-    : MAP_Explorer::BranchGroup(models.data(), models.size())
+    : BranchGroupT(
+        % for mod_i in variant_.getBranchGroup().getAllModels():
+        ${mod_i.name}${"" if loop.last else ","}
+        % endfor
+    )
 {}
 
 void ${builder_.getBranchGroupClassName()}::connectChannel(Channel* channel_, int* instrIdx_ptr_){
@@ -72,15 +69,13 @@ static ${builder_.getModelClassName(mod_i)} ${mod_i.name};
 % endif
 % endfor
 
-const std::array<const map_models::ResourceModel*, ${gr_i.getNumModels()}> 
-${builder_.getResourceGroupClassName(gr_i)}::models = {
-    % for mod_i in gr_i.getAllModels():
-    &${mod_i.name}${"" if loop.last else ","}
-    % endfor
-};
-
 ${builder_.getResourceGroupClassName(gr_i)}::${builder_.getResourceGroupClassName(gr_i)}()
-    : MAP_Explorer::ResourceGroup(${gr_i.id}, delayBuffer, models.data(), models.size())
+    : ResourceGroupT(
+        ${gr_i.id},
+        % for mod_i in gr_i.getAllModels():
+        ${mod_i.name}${"" if loop.last else ","}
+        % endfor
+    )
 {}
 
 void ${builder_.getResourceGroupClassName(gr_i)}::connectChannel(Channel* channel_, int* instrIdx_ptr_){
@@ -101,25 +96,29 @@ void ${builder_.getResourceGroupClassName(gr_i)}::connectChannel(Channel* channe
 
 ${builder_.getBranchGroupClassName()} ${builder_.getName()}_MAPExplorer::branchGroup;
 
-const std::array<const std::unique_ptr<MAP_Explorer::ResourceGroup>, ${variant_.getNumResourceGroups()}>
+%for gr_i in variant_.getAllResourceGroups():
+static ${builder_.getResourceGroupClassName(gr_i)} resGroup_${gr_i.name};
+% endfor
+
+constexpr std::array<MAP_Explorer::ResourceGroup*, ${variant_.getNumResourceGroups()}>
 ${builder_.getName()}_MAPExplorer::resGroups = {
-    % for gr_i in variant_.getAllResourceGroups():
-    std::make_unique<${builder_.getResourceGroupClassName(gr_i)}>()${"" if loop.last else ","}
+    %for gr_i in variant_.getAllResourceGroups():
+    &${builder_.getResourceGroupName(gr_i)}${"" if loop.last else ","}
     % endfor
 };
 
-const std::array<const std::vector<int>, ${variant_.getNumInstructions()}>
-${builder_.getName()}_MAPExplorer::instrResLUT = {{
+constexpr std::array<const ${builder_.getName()}_MAPExplorer::ResGroupEntryType, ${variant_.getNumInstructions()}>
+${builder_.getName()}_MAPExplorer::resGroupLUT = {{
     % for instr_i in variant_.getAllInstructions():
-    {${", ".join(str(x.id) for x in instr_i.getRequiredResourceGroups())}}${"" if loop.last else ","}
+    {${instr_i.getNumDynDelays()},{${", ".join("&" + builder_.getResourceGroupName(x) for x in instr_i.getRequiredResourceGroups())}}}${"" if loop.last else ","}
     % endfor
 }};
 
 % for comb_i in variant_.getAllCombinations():
-static ${builder_.getName()}_MAPExplorer::CombType comb_${comb_i.id} { {${", ".join( str(x.id) for x in comb_i.getAllResourceModels())}}, ${comb_i.getBranchModel().id}, ${builder_.getName()}_blockDict.getDelayVecSize()};
+static ${builder_.getName()}_MAPExplorer::CombType comb_${comb_i.id} { {${", ".join( "&" + str(x.name) for x in comb_i.getAllResourceModels())}}, &${comb_i.getBranchModel().name}};
 % endfor 
 
-const std::array<const ${builder_.getName()}_MAPExplorer::CombType*, ${variant_.getNumCombinations()}>
+const std::array<${builder_.getName()}_MAPExplorer::CombType*, ${variant_.getNumCombinations()}>
 ${builder_.getName()}_MAPExplorer::combs = {
     % for comb_i in variant_.getAllCombinations():
     &comb_${comb_i.id}${"" if loop.last else ","}
@@ -129,7 +128,7 @@ ${builder_.getName()}_MAPExplorer::combs = {
 ${builder_.getName()}_MAPExplorer::${builder_.getName()}_MAPExplorer()
     : MAPExplorerBase(
         &${builder_.getName()}_blockDict,
-        instrResLUT,
+        resGroupLUT,
         resGroups,
         &branchGroup,
         combs) 

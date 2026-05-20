@@ -17,6 +17,7 @@
 import pathlib
 import json
 from mako.template import Template
+import time # TODO: Debug
 
 from .CodeBuilder import CodeBuilder
 from backends.common import dirUtils
@@ -121,18 +122,75 @@ class BlockScheduleGenerator:
 
             mpLib = MaxPlusLib()
 
+#            if block_i['id'] == 285 or block_i['id'] == 287:
+#                print()
+#                print("+++++++++++++++++++++++++++++++")
+#                print(f"Block-ID: {block_i['id']}")
+#                print(f"Num. instr.: {len(block_i['instrs'])}")
+#
+#                instrDict = {}
+#                for instr_i in block_i['instrs']:
+#                    type = instr_i['typeId']
+#                    if type not in instrDict:
+#                        instrDict[type] = 1
+#                    else:
+#                        instrDict[type] += 1
+#
+#                print("Instr-types:")
+#                for instr_i in instrDict:
+#                    print("\t" + f"{instr_i}: {instrDict[instr_i]}")
+#                print()
+#
+#                srcDict = {}
+#                targetDict = {}
+#                print("Register utilization:")
+#                for i, instr_i in enumerate(block_i['instrs']):
+#                    for src_i in ['rs1', 'rs2']:
+#                        if (rs := instr_i[src_i]) is not None:
+#                            if rs not in srcDict:
+#                                srcDict[rs] = 1
+#                            else:
+#                                srcDict[rs] += 1
+#                    if (rd := instr_i['rd']) is not None:
+#                        if rd not in targetDict:
+#                            targetDict[rd] = 1
+#                        else:
+#                            targetDict[rd] += 1
+#
+#                    srcDict = dict(sorted(srcDict.items()))
+#                    targetDict = dict(sorted(targetDict.items()))
+#
+#                    print("\t" + f"instr #{i}")
+#                    print("\t\t" + f"Used src registers: {len(srcDict)} | {srcDict}")
+#                    print("\t\t" + f"Used target registers: {len(targetDict)} | {targetDict}")
+#
+#
+#                #raise RuntimeError("Abort program...")
+
+            dbg_time = 0
+
             blockMatrix = None
-            for instr_i in block_i["instrs"]:
-                
-                #if block_i['id'] == 29:
-                #    print(f">>>> Handling instr: {instr_i['typeId']}")
+            for i, instr_i in enumerate(block_i["instrs"]):
 
                 instr = variant_.getInstruction(instr_i["typeId"])
-                    
+
+                #type = instr_i['typeId']
+                #if block_i['id'] == 285:
+                #    if type == 38 or type == 42:
+                #        type = 0
+                #instr = variant_.getInstruction(type)
+
                 if blockMatrix is None:
                     blockMatrix = instr.getMatrix(instr_i, dynDelayCnt) 
                 else:
                     blockMatrix = instr.mulMatrix(blockMatrix, instr_i, dynDelayCnt, mpLib)
+
+#                if block_i['id'] == 285 or block_i['id'] == 287:
+#                    print(f"Handled instr: {i} [Type: {instr_i['typeId']}]")
+#                    t = time.time()
+#                    print("\t" + f"Execution time: {t - dbg_time}")
+#                    dbg_time = t
+
 
                 #if block_i['id'] == 29:
                 #    print()
@@ -141,11 +199,11 @@ class BlockScheduleGenerator:
 
                 dynDelayCnt += instr.getNumDynDelays()
 
-            #if block_i['id'] == 29:
-            #    print()
-            #    variant_.showMatrix(blockMatrix)
-            #    print()
-            #    raise RuntimeError("Catch program...")
+#            if block_i['id'] == 285 or block_i['id'] == 287:
+#                print()
+#                variant_.showMatrix(blockMatrix)
+#                print()
+#                #raise RuntimeError("Catch program...")
 
             #if block_i['id'] == 29:
             #    self.__tempCheck_HACK(mpLib.getTempList())

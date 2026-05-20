@@ -72,13 +72,14 @@ public:
 
 /* MAP EXPLORER */
 
-using MAPExplorerBase = MAP_Explorer::MAPExplorer<${variant_.getNumResourceGroups()}, ${variant_.getNumCombinations()}, ${variant_.getNumInstructions()}, ${variant_.getDimension()}, ${variant_.getMaxDynDelayPerInstr()}>;
+using MAPExplorerBase = MAP_Explorer::MAPExplorer<${variant_.getNumResourceGroups()}, ${variant_.getNumCombinations()}, ${variant_.getNumResourceCombinations()}, ${variant_.getNumInstructions()}, ${variant_.getDimension()}, ${variant_.getMaxDynDelayPerInstr()}>;
 
 class ${builder_.getName()}_MAPExplorer : public MAPExplorerBase{
 
 public:
 
     using CombType = typename MAPExplorerBase::CombType;
+    using DVecType = typename MAPExplorerBase::DVecType;
     using ResGroupEntryType = typename MAPExplorerBase::ResGroupEntryType;
 
     ${builder_.getName()}_MAPExplorer();
@@ -97,8 +98,11 @@ private:
     // Instr -> ResourceGroup LUT
     static const std::array<const ResGroupEntryType, ${variant_.getNumInstructions()}> resGroupLUT;
 
+    // Delay-Vectors
+    static std::array<DVecType, ${variant_.getNumResourceCombinations()}> delayVectors;
+
     // Combinations
-    static const std::array<CombType*, ${variant_.getNumCombinations()}> combs;
+    static std::array<CombType, ${variant_.getNumCombinations()}> combs;
 };
 
 } // namespace ${builder_.getName()}

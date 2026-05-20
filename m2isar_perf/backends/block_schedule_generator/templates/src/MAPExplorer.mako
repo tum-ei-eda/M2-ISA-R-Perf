@@ -114,16 +114,19 @@ ${builder_.getName()}_MAPExplorer::resGroupLUT = {{
     % endfor
 }};
 
-% for comb_i in variant_.getAllCombinations():
-static ${builder_.getName()}_MAPExplorer::CombType comb_${comb_i.id} { {${", ".join( "&" + str(x.name) for x in comb_i.getAllResourceModels())}}, &${comb_i.getBranchModel().name}};
-% endfor 
-
-const std::array<${builder_.getName()}_MAPExplorer::CombType*, ${variant_.getNumCombinations()}>
-${builder_.getName()}_MAPExplorer::combs = {
-    % for comb_i in variant_.getAllCombinations():
-    &comb_${comb_i.id}${"" if loop.last else ","}
+std::array<${builder_.getName()}_MAPExplorer::DVecType, ${variant_.getNumResourceCombinations()}>
+${builder_.getName()}_MAPExplorer::delayVectors = {{
+    % for resComb_i in variant_.getAllResourceCombinations():
+    {{{${", ".join( "&" + str(x.name) for x in resComb_i.getAllResourceModels())}}}}${"" if loop.last else ","}
     % endfor
-};
+}};
+
+std::array<${builder_.getName()}_MAPExplorer::CombType, ${variant_.getNumCombinations()}>
+${builder_.getName()}_MAPExplorer::combs = {{
+    % for comb_i in variant_.getAllCombinations():
+    {&delayVectors[${comb_i.getResourceCombination().id}], &${comb_i.getBranchModel().name}}${"" if loop.last else ","}
+    % endfor
+}};
 
 ${builder_.getName()}_MAPExplorer::${builder_.getName()}_MAPExplorer()
     : MAPExplorerBase(
@@ -131,6 +134,7 @@ ${builder_.getName()}_MAPExplorer::${builder_.getName()}_MAPExplorer()
         resGroupLUT,
         resGroups,
         &branchGroup,
+        delayVectors,
         combs) 
 {}
 

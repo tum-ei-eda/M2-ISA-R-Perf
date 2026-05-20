@@ -27,7 +27,7 @@ from .MaxPlusLib import mp_mul, mp_add, mp_create_sop
 from .MaxPlusLib_NEW import MaxPlusLib
 
 from typing import List, Dict, Tuple
-import copy
+from itertools import product
 
 class MatrixModel(FrozenBase):
 
@@ -65,6 +65,7 @@ class Variant(FrozenBase):
         self.branchSet = BranchSet(self)
         self.resourceGroups:Dict[str, ResourceGroup] = {}
         self.branchGroup = None
+        self.resourceCombinations:List[ResourceCombination] = []
         self.combinations:List[Combination] = []
 
         # Look-up
@@ -94,10 +95,25 @@ class Variant(FrozenBase):
         self.branchGroup = BranchGroup()
         return self.branchGroup
     
-    def createCombination(self, brMod_:'BranchModel', resMods_:List['ResourceModel']) -> 'Combination':
-        comb = Combination(len(self.combinations), brMod_, resMods_)
-        self.combinations.append(comb)
-        return comb
+    def createAllResourceCombinations(self):
+        for resModComb_i in product(*(g.getAllModels() for g in self.getAllResourceGroups())):
+            self.resourceCombinations.append(ResourceCombination(len(self.resourceCombinations), resModComb_i))
+
+    def createAllCombinations(self):
+        for brMod_i in self.getBranchGroup().getAllModels():
+            for resComb_i in self.getAllResourceCombinations():
+                self.combinations.append(Combination(len(self.combinations), brMod_i, resComb_i))
+
+    #def createAllCombinations(self):
+    #    for brMod_i in self.getBranchGroup().getAllModels():
+    #            for resModComb_i in product(*(g.getAllModels() for g in self.getAllResourceGroups())):
+    #                #matrixVar.createCombination(brMod_i, resModComb_i)
+    #                self.combinations.append(Combination(len(self.combinations), brMod_i, resModComb_i))
+
+    #def createCombination(self, brMod_:'BranchModel', resMods_:List['ResourceModel']) -> 'Combination':
+    #    comb = Combination(len(self.combinations), brMod_, resMods_)
+    #    self.combinations.append(comb)
+    #    return comb
     
     def addInVariable(self, var_:'InVariable'):
         if var_.name in self.inVariables:
@@ -173,6 +189,9 @@ class Variant(FrozenBase):
     def getBranchGroup(self) -> 'BranchGroup':
         return self.branchGroup
     
+    def getAllResourceCombinations(self) -> List['ResourceCombination']:
+        return self.resourceCombinations
+
     def getAllCombinations(self) -> List['Combination']:
         return self.combinations
     
@@ -181,6 +200,9 @@ class Variant(FrozenBase):
 
     def getNumResourceGroups(self) -> int:
         return len(self.resourceGroups)
+
+    def getNumResourceCombinations(self) -> int:
+        return len(self.resourceCombinations)
 
     def getNumCombinations(self) -> int:
         return len(self.combinations)
@@ -1034,17 +1056,37 @@ class BranchModel(Model):
     def __init__(self, name_:str, id_:int, link_:str, trVals_:List[str]):
         super().__init__(name_, id_, link_, trVals_)
 
-class Combination(FrozenBase):
+class ResourceCombination(FrozenBase):
 
-    def __init__(self, id_:int, brMod_:'BranchModel', resMods_:List['ResourceModel']):
+    def __init__(self, id_:int, resMods_:List['ResourceModel']):
         self.id = id_
-        self.branchModel = brMod_
         self.resourceModels = resMods_
 
         super().__init__()
 
     def getAllResourceModels(self):
         return self.resourceModels
+
+class Combination(FrozenBase):
+
+#    def __init__(self, id_:int, brMod_:'BranchModel', resMods_:List['ResourceModel']):
+#        self.id = id_
+#        self.branchModel = brMod_
+#        self.resourceModels = resMods_
+#
+#        super().__init__()
+
+    def __init__(self, id_:int, brMod_:'BranchModel', resComb_:'ResourceCombination'):
+        self.id = id_
+        self.branchModel = brMod_
+        self.resourceCombination = resComb_
+
+    # TODO: Make sure this is no longer used!
+    def getAllResourceModels(self):
+        return self.resourceCombination.getAllResourceModels()
     
+    def getResourceCombination(self):
+        return self.resourceCombination
+
     def getBranchModel(self):
         return self.branchModel

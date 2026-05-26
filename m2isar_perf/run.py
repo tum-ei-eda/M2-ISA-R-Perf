@@ -36,6 +36,7 @@ from backends.estimator_generator.EstimatorGenerator import EstimatorGenerator
 from backends.block_extractor_generator.BlockExtractorGenerator import BlockExtractorGenerator
 from backends.block_schedule_generator.BlockScheduleGenerator import BlockScheduleGenerator
 
+
 # Read command line arguments
 startTime = time.time()
 argParser = argparse.ArgumentParser()
@@ -83,7 +84,10 @@ if args.block_ext:
     BlockExtractorGenerator().execute(structModel, outDir)
 if args.block_gen is not None:
     #pass
-    BlockScheduleGenerator().execute(matrixModel, args.block_gen, outDir)
+    gen = BlockScheduleGenerator()
+    gen.execute(matrixModel, args.block_gen, outDir)
+    gen.getInfo()
+    #BlockScheduleGenerator().execute(matrixModel, args.block_gen, outDir)
 if args.info_print :
     #StructuralModelViewer().execute(structModel, outDir)
     SchedulingModelViewer().execute(schedModel, outDir)
@@ -91,3 +95,5 @@ if args.info_print :
 # Calculate run-time
 endTime = time.time()
 print(f"Total execution time M2ISAR-Perf: {float(endTime-startTime)}s")
+
+

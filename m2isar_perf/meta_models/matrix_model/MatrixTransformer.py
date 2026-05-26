@@ -143,12 +143,28 @@ class MatrixTransformer:
             #        matrixVar.createCombination(brMod_i, resModComb_i)
 
 
-            for timingVar_i in schedVar_i.getAllTimingVariables():
-                matrixVar.addTimingVariable(timingVar_i.name, timingVar_i.numElements)
+            #for timingVar_i in schedVar_i.getAllTimingVariables():
+            #    #print(f"{timingVar_i.name}: {timingVar_i.numElements}")
+            #    matrixVar.addTimingVariable(timingVar_i.name, timingVar_i.numElements)
+
+            matrixVar.createTimingVariableSet([(t.name, t.numElements) for t in schedVar_i.getAllTimingVariables()])
 
             # TODO: Need to get this information from the model
-            matrixVar.addRegisterSet([("Xa", "rs1"), ("Xb", "rs2")], [("Xd", "rd")], 32)
-            matrixVar.addBranchSet(["Pc"], ["Pc_p", "Pc_np"])
+            if "CV32E40P" in schedVar_i.name:
+                #matrixVar.addRegisterSet([("Xa", "rs1"), ("Xb", "rs2")], [("Xd", "rd")], 32)
+                matrixVar.addStaticConnectorSet("R", [("Xa", "rs1"), ("Xb", "rs2")], [("Xd", "rd")], 32)
+                matrixVar.createBranchSet(["Pc"], ["Pc_p", "Pc_np"])
+            elif "CVA6" in schedVar_i.name:
+                ##matrixVar.addRegisterSet([("Xa", "rs1"), ("Xb", "rs2"), ("Cb_out", "rd")], [("Xd", "rd"), ("Cb_in", "rd")], 32)
+                #matrixVar.addRegisterSet([("Xa", "rs1"), ("Xb", "rs2")], [("Xd", "rd")], 32)
+                #matrixVar.addStaticConnectorSet("Cb", [("Cb_out", "rd")], [("Cb_in", "rd")], 32)
+
+                matrixVar.addStaticConnectorSet("R", [("Xa", "rs1"), ("Xb", "rs2")], [("Xd", "rd")], 32)
+                matrixVar.addStaticConnectorSet("Cb", [("Cb_out", "rd")], [("Cb_in", "rd")], 32)
+
+                matrixVar.createBranchSet(["Pc_mp", "Pc_pt"], ["Pc_p", "Pc_p_j", "Pc_p_jr", "Pc_c"])
+            else:
+                raise RuntimeError("Cannot handle this variant yet. Expand hack!")
 
             for schedFunc_i in schedVar_i.getAllSchedulingFunctions():
 
@@ -161,7 +177,6 @@ class MatrixTransformer:
                     curNode = openNodes.pop(0)
 
                     if curNode.hasDynamicDelay():
-                        
                         resModel = curNode.getResourceModel() # TODO: Hack to find a resource-group
                         weight = DynamicElement(instr.createDynamicDelay(resModel.name.upper()))
                     else:
@@ -180,8 +195,6 @@ class MatrixTransformer:
                         outVar = matrixVar.getOutVariable(self.__getEdgeName(outEdge_i))
                         schedGraph.add_edge(curNode.name, outVar.getGraphName(), weight=weight)
 
-                #if skipInstr:
-                #    continue
                 
                 # Calculate longest path between all out- and in-variable pairs to create the compressed Instr-Matrix
                 cInstrMatrix = instr.getCompressedInstructionMatrix()
@@ -222,6 +235,13 @@ class MatrixTransformer:
 
                         cInstrMatrix.addElement(inVar_i, outVar_i, maxWeight)
 
+                cInstrMatrix.finalize()
+
+                #if instr.name == "addi":
+                #    cInstrMatrix.show()
+                #    print()
+                #    raise RuntimeError("CFOF")
+
         return matrixModel
 
     def __getPathWeight(self, schedGraph_, path_):
@@ -238,8 +258,17 @@ class MatrixTransformer:
                     weight += w
         return weight
 
+#    def __getEdgeName(self, edge_):
+#        if not edge_.isDynamic():
+#            if edge_.depth > 1:
+#                raise RuntimeError(f"Edge-depth is {edge_.depth} (>1). I cannot handle this yet!")
+#        return edge_.name if edge_.isDynamic() else edge_.getTimingVariable().name
+
     def __getEdgeName(self, edge_):
         if not edge_.isDynamic():
-            if edge_.depth > 1:
-                raise RuntimeError(f"Edge-depth is {edge_.depth} (>1). I cannot handle this yet!")
-        return edge_.name if edge_.isDynamic() else edge_.getTimingVariable().name
+            tv = edge_.getTimingVariable()
+            if tv.hasMultiElements():
+                return f"{tv.name}__{edge_.depth}"
+            else:
+                return tv.name
+        return edge_.name

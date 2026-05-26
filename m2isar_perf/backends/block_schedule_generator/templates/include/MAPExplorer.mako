@@ -72,7 +72,7 @@ public:
 
 /* MAP EXPLORER */
 
-using MAPExplorerBase = MAP_Explorer::MAPExplorer<${variant_.getNumResourceGroups()}, ${variant_.getNumCombinations()}, ${variant_.getNumResourceCombinations()}, ${variant_.getNumInstructions()}, ${variant_.getDimension()}, ${variant_.getMaxDynDelayPerInstr()}>;
+using MAPExplorerBase = MAP_Explorer::MAPExplorer<${variant_.getNumResourceGroups()}, ${variant_.getNumCombinations()}, ${variant_.getNumResourceCombinations()}, ${variant_.getNumInstructions()}, ${variant_.getDimension()}, ${variant_.getMaxDynDelayPerInstr()}, ${variant_.getNumTimingVariables()}>;
 
 class ${builder_.getName()}_MAPExplorer : public MAPExplorerBase{
 

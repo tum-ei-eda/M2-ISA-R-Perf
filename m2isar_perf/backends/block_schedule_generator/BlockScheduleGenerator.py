@@ -32,7 +32,20 @@ class BlockScheduleGenerator:
 
         self.maxDynDelayCnt = 0 # Max number of dynamic delays per block
 
+        self.matrixGenTime = 0
+        self.matrixOptTime = 0
+
+    def getInfo(self):
+        print("+++++++++++++++++++++++++++++++++++++++")
+        print("BLOCK_GEN:")
+        print(f"MaxDynDelayCnt: {self.maxDynDelayCnt}")
+        print(f"Matrix-Gen Time: {self.matrixGenTime}s")
+        print(f"Matrix-Opt Time: {self.matrixOptTime}s")
+        print("+++++++++++++++++++++++++++++++++++++++")
+
     def execute(self, model_, blockList_, outDir_):
+
+        self.executed = True
 
         blockListPath = pathlib.Path(blockList_).resolve()
         with blockListPath.open('r', encoding='utf-8') as f:
@@ -118,6 +131,7 @@ class BlockScheduleGenerator:
         for block_i in self.blockDict["blocks"]:
 
             block = Block(block_i['id'], block_i['startPc'], block_i['endPc'], block_i['callCnt'])
+            blockLength = len(block_i['instrs'])
             dynDelayCnt = 0
 
             mpLib = MaxPlusLib()
@@ -169,10 +183,15 @@ class BlockScheduleGenerator:
 
             dbg_time = 0
 
+            #print(f"Handling block: {block_i['id']}")
+
+            startMatrixGen = time.time()
+
             blockMatrix = None
             for i, instr_i in enumerate(block_i["instrs"]):
 
                 instr = variant_.getInstruction(instr_i["typeId"])
+                branchInstr = (i == blockLength-1)
 
                 #type = instr_i['typeId']
                 #if block_i['id'] == 285:
@@ -181,23 +200,33 @@ class BlockScheduleGenerator:
                 #instr = variant_.getInstruction(type)
 
                 if blockMatrix is None:
-                    blockMatrix = instr.getMatrix(instr_i, dynDelayCnt) 
+                    blockMatrix = instr.getMatrix(instr_i, branchInstr, dynDelayCnt)
+
+                    #if block_i['id'] == 8:
+                    #    print(instr_i)
+                    #    variant_.showMatrix(blockMatrix.matrix)
+                    #    print()
+                    #    print(f"Unit-Cols: {blockMatrix.getUnitColIdxs(4)}")
+                    #    print(f"Zero-Cols: {blockMatrix.getZeroColIdxs(4)}")
+                    #    print(f"Unit-Rows: {blockMatrix.getUnitRowIdxs(4)}")
+                    #    print()
+
                 else:
-                    blockMatrix = instr.mulMatrix(blockMatrix, instr_i, dynDelayCnt, mpLib)
+                    blockMatrix = instr.mulMatrix(blockMatrix, instr_i, branchInstr, dynDelayCnt, mpLib)
 
-#                if block_i['id'] == 285 or block_i['id'] == 287:
-#                    print(f"Handled instr: {i} [Type: {instr_i['typeId']}]")
-#                    t = time.time()
-#                    print("\t" + f"Execution time: {t - dbg_time}")
-#                    dbg_time = t
-
-
-                #if block_i['id'] == 29:
-                #    print()
-                #    variant_.showMatrix(blockMatrix)
-                #    print()
+                    #if block_i['id'] == 8:
+                    #    print(instr_i)
+                    #    variant_.showMatrix(blockMatrix.matrix)
+                    #    print()
+                    #    print(f"Unit-Cols: {blockMatrix.getUnitColIdxs(4)}")
+                    #    print(f"Zero-Cols: {blockMatrix.getZeroColIdxs(4)}")
+                    #    print(f"Unit-Rows: {blockMatrix.getUnitRowIdxs(4)}")
+                    #    print()
 
                 dynDelayCnt += instr.getNumDynDelays()
+
+            #if block_i['id'] == 8:
+            #    raise RuntimeError("COFO")
 
 #            if block_i['id'] == 285 or block_i['id'] == 287:
 #                print()
@@ -208,11 +237,19 @@ class BlockScheduleGenerator:
             #if block_i['id'] == 29:
             #    self.__tempCheck_HACK(mpLib.getTempList())
             #    raise RuntimeError("Catch the program...")
-
+ 
             #block.code = self.__getScheduleFunctionCode(blockMatrix)
             #block.code = self.__getScheduleFunctionCode_HACK(blockMatrix, mpLib.getTempList())
             #block.code = self.__getScheduleFunctionCode_HACK(blockMatrix, mpLib, block_i['id'] == 29)
-            block.code = self.__getScheduleFunctionCode_HACK(blockMatrix, mpLib)
+            
+            endMatrixGen = time.time()
+            self.matrixGenTime += (endMatrixGen - startMatrixGen)
+            
+            startMatrixOpt = time.time()
+            block.code = self.__getScheduleFunctionCode_HACK(blockMatrix.matrix, mpLib)
+            endMatrixOpt = time.time()
+            self.matrixOptTime += (endMatrixOpt - startMatrixOpt)
+            
             blocks.append(block)
 
             self.maxDynDelayCnt = max(self.maxDynDelayCnt, dynDelayCnt)
@@ -419,6 +456,13 @@ class BlockScheduleGenerator:
             for j, e_j in enumerate(row_i):
                 row_i[j] = mpLib_.resolveElement(e_j)
 
+            # Check if simple set row (e.g. out_7 = vec_[6])
+            if (res := self.__checkSimpleSetRow(row_i)) is not None:
+                rowExp = RowExpression(idx_i).setSimpleSetRow(res)
+                rowExpressions.append(rowExp)
+                unhandledIdxs.remove(idx_i)
+                continue
+
             # Check if identical to any row below
             for idx_ii in range(idx_i+1, dim):
                 if idx_ii not in unhandledIdxs:
@@ -493,6 +537,21 @@ class BlockScheduleGenerator:
                     unitOrEmpty = False
                     break
         return unitOrEmpty
+    
+    def __checkSimpleSetRow(self, row_, verbose_=False):
+        res = None
+        for i, elem_i in enumerate(row_):
+            if not elem_i.isZeroElement():
+                if not elem_i.isUnitElement():
+                    return None
+                else:
+                    if res is None:
+                        res = (i, elem_i)
+                        continue
+                    else:
+                        return None
+
+        return res
 
     def __checkIdenticalRow(self, row_i_, row_ii_):
         for e_i, e_ii in zip(row_i_, row_ii_):
@@ -554,6 +613,7 @@ class BlockScheduleGenerator:
 
 def getMaxExpression(operands_, resName_):
     if len(operands_) < 2:
+        print(f"{resName_}: {operands_}")
         raise RuntimeError("Trying to create a max-expression for less than 2 operands")
 
     ret = "\t" + f"uint64_t {resName_} = "
@@ -645,6 +705,10 @@ class RowExpression:
     def isDimShiftRow(self):
         return ((self.refIdx is not None) and (self.dimensions))
 
+    def setSimpleSetRow(self, entry_):
+        self.dimensions = [entry_]
+        return self
+
     def setIdenticalRow(self, refIdx_):
         self.refIdx = refIdx_
         return self
@@ -665,12 +729,18 @@ class RowExpression:
         return self
 
     def getCodeLine(self):
+        
         resName = f"out_{self.idx}"
 
         if len(self.dimensions) == 0:
             if self.refIdx is None:
                 raise RuntimeError("Row expression without any dimensions and refIdx")
             ret = "\t" + f"uint64_t {resName} = {self.__getRefExpression()};" + "\n"
+
+        # simpleSetRow
+        elif (len(self.dimensions) == 1) and (self.refIdx is None):
+            dim = self.dimensions[0]
+            ret = "\t" + f"uint64_t {resName} = vec_[{dim[0]}] " + dim[1].getExpression() + ";\n"
 
         else:
             maxOps = []
@@ -687,4 +757,3 @@ class RowExpression:
         if self.offset is not None:
             ret += " " + self.offset.getExpression()
         return ret
-    

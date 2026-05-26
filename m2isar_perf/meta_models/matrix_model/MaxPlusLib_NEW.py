@@ -305,8 +305,8 @@ class MaxPlusElement:
         self.symbolMask = 0
         self.tempMask = 0
 
-        self.symbolIdxs = []
-        self.tempIdxs = []
+        self.symbolIdxs = [] # TODO: Dangerous to dublicate information (ref. masks). Rather have a member function to derive idxs when necessary!?
+        self.tempIdxs = [] # TODO: Dangerous to dublicate information (ref. masks). Rather have a member function to derive idxs when necessary!?
 
         self.zeroElement = False
 
@@ -329,6 +329,9 @@ class MaxPlusElement:
 
     def isZeroElement(self):
         return self.zeroElement
+    
+    def isUnitElement(self):
+        return (self.value == 0 and self.symbolMask == 0 and self.tempMask == 0)
 
     def isIdentical(self, elem_:'MaxPlusElement'):
         return (self.value == elem_.value) and (self.symbolMask == elem_.symbolMask) and (self.tempMask == elem_.tempMask)

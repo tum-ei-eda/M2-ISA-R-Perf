@@ -42,7 +42,11 @@ class BlockExtractorGenerator:
             # TODO: Need to get this information from the model!
             self.builder.setPcTraceValue("pc")
             self.builder.setObservedTraceValues(["rs1", "rs2", "rd"])
-            self.builder.setBranchInstrList([43, 44, 45, 46, 47, 48, 49, 50, 52, 53])
+            if "CV32E40P" in variant_i.name:
+                self.builder.setBranchInstrList([43, 44, 45, 46, 47, 48, 49, 50, 52, 53])
+            elif "CVA6" in variant_i.name:
+                self.builder.setBranchInstrList([34, 35, 36, 37, 38, 39, 40, 41, 42, 43])
+            #self.builder.setBranchInstrList([43, 44, 45, 46, 47, 48, 49, 50, 52, 53])
 
             self.__generateBlockExtractor(outDir)
             self.__generateBlockInstructionGenerator(model_.getAllInstructions(), outDir)

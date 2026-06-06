@@ -74,6 +74,8 @@ if args.code_gen or args.info_print or (args.block_gen is not None):
             matrixModel = MatrixTransformer(args.test_1, args.test_2, args.test_3).transform(schedModel)
         else:
             matrixModel = MatrixTransformer().transform(schedModel)
+            transTime = time.time()
+            print(f"Time spend on parsing and model transformation: {float(transTime-startTime)}s")
 
 # Call applicable backends
 if args.monitor_description:
@@ -83,10 +85,11 @@ if args.code_gen:
 if args.block_ext:
     BlockExtractorGenerator().execute(structModel, outDir)
 if args.block_gen is not None:
-    #pass
     gen = BlockScheduleGenerator()
+    
     gen.execute(matrixModel, args.block_gen, outDir)
     gen.getInfo()
+    
     #BlockScheduleGenerator().execute(matrixModel, args.block_gen, outDir)
 if args.info_print :
     #StructuralModelViewer().execute(structModel, outDir)

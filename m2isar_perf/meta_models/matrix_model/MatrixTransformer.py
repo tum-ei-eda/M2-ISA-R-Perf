@@ -98,9 +98,23 @@ class MatrixTransformer:
                         mod.addConfig(dCacheConfigs[i])
 
                 elif rMod_i.name == "divider":
-                    rGroup.createResourceModel(rMod_i.name, "map_models/Divider_CV32E40P.h", rMod_i.getAllTraceValues())
+                    if "CV32E40P" in schedVar_i.name:
+                        modelLink = "map_models/Divider_CV32E40P.h"
+                    elif "CVA6" in schedVar_i.name:
+                        modelLink = "map_models/Divider_CVA6.h"
+                    else:
+                        raise RuntimeError("Cannot handle this variant yet. Expand HACK!")
+                    rGroup.createResourceModel(rMod_i.name, modelLink, rMod_i.getAllTraceValues())
+
                 elif rMod_i.name == "divider_u":
-                    rGroup.createResourceModel(rMod_i.name, "map_models/DividerUnsigned_CV32E40P.h", rMod_i.getAllTraceValues())
+                    if "CV32E40P" in schedVar_i.name:
+                        modelLink = "map_models/DividerUnsigned_CV32E40P.h"
+                    elif "CVA6" in schedVar_i.name:
+                        modelLink = "map_models/DividerUnsigned_CVA6.h"
+                    else:
+                        raise RuntimeError("Cannot handle this variant yet. Expand HACK!")
+                    rGroup.createResourceModel(rMod_i.name, modelLink, rMod_i.getAllTraceValues())
+                    
                 else:
                     print(f"WARNING: Currently no idea how to handle resource-model {rMod_i.name}...EXPAND HACK!")
 
@@ -109,58 +123,60 @@ class MatrixTransformer:
             # TODO: Hack to create branch-group
             brGroup = matrixVar.createBranchGroup()
             
-            branchConfig = [
-                {'NUM_PAGES': 2, 'NUM_ROWS': 64}, # Default
-                {'NUM_PAGES': 4, 'NUM_ROWS': 32},
-                {'NUM_PAGES': 2, 'NUM_ROWS': 128}, # Increased size
-                {'NUM_PAGES': 4, 'NUM_ROWS': 64},
-                {'NUM_PAGES': 2, 'NUM_ROWS': 32}, # Decreased size
-                {'NUM_PAGES': 4, 'NUM_ROWS': 16},
-            ]
+            if "CV32E40P" in schedVar_i.name:
 
-            n = self.n_BrPred # max: 3
-            for i in range(2**n):
-                if i == 0:
-                    brGroup.createBranchModel("branch_ant", "map_models/Branch_ant.h", ["pc", "brTarget"]) # always non-taken
-                elif i == 1:
-                    brGroup.createBranchModel("branch_fnt_bt", "map_models/Branch_fnt_bt.h", ["pc", "brTarget"]) # forward: non-taken, backward: taken
-                else:
-                    j = i-2
-                    mod = brGroup.createBranchModel("branch_2sat_" + str(j), "map_models/Branch_2sat.h", ["pc", "brTarget"]) # Dynamic 2-sat.
-                    mod.addConfig(branchConfig[j])
+                branchConfig = [
+                    {'NUM_PAGES': 2, 'NUM_ROWS': 64}, # Default
+                    {'NUM_PAGES': 4, 'NUM_ROWS': 32},
+                    {'NUM_PAGES': 2, 'NUM_ROWS': 128}, # Increased size
+                    {'NUM_PAGES': 4, 'NUM_ROWS': 64},
+                    {'NUM_PAGES': 2, 'NUM_ROWS': 32}, # Decreased size
+                    {'NUM_PAGES': 4, 'NUM_ROWS': 16},
+                ]
 
-            #brGroup.createBranchModel("branch_ant", "map_models/Branch_ant.h", ["pc", "brTarget"])
-            ##brGroup.createBranchModel("branch_fnt_bt", "map_models/Branch_fnt_bt.h", ["pc", "brTarget"])
-            ##mod = brGroup.createBranchModel("branch_2sat_1", "map_models/Branch_2sat.h", ["pc", "brTarget"])
-            ##mod.addConfig({'NUM_PAGES': 2, 'NUM_ROWS': 64})
-            ##mod = brGroup.createBranchModel("branch_2sat_2", "map_models/Branch_2sat.h", ["pc", "brTarget"])
-            ##mod.addConfig({'NUM_PAGES': 4, 'NUM_ROWS': 32})
+                n = self.n_BrPred # max: 3
+                for i in range(2**n):
+                    if i == 0:
+                        brGroup.createBranchModel("branch_ant", "map_models/Branch_ant.h", ["pc", "brTarget"]) # always non-taken
+                    elif i == 1:
+                        brGroup.createBranchModel("branch_fnt_bt", "map_models/Branch_fnt_bt.h", ["pc", "brTarget"]) # forward: non-taken, backward: taken
+                    else:
+                        j = i-2
+                        mod = brGroup.createBranchModel("branch_2sat_" + str(j), "map_models/Branch_2sat.h", ["pc", "brTarget"]) # Dynamic 2-sat.
+                        mod.addConfig(branchConfig[j])
+
+            elif "CVA6" in schedVar_i.name:
+
+                branchConfig = [
+                    {'BHT_NUM_PAGES': 2, 'BHT_NUM_ROWS': 64, 'BTB_NUM_PAGES': 2, 'BTB_NUM_ROWS': 16, 'RAS_SIZE': 2},  # Default
+                    {'BHT_NUM_PAGES': 2, 'BHT_NUM_ROWS': 128, 'BTB_NUM_PAGES': 2, 'BTB_NUM_ROWS': 16, 'RAS_SIZE': 2},
+                    {'BHT_NUM_PAGES': 2, 'BHT_NUM_ROWS': 64, 'BTB_NUM_PAGES': 2, 'BTB_NUM_ROWS': 32, 'RAS_SIZE': 2},
+                    {'BHT_NUM_PAGES': 2, 'BHT_NUM_ROWS': 128, 'BTB_NUM_PAGES': 2, 'BTB_NUM_ROWS': 32, 'RAS_SIZE': 2},
+                    {'BHT_NUM_PAGES': 2, 'BHT_NUM_ROWS': 64, 'BTB_NUM_PAGES': 2, 'BTB_NUM_ROWS': 16, 'RAS_SIZE': 4},
+                    {'BHT_NUM_PAGES': 2, 'BHT_NUM_ROWS': 128, 'BTB_NUM_PAGES': 2, 'BTB_NUM_ROWS': 16, 'RAS_SIZE': 4},
+                    {'BHT_NUM_PAGES': 2, 'BHT_NUM_ROWS': 64, 'BTB_NUM_PAGES': 2, 'BTB_NUM_ROWS': 32, 'RAS_SIZE': 4},
+                    {'BHT_NUM_PAGES': 2, 'BHT_NUM_ROWS': 128, 'BTB_NUM_PAGES': 2, 'BTB_NUM_ROWS': 32, 'RAS_SIZE': 4},
+                ]
+
+                n = self.n_BrPred # max: 3
+                for i in range(2**n):
+                    mod = brGroup.createBranchModel("branch_cva6", "map_models/Branch_CVA6.h", ["pc", "brTarget", "imm", "typeId", "rs1", "rd"])
+                    mod.addConfig(branchConfig[i]) # Default
+
+            else:
+                raise RuntimeError("No idea how to generate a branch model here. Expand the hack...")
 
             # Create combinations for all involved models
             matrixVar.createAllCombinations()
-            #for brMod_i in matrixVar.getBranchGroup().getAllModels():
-            #    for resModComb_i in product(*(g.getAllModels() for g in matrixVar.getAllResourceGroups())):
-            #        matrixVar.createCombination(brMod_i, resModComb_i)
-
-
-            #for timingVar_i in schedVar_i.getAllTimingVariables():
-            #    #print(f"{timingVar_i.name}: {timingVar_i.numElements}")
-            #    matrixVar.addTimingVariable(timingVar_i.name, timingVar_i.numElements)
 
             matrixVar.createTimingVariableSet([(t.name, t.numElements) for t in schedVar_i.getAllTimingVariables()])
-
             # TODO: Need to get this information from the model
             if "CV32E40P" in schedVar_i.name:
-                #matrixVar.addRegisterSet([("Xa", "rs1"), ("Xb", "rs2")], [("Xd", "rd")], 32)
                 matrixVar.addStaticConnectorSet("R", [("Xa", "rs1"), ("Xb", "rs2")], [("Xd", "rd")], 32)
                 matrixVar.createBranchSet(["Pc"], ["Pc_p", "Pc_np"])
             elif "CVA6" in schedVar_i.name:
-                ##matrixVar.addRegisterSet([("Xa", "rs1"), ("Xb", "rs2"), ("Cb_out", "rd")], [("Xd", "rd"), ("Cb_in", "rd")], 32)
-                #matrixVar.addRegisterSet([("Xa", "rs1"), ("Xb", "rs2")], [("Xd", "rd")], 32)
-                #matrixVar.addStaticConnectorSet("Cb", [("Cb_out", "rd")], [("Cb_in", "rd")], 32)
-
                 matrixVar.addStaticConnectorSet("R", [("Xa", "rs1"), ("Xb", "rs2")], [("Xd", "rd")], 32)
-                matrixVar.addStaticConnectorSet("Cb", [("Cb_out", "rd")], [("Cb_in", "rd")], 32)
+                matrixVar.addStaticConnectorSet("Cb", [("Cb_out", "rd")], [("Cb_in", "rd")], 32, [0])
 
                 matrixVar.createBranchSet(["Pc_mp", "Pc_pt"], ["Pc_p", "Pc_p_j", "Pc_p_jr", "Pc_c"])
             else:
@@ -178,7 +194,13 @@ class MatrixTransformer:
 
                     if curNode.hasDynamicDelay():
                         resModel = curNode.getResourceModel() # TODO: Hack to find a resource-group
-                        weight = DynamicElement(instr.createDynamicDelay(resModel.name.upper()))
+
+                        if resModel.name == "iCache":
+                            weight = DynamicElement(instr.createDynamicDelay(resModel.name.upper(), condition_=("pc & 0xC != 0", ["pc"], 1)))
+                        else:
+                            weight = DynamicElement(instr.createDynamicDelay(resModel.name.upper()))
+                        
+                        #weight = DynamicElement(instr.createDynamicDelay(resModel.name.upper()))
                     else:
                         weight = curNode.getDelay()
 
@@ -223,12 +245,10 @@ class MatrixTransformer:
                                 maxWeight = weight
                             else:
                                 if isinstance(maxWeight, DynamicElement):
-                                    #maxWeight = maxWeight.compare(weight)
                                     maxWeight.max(weight)
                                 else:
                                     if isinstance(weight, DynamicElement):
                                         maxWeight = DynamicElement(maxWeight)
-                                        #maxWeight = maxWeight.compare(weight)
                                         maxWeight.max(weight)
                                     else:
                                         maxWeight = max(maxWeight, weight)                            
@@ -237,10 +257,20 @@ class MatrixTransformer:
 
                 cInstrMatrix.finalize()
 
-                #if instr.name == "addi":
+                #if instr.name == "divu":
                 #    cInstrMatrix.show()
                 #    print()
-                #    raise RuntimeError("CFOF")
+                #    raise RuntimeError("COFO")
+
+            matrixVar.finalize()
+
+            #print("+++++++++++++++++++++++++++ BRANCH INFO +++++++++++++++++++++++++++")
+            #brSet = matrixVar.branchSet
+            #for i, inVar_i in enumerate(brSet.inVariables):
+            #    print(f"{inVar_i.name} -> row: {brSet.rowOffsetIn+i} | col: {brSet.colOffsetIn+i}")
+            #for i, outVar_i in enumerate(brSet.outVariables):
+            #    print(f"{outVar_i.name} -> row: {brSet.rowOffsetOut+i} | col: {brSet.colOffsetOut+i}")
+            #print(f"Dimension: {matrixVar.dimension}")
 
         return matrixModel
 
@@ -257,12 +287,6 @@ class MatrixTransformer:
                 else:
                     weight += w
         return weight
-
-#    def __getEdgeName(self, edge_):
-#        if not edge_.isDynamic():
-#            if edge_.depth > 1:
-#                raise RuntimeError(f"Edge-depth is {edge_.depth} (>1). I cannot handle this yet!")
-#        return edge_.name if edge_.isDynamic() else edge_.getTimingVariable().name
 
     def __getEdgeName(self, edge_):
         if not edge_.isDynamic():

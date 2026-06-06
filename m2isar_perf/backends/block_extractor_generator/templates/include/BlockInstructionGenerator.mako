@@ -17,6 +17,7 @@ class BlockInstruction_${instr_i.name} : public BlockInstruction{
 public:
     BlockInstruction_${instr_i.name}(Channel* channel_, uint64_t instrCnt_): BlockInstruction(channel_, instrCnt_) {
         ${builder_.getName()}_Channel* channel = static_cast<${builder_.getName()}_Channel*>(channel_);
+        pc = channel->pc[instrCnt_];
         % for trVal_i in builder_.getUsedTraceValues(instr_i):
         ${trVal_i} = channel->${trVal_i}[instrCnt_];
         % endfor
@@ -30,6 +31,7 @@ public:
         std::stringstream ret_strs;
         ret_strs << offset_ << "{\n";
         ret_strs << offset_ << "\t\"typeId\": " << typeId;
+        ret_strs << ",\n" << offset_ << "\t\"pc\": " << pc;
         % for (key_i, val_i) in builder_.getTraceValuePairs(instr_i):
         ret_strs << ",\n" << offset_ << "\t\"${key_i}\": " << ${val_i};
         % endfor

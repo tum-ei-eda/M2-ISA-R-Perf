@@ -35,7 +35,15 @@ class MaxPlusLib:
         symMask = 0
         for sId_i in symIds_:
             symMask |= 1 << sId_i
-        return (val_, symMask, 0, bin(symMask).count('1') + 1)
+        #return (val_, symMask, 0, bin(symMask).count('1') + 1)
+        return (val_, symMask, 0, symMask.bit_count() + 1)
+    
+    def forAllMaskIdxs(self, mask_):
+        while mask_:
+            lsb = mask_ & -mask_
+            idx = lsb.bit_length() - 1
+            mask_ ^= lsb
+            yield idx
 
     def str(self, op_):
         
@@ -54,10 +62,12 @@ class MaxPlusLib:
 
             if symMask != 0:
                 for sym_i in self.__getMaskIdxs(symMask):
+                #for sym_i in self.getMaskIdxs(symMask):
                     ret += f"d{sym_i}"
 
             if tempMask != 0:
                 for temp_i in self.__getMaskIdxs(tempMask):
+                #for temp_i in self.getMaskIdxs(tempMask):
                     ret += f"t{temp_i}"
 
             return ret
@@ -93,7 +103,8 @@ class MaxPlusLib:
                 val_ret = op_a_[0] + op_b_[0]
                 symMask_ret = op_a_[1] | op_b_[1]
                 tempMask_ret = op_a_[2] | op_b_[2]
-                minVal_ret = val_ret + bin(symMask_ret).count('1') + self.__getTempMinValue(tempMask_ret) # TODO: replace with .bit_count()!!
+                #minVal_ret = val_ret + bin(symMask_ret).count('1') + self.__getTempMinValue(tempMask_ret) # TODO: replace with .bit_count()!!
+                minVal_ret = val_ret + symMask_ret.bit_count() + self.__getTempMinValue(tempMask_ret)
 
                 if (val_ret == 0 and symMask_ret == 0 and tempMask_ret == 0 and minVal_ret != 0):
                     print(f"Creating something weird...")
@@ -106,7 +117,7 @@ class MaxPlusLib:
         else:
             raise RuntimeError(f"Unexpected operand-type ({op_a_}) for op_a_ in MaxPlusLib::mul.")
         
-    def add(self, orig_, comp_):
+    def add(self, orig_, comp_, verbose_=False):
 
         if type(orig_) is int:
 
@@ -165,6 +176,12 @@ class MaxPlusLib:
                 tempMask_comp = comp_[2]
                 minVal_comp = comp_[3]
 
+                if (verbose_):
+                    print()
+                    print(f" >> orig_: {orig_}")
+                    print(f" >> comp_: {comp_}")
+
+
                 symMask_common = symMask_orig & symMask_comp
                 tempMask_common = tempMask_orig & tempMask_comp
 
@@ -180,24 +197,54 @@ class MaxPlusLib:
                     
                 val_common = min(val_orig, val_comp)
 
-                val_a = val_orig - val_common
-                symMask_a = symMask_orig & ~symMask_common
-                tempMask_a = tempMask_orig & ~tempMask_common
-                minVal_a = val_a + bin(symMask_a).count('1') + self.__getTempMinValue(tempMask_a)
+                val_1 = val_orig - val_common
+                symMask_1 = symMask_orig & ~symMask_common
+                tempMask_1 = tempMask_orig & ~tempMask_common
+                minVal_1 = val_1 + symMask_1.bit_count() + self.__getTempMinValue(tempMask_1)
 
-                val_b = val_comp - val_common
-                symMask_b = symMask_comp & ~symMask_common
-                tempMask_b = tempMask_comp & ~tempMask_common
-                minVal_b = val_b + bin(symMask_b).count('1') + self.__getTempMinValue(tempMask_b)
+                val_2 = val_comp - val_common
+                symMask_2 = symMask_comp & ~symMask_common
+                tempMask_2 = tempMask_comp & ~tempMask_common
+                minVal_2 = val_2 + symMask_2.bit_count() + self.__getTempMinValue(tempMask_2)
 
-                tempMask = self.__getTemp(
-                    (val_a, symMask_a, tempMask_a, minVal_a),
-                    (val_b, symMask_b, tempMask_b, minVal_b)
+                op_a, op_b = self.__checkDominance(
+                    (val_1, symMask_1, tempMask_1, minVal_1),
+                    (val_2, symMask_2, tempMask_2, minVal_2)
                 )
-                tempMask_ret = tempMask | tempMask_common
-                minVal_ret = val_common + bin(symMask_common).count('1') + self.__getTempMinValue(tempMask_ret)
 
-                return (val_common, symMask_common, tempMask_ret, minVal_ret)
+                # op_a completely dominates op_b
+                if op_b is None:
+                    val_a, symMask_a, tempMask_a, minVal_a = op_a
+                    val_common += val_a
+                    symMask_common |= symMask_a
+                    tempMask_common |= tempMask_a
+                else:
+                    tempMask = self.__getTemp(op_a, op_b)
+                    tempMask_common |= tempMask
+
+                minVal_common = val_common + symMask_common.bit_count() + self.__getTempMinValue(tempMask_common)
+                return (val_common, symMask_common, tempMask_common, minVal_common)
+
+#                if (dom := self.__checkDominance(
+#                    (val_a, symMask_a, tempMask_a, minVal_a),
+#                    (val_b, symMask_b, tempMask_b, minVal_b)
+#                )) is not None:
+#                    val_dom, symMask_dom, tempMask_dom, minVal_dom = dom
+#                    val_common += val_dom
+#                    symMask_common |= symMask_dom
+#                    if tempMask_dom != 0:
+#                        raise RuntimeError("This is odd.....")
+#                    tempMask_ret = tempMask_common | tempMask_dom
+#                
+#                else:
+#                    tempMask = self.__getTemp(
+#                        (val_a, symMask_a, tempMask_a, minVal_a),
+#                        (val_b, symMask_b, tempMask_b, minVal_b)
+#                    )
+#                    tempMask_ret = tempMask | tempMask_common
+#
+#                minVal_ret = val_common + symMask_common.bit_count() + self.__getTempMinValue(tempMask_ret)
+#                return (val_common, symMask_common, tempMask_ret, minVal_ret)
             
             else:
                 raise RuntimeError(f"Unexpected operand-type ({comp_}) for comp_ in MaxPlusLib::add.")
@@ -205,18 +252,100 @@ class MaxPlusLib:
         else:
             raise RuntimeError(f"Unexpected operand-type ({orig_}) for orig_ in MaxPlusLib::add.")
         
-    def getTempList(self):
-        return [MaxPlusTemp(t) for t in self._tempList]
+    #def getTempList(self):
+    #    return [MaxPlusTemp(t) for t in self._tempList]
     
+    def getNumTemps(self) -> int:
+        return len(self._tempList)
+
+    def forAllTemps(self):
+        for t in self._tempList:
+            yield MaxPlusTemp(t)
+
+    def forAllTemps_reversed(self):
+        for t in reversed(self._tempList):
+            yield MaxPlusTemp(t)
+
     def resolveElement(self, e_):
         return MaxPlusElement(e_)
 
-    def __getTemp(self, op_a_, op_b_):
+    def __checkDominance(self, op_a_, op_b_):
 
+        def check(dom_, sub_):
+            _, symMask_dom, tempMask_dom, minVal_dom = dom_
+            val_sub, symMask_sub, tempMask_sub, _ = sub_
+
+            if(tempMask_dom == 0):
+                if(val_sub == 0) and (symMask_sub == 0) and (tempMask_sub.bit_count() == 1):
+                    temp_sub = self._tempList[tempMask_sub.bit_length()-1]
+                    e1, e2 = temp_sub[1]
+                    c1 = subCheck(symMask_dom, minVal_dom, e1)
+                    c2 = subCheck(symMask_dom, minVal_dom, e2)
+
+                    if c1 and c2:
+                        return (dom_, None)
+                    elif c1:
+                        return (dom_, e2)
+                    elif c2:
+                        return (dom_, e1)
+            
+            return None
+
+        def subCheck(symMask_, minVal_, e_):
+            _, symMask_e, tempMask_e, minVal_e = e_
+            if (tempMask_e == 0):
+                if((symMask_ & symMask_e) == symMask_e) and (minVal_ >= minVal_e):
+                    return True
+
+        if (res := check(op_b_, op_a_)) is not None:
+            return res
+        elif (res := check(op_a_, op_b_)) is not None:
+            return res
+        
+        return (op_a_, op_b_) 
+
+#    def __checkDominance(self, op_a_, op_b_):
+#
+#        val_a, symMask_a, tempMask_a, minVal_a = op_a_
+#        val_b, symMask_b, tempMask_b, minVal_b = op_b_
+#
+#        # Check if op_b_ dominates op_a_:
+#        if (tempMask_b == 0):
+#            if (val_a == 0) and (symMask_a == 0) and (tempMask_a.bit_count() == 1):
+#                temp_a = self._tempList[tempMask_a.bit_length()-1]
+#                domCnt = 0
+#                for e_i in temp_a[1]:
+#                    val_e, symMask_e, tempMask_e, minVal_e = e_i
+#                    if (tempMask_e == 0):
+#                        symMask_common = symMask_b & symMask_e
+#                        if(symMask_common == symMask_e) and (minVal_b >= minVal_e):
+#                            domCnt += 1
+#                if domCnt == 2:
+#                    return op_b_
+#
+#        # Check if op_a_ dominates op_b_:       
+#        if (tempMask_a == 0):
+#            if (val_b == 0) and (symMask_b == 0) and (tempMask_b.bit_count() == 1):
+#                temp_b = self._tempList[tempMask_b.bit_length()-1]
+#                domCnt = 0
+#                for e_i in temp_b[1]:
+#                    val_e, symMask_e, tempMask_e, minVal_e = e_i
+#                    if (tempMask_e == 0):
+#                        symMask_common = symMask_a & symMask_e
+#                        if(symMask_common == symMask_e) and (minVal_a >= minVal_e):
+#                            domCnt += 1
+#                if domCnt == 2:
+#                    return op_a_
+#                        
+#        return None
+
+    def __getTemp(self, op_a_, op_b_):
+        
         if not self._allowTempCreation:
             raise RuntimeError("Attempting to create a temp-variable. Not allowed for the current MaxPlusLib instance")
         
-        key = (*op_a_, *op_b_) if op_a_ <= op_b_ else (*op_b_, *op_a_)
+        #key = (*op_a_, *op_b_) if op_a_ <= op_b_ else (*op_b_, *op_a_)
+        key = (op_a_, op_b_) if op_a_ <= op_b_ else (op_b_, op_a_)
 
         # If operator-pair is already registered as a temp, look it up
         temp = self._tempDict.get(key)
@@ -226,22 +355,37 @@ class MaxPlusLib:
             val_a = op_a_[0]
             symMask_a = op_a_[1]
             tempMask_a = op_a_[2]
-            if (val_a == 0) and (symMask_a == 0):
-                subTemps_a = [self._tempList[i] for i in range(tempMask_a.bit_length()) if (tempMask_a >> i) & 1]
-                if len(subTemps_a) == 1:
-                    if self.__checkDuplicate(subTemps_a[0], op_b_):
-                        temp = subTemps_a[0]
+            #if (val_a == 0) and (symMask_a == 0):
+            if (val_a == 0) and (symMask_a == 0) and (tempMask_a.bit_count() == 1):
+            #if (val_a == 0) and (symMask_a == 0) and (tempMask_a != 0) and ((tempMask_a & (tempMask_a - 1)) == 0): # Check if tempMask_a is a power of two (i.e. only one bit set)
+                subTemp_a = self._tempList[tempMask_a.bit_length()-1]
+                if self.__checkDuplicate(subTemp_a, op_b_):
+                    temp = subTemp_a
+                    self._tempDict[key] = temp
+                
+                #subTemps_a = [self._tempList[i] for i in range(tempMask_a.bit_length()) if (tempMask_a >> i) & 1]
+                #if len(subTemps_a) == 1:
+                #    if self.__checkDuplicate(subTemps_a[0], op_b_):
+                #        self._tempDict[key] = temp
+                #        temp = subTemps_a[0]
 
         # Check if duplicate of an existing temp: New temp can be expressed by op_b_
         if temp is None:
             val_b = op_b_[0]
             symMask_b = op_b_[1]
             tempMask_b = op_b_[2]
-            if (val_b == 0) and (symMask_b == 0):
-                subTemps_b = [self._tempList[i] for i in range(tempMask_b.bit_length()) if (tempMask_b >> i) & 1]
-                if len(subTemps_b) == 1:
-                    if self.__checkDuplicate(subTemps_b[0], op_a_):
-                        temp = subTemps_b[0]
+            #if (val_b == 0) and (symMask_b == 0):
+            if (val_b == 0) and (symMask_b == 0) and (tempMask_b.bit_count() == 1):    
+                subTemp_b = self._tempList[tempMask_b.bit_length()-1]
+                if self.__checkDuplicate(subTemp_b, op_a_):
+                    temp = subTemp_b
+                    self._tempDict[key] = temp
+
+                #subTemps_b = [self._tempList[i] for i in range(tempMask_b.bit_length()) if (tempMask_b >> i) & 1]
+                #if len(subTemps_b) == 1:
+                #    if self.__checkDuplicate(subTemps_b[0], op_a_):
+                #        self._tempDict[key] = temp
+                #        temp = subTemps_b[0]
 
         # Create a new temp
         if temp is None:
@@ -271,30 +415,61 @@ class MaxPlusLib:
     
     def __getMaskIdxs(self, mask_):
         return [i for i in range(mask_.bit_length()) if (mask_ >> i) & 1]
-    
+
+
     def __checkDuplicate(self, temp_, op_, pathWeight_=0, searchDepth_=0):
 
         if searchDepth_ >= 5:
             return False
 
-        op = (op_[0]-pathWeight_, *op_[1:3], op_[3]-pathWeight_)
+        #op = (op_[0]-pathWeight_, *op_[1:3], op_[3]-pathWeight_)
         for e_i in temp_[1]:
-            symMask_common = op[1] & e_i[1]
-            tempMask_common = op[2] & e_i[2]
-            if (symMask_common == op[1]) and (tempMask_common == op[2]):
-                if e_i[3] >= op[3]:
+            symMask_common = op_[1] & e_i[1]
+            tempMask_common = op_[2] & e_i[2]
+            if (symMask_common == op_[1]) and (tempMask_common == op_[2]):
+                if e_i[3] >= (op_[3]-pathWeight_):
+                    #print(f">Duplicate found at depth:{searchDepth_}")
                     return True
         
         for e_i in temp_[1]:
             val_i = e_i[0]
             symMask_i = e_i[1]
             tempMask_i = e_i[2]
-            if symMask_i == 0:
-                subTemps = [self._tempList[i] for i in self.__getMaskIdxs(tempMask_i)]
-                if len(subTemps) == 1:
-                    return self.__checkDuplicate(subTemps[0], op_, pathWeight_+val_i, searchDepth_+1)
+            if symMask_i == 0 and tempMask_i.bit_count() == 1:
+                subTemp = self._tempList[tempMask_i.bit_length()-1]
+                if self.__checkDuplicate(subTemp, op_, pathWeight_+val_i, searchDepth_+1):
+                    return True
+            #if symMask_i == 0:
+            #    subTemps = [self._tempList[i] for i in self.__getMaskIdxs(tempMask_i)]
+            #    if len(subTemps) == 1:
+            #        return self.__checkDuplicate(subTemps[0], op_, pathWeight_+val_i, searchDepth_+1)
 
         return False
+
+
+#    def __checkDuplicate(self, temp_, op_, pathWeight_=0, searchDepth_=0):
+#
+#        if searchDepth_ >= 1:
+#            return False
+#
+#        op = (op_[0]-pathWeight_, *op_[1:3], op_[3]-pathWeight_)
+#        for e_i in temp_[1]:
+#            symMask_common = op[1] & e_i[1]
+#            tempMask_common = op[2] & e_i[2]
+#            if (symMask_common == op[1]) and (tempMask_common == op[2]):
+#                if e_i[3] >= op[3]:
+#                    return True
+#        
+#        for e_i in temp_[1]:
+#            val_i = e_i[0]
+#            symMask_i = e_i[1]
+#            tempMask_i = e_i[2]
+#            if symMask_i == 0:
+#                subTemps = [self._tempList[i] for i in self.__getMaskIdxs(tempMask_i)]
+#                if len(subTemps) == 1:
+#                    return self.__checkDuplicate(subTemps[0], op_, pathWeight_+val_i, searchDepth_+1)
+#
+#        return False
 
 
 class MaxPlusElement:
@@ -305,8 +480,8 @@ class MaxPlusElement:
         self.symbolMask = 0
         self.tempMask = 0
 
-        self.symbolIdxs = [] # TODO: Dangerous to dublicate information (ref. masks). Rather have a member function to derive idxs when necessary!?
-        self.tempIdxs = [] # TODO: Dangerous to dublicate information (ref. masks). Rather have a member function to derive idxs when necessary!?
+        #self.symbolIdxs = [] # TODO: Dangerous to dublicate information (ref. masks). Rather have a member function to derive idxs when necessary!?
+        #self.tempIdxs = [] # TODO: Dangerous to dublicate information (ref. masks). Rather have a member function to derive idxs when necessary!?
 
         self.zeroElement = False
 
@@ -321,8 +496,8 @@ class MaxPlusElement:
             self.symbolMask = elem_[1]
             self.tempMask = elem_[2]
             
-            self.symbolIdxs = [i for i in range(self.symbolMask.bit_length()) if (self.symbolMask >> i) & 1]
-            self.tempIdxs = [i for i in range(self.tempMask.bit_length()) if (self.tempMask >> i) & 1]
+            #self.symbolIdxs = [i for i in range(self.symbolMask.bit_length()) if (self.symbolMask >> i) & 1]
+            #self.tempIdxs = [i for i in range(self.tempMask.bit_length()) if (self.tempMask >> i) & 1]
 
         elif elem_ is not None:
             raise RuntimeError(f"Unexpected input {elem_} for MaxPlusElement")
@@ -335,6 +510,9 @@ class MaxPlusElement:
 
     def isIdentical(self, elem_:'MaxPlusElement'):
         return (self.value == elem_.value) and (self.symbolMask == elem_.symbolMask) and (self.tempMask == elem_.tempMask)
+    
+    def getTempMask(self):
+        return self.tempMask
     
     def getOffset(self, elem_:'MaxPlusElement'):
         symMask_common = self.symbolMask & elem_.symbolMask
@@ -356,14 +534,27 @@ class MaxPlusElement:
         elif self.value < 0:
             ret += f"-{abs(self.value)}"
 
-        for sym_i in self.symbolIdxs:
+        #for sym_i in self.symbolIdxs:
+        #    ret += f"+d_[{sym_i}]"
+        for sym_i in self.__getMaskIdxs(self.symbolMask):
             ret += f"+d_[{sym_i}]"
 
-        for temp_i in self.tempIdxs:
+        #for temp_i in self.tempIdxs:
+        #    ret += f"+t_{temp_i}"
+        for temp_i in self.__getMaskIdxs(self.tempMask):
             ret += f"+t_{temp_i}"
+            #ret += f"+t[{temp_i}]"
 
         return ret
     
+    def __getMaskIdxs(self, mask_):
+        while mask_:
+            lsb = mask_ & -mask_
+            idx = lsb.bit_length() - 1
+            mask_ ^= lsb
+            yield idx
+            
+
     # TODO: Temporary hack. Remove:
     def getSymbolMask(self):
         return self.symbolMask
@@ -381,9 +572,14 @@ class MaxPlusTemp:
     def __init__(self, temp_):
         self.id = temp_[0]
         self.elements = [MaxPlusElement(e) for e in temp_[1]]
+        self.minVal = temp_[2] # TODO: For dbg only?
 
     def getId(self):
         return self.id
+
+    def forAllTempMasks(self):
+        for e_i in self.elements:
+            yield e_i.getTempMask()
 
     def getExpression(self, sep_=","):
         ret = ""

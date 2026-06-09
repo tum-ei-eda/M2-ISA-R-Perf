@@ -160,7 +160,7 @@ class MatrixTransformer:
 
                 n = self.n_BrPred # max: 3
                 for i in range(2**n):
-                    mod = brGroup.createBranchModel("branch_cva6", "map_models/Branch_CVA6.h", ["pc", "brTarget", "imm", "typeId", "rs1", "rd"])
+                    mod = brGroup.createBranchModel("branch_cva6_" + str(i), "map_models/Branch_CVA6.h", ["pc", "brTarget", "imm", "typeId", "rs1", "rd"])
                     mod.addConfig(branchConfig[i]) # Default
 
             else:

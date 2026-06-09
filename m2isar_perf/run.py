@@ -87,7 +87,7 @@ if args.block_ext:
 if args.block_gen is not None:
     gen = BlockScheduleGenerator()
     
-    gen.execute(matrixModel, args.block_gen, outDir)
+    gen.execute(matrixModel, schedModel, args.block_gen, outDir)
     gen.getInfo()
     
     #BlockScheduleGenerator().execute(matrixModel, args.block_gen, outDir)

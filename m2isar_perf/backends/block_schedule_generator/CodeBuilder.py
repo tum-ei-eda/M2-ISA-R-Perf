@@ -16,10 +16,15 @@
 
 from datetime import datetime
 
+from meta_models.scheduling_model.SchedulingModel import DynamicEdge
+from meta_models.scheduling_model.SchedulingModel import StaticEdge
+from meta_models.scheduling_model.SchedulingModel import Node
+
 class CodeBuilder:
 
     def __init__(self, variant_):
         self.variant = variant_
+        self.delayCnt = 0
 
     def getName(self):
         return self.variant.name
@@ -81,3 +86,50 @@ class CodeBuilder:
     def getModelClass(self, mod_):
         split = mod_.link.replace('.h','').split('/')
         return split[-1]
+
+    ## Helper function to write nodes for Instruction-Scheduling functions
+    
+    def getNodeStr(self, node_):
+        return ("n_" + node_.name)
+
+    def getNodeMaxStr(self, node_):
+        return ("n_" + node_.name + "_max")
+
+    def getNodeDelay(self, node_):
+        if node_.hasDynamicDelay():
+            ret = f"d_{self.delayCnt}"
+            self.delayCnt += 1
+            return ret
+        else:
+            return (str(node_.getDelay()))
+
+    def resetDelayCnt(self):
+        self.delayCnt = 0
+
+    def getInElementStr(self, elem_):
+        if isinstance(elem_, Node):
+            return self.getNodeStr(elem_)
+        elif isinstance(elem_, StaticEdge):
+            tVar = elem_.getTimingVariable()
+            if tVar.hasMultiElements():
+                return self.getUnrolledStr(tVar.name, elem_.depth)
+                #return(f"{tVar.name}__{elem_.depth}")
+            else:
+                return(f"{tVar.name}")
+        elif isinstance(elem_, DynamicEdge):
+            return elem_.name
+        raise RuntimeError(f"Provided element ({elem_}) cannot be identified")
+
+    def getOutEdgeStr(self, edge_, node_):
+        if isinstance(edge_, StaticEdge):
+            tVar = edge_.getTimingVariable()
+            if tVar.hasMultiElements():
+                return (f"{tVar.name}__{edge_.depth} = {self.getNodeStr(node_)}")
+            else:
+                return(f"{tVar.name} = {self.getNodeStr(node_)}")
+        elif isinstance(edge_, DynamicEdge):
+            return (f"uint64_t {edge_.name} = {self.getNodeStr(node_)}")
+        raise RuntimeError(f"Provided edge ({edge_}) cannot be identified")
+    
+    def getUnrolledStr(self, name_:str, depth_:int):
+        return f"{name_}__{depth_}"

@@ -60,10 +60,7 @@ class Variant(FrozenBase):
         # Owned instances
         self.instructions:Dict[int, Instruction] = {}
         self.timingVarSet = None
-
         self.statConSets = []
-
-        #self.regSet = RegisterSet(self)
         self.branchSet = None
         self.resourceGroups:Dict[str, ResourceGroup] = {}
         self.branchGroup = None

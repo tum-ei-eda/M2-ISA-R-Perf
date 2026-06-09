@@ -17,6 +17,7 @@
 import pathlib
 import json
 from mako.template import Template
+from collections import deque
 import time # TODO: Debug
 
 from .CodeBuilder import CodeBuilder
@@ -29,6 +30,8 @@ class BlockScheduleGenerator:
 
     def __init__(self):
         self.templateDir = pathlib.Path(__file__).parents[0] / "templates"
+        # TODO: Make nodes common if instruction scheduling is further used?
+        self.estimatorGenTemplateDir = pathlib.Path(__file__).parents[0].parents[0] / "estimator_generator" / "templates"
 
         self.maxDynDelayCnt = 0 # Max number of dynamic delays per block
 
@@ -49,7 +52,7 @@ class BlockScheduleGenerator:
         print(f"Matrix-Opt Time: {self.matrixOptTime}s")
         print("+++++++++++++++++++++++++++++++++++++++")
 
-    def execute(self, model_, blockList_, outDir_):
+    def execute(self, model_, schedModel_, blockList_, outDir_):
 
         self.executed = True
 
@@ -62,6 +65,14 @@ class BlockScheduleGenerator:
 
         for variant_i in model_.getAllVariants():
 
+            schedVariant = None
+            for var_i in schedModel_.variants:
+                if var_i.name == variant_i.name:
+                    schedVariant = var_i
+                    break
+            if schedVariant is None:
+                raise RuntimeError(f"Could not find matching variant for {variant_i.name} in scheduling model")
+
             print(f" > Creating output directory for {variant_i.name}")
             outDir = dirUtils.getCodeDirPath(outDir_, variant_i, "block_sched")
             dirUtils.createOrReplaceDir(outDir / "src")
@@ -72,6 +83,7 @@ class BlockScheduleGenerator:
 
             print(f" > Generating block-schedules for {variant_i.name}")
             self.__generateBlockScheduleFunctions(variant_i, outDir)
+            self.__generateInstructionSchedulingFunctions(variant_i, schedVariant, outDir)
             self.__generateMAPExplorer(variant_i, outDir)
 
     def __generateMAPExplorer(self, variant_, outDir_):
@@ -88,6 +100,22 @@ class BlockScheduleGenerator:
         with outFile_src.open('w') as f:
             f.write(code_src)
     
+    def __generateInstructionSchedulingFunctions(self, variant_, schedVariant_, outDir_):
+
+        instructions = self.__getInsructions(variant_, schedVariant_)
+
+        template_header = Template(filename = str(self.templateDir) + "/include/InstructionSchedulingFunctions.mako")
+        code_header = template_header.render(**{'builder_': self.builder})
+        outFile_header = outDir_ / "include" / (self.builder.getName() + "_InstructionSchedulingFunctions.h")
+        with outFile_header.open('w') as f:
+            f.write(code_header)
+
+        template_src = Template(filename = str(self.templateDir) + "/src/InstructionSchedulingFunctions.mako")
+        code_src = template_src.render(**{'instructions_': instructions, 'builder_': self.builder})
+        outFile_src = outDir_ / "src" / (self.builder.getName() + "_InstructionSchedulingFunctions.cpp")
+        with outFile_src.open('w') as f:
+            f.write(code_src)
+
     def __generateBlockScheduleFunctions(self, variant_, outDir_):
 
         blocks = self.__getBlocks(variant_)
@@ -141,6 +169,137 @@ class BlockScheduleGenerator:
         with outFile_src.open('w') as f:
             f.write(code_src)
 
+
+    def __getInsructions(self, variant_, schedVariant_):
+        instructions =  []
+
+        nodeTemplateDir = self.estimatorGenTemplateDir / "src" / "nodes"
+
+        schedFuncs = schedVariant_.getAllSchedulingFunctions()
+        schedFuncs.sort(key=lambda x: x.identifier)
+
+        matrixInstrs = variant_.getAllInstructions()
+        matrixInstrs.sort(key=lambda x: x.typeId)
+
+        for schedFunc_i, matrixInstr_i in zip(schedFuncs, matrixInstrs):
+            instruction = Instruction(schedFunc_i.name, schedFunc_i.identifier, schedFunc_i.isBranch)
+            
+            usedInConnectors = []
+            usedOutConnectors = []
+
+            shiftedTimingVarDict = {}
+            for tVar_i in schedVariant_.getAllTimingVariables():
+                if tVar_i.hasMultiElements():
+                    shiftedTimingVarDict[tVar_i.name] = [i+1 for i in range(tVar_i.getNumElements())] # 1-indexed.
+
+            #Create compute-body code
+            # NOTE/TODO: This functionality is copied from EstimatorGenerator. Code-sharing?
+            computeCode = "\n/* Compute body */\n"
+            visitedNodes = []
+            nodeQueue = deque([schedFunc_i.getRootNode()])
+            self.builder.resetDelayCnt()
+            while nodeQueue:
+                curNode = nodeQueue.popleft()
+                if curNode not in visitedNodes:
+                    visitedNodes.append(curNode)
+                    
+                    for edge_i in curNode.getAllInEdges():
+                        if edge_i.isDynamic():
+                            usedInConnectors.append(edge_i.name)
+
+                    for edge_i in curNode.getAllOutEdges():
+                        if edge_i.isDynamic():
+                            usedOutConnectors.append(edge_i.name)
+                        else:
+                            if (tv := edge_i.getTimingVariable()).hasMultiElements():
+                                if (d := edge_i.depth) in (l := shiftedTimingVarDict[tv.name]):
+                                    l.remove(d)
+
+                    if curNode.hasMultipleInElements():
+                        if curNode.hasZeroDelay():
+                            template = Template(filename = str(nodeTemplateDir) + "/ZeroDelayNode.mako")
+                        else:
+                            template = Template(filename = str(nodeTemplateDir) + "/FullNode.mako")
+                    elif curNode.hasSingleInElement():
+                        if curNode.hasZeroDelay():
+                            template = Template(filename = str(nodeTemplateDir) + "/EmptyNode.mako")
+                        else:
+                            template = Template(filename = str(nodeTemplateDir) + "/SingleInputNode.mako")
+                    else:
+                        raise RuntimeError(f"Node {curNode.name} has no input element! This should never happen...")
+                    computeCode += template.render(**{"node_":curNode, "builder_":self.builder})
+
+                    for nxtNode_i in curNode.getAllOutNodes():
+                        nodeQueue.append(nxtNode_i)
+
+            # Create code to shift buffer-variables
+            bufferCode = "\n/* Buffer-Shifting */\n"
+            for tVarName_i in shiftedTimingVarDict.keys():
+                for idx_i in shiftedTimingVarDict[tVarName_i]:
+                    #computeCode += f"{self.builder.getUnrolledStr(tVarName_i, idx_i)} = {self.builder.getUnrolledStr(tVarName_i, idx_i-1)};" + "\n"
+                    bufferCode += f"{self.builder.getUnrolledStr(tVarName_i, idx_i)} = "
+                    varName = self.builder.getUnrolledStr(tVarName_i, idx_i-1)
+                    vecCode = None
+                    for i, inVar_i in enumerate(variant_.timingVarSet.inVariables):
+                        if inVar_i.name == varName:
+                            vecCode = f"vec_[{i}]"
+                            break
+                    if vecCode is None:
+                        raise RuntimeError(f"Could not find vector-description for buffer variable: {varName}")
+                    bufferCode += vecCode + ";\n"
+
+            # Create input- and output-alignment code
+            inputCode = "\n/* Input Alignment */\n"
+            for i, inVar_i in enumerate(variant_.timingVarSet.inVariables):
+                inputCode += f"uint64_t {inVar_i.name} = vec_[{i}];" + "\n"
+
+            for statConSet_i in variant_.statConSets:
+                for inVar_i in statConSet_i.inVariables:
+                    if inVar_i.name in usedInConnectors:
+                        inputCode += f"uint64_t {inVar_i.name} = "
+                        if len((exceptions := inVar_i.exceptions)) > 0:
+                            inputCode += "("
+                            for i, e_i in enumerate(exceptions):
+                                if i != 0:
+                                    inputCode += "||"
+                                inputCode += f" {inVar_i.traceValue}_ == {e_i} "
+                            inputCode += ") ? 0 : "
+                        inputCode += f"vec_[{statConSet_i.rowOffset} + {inVar_i.traceValue}_];" + "\n"
+
+            brSet = variant_.branchSet
+            for i, inVar_i in enumerate(brSet.inVariables):
+                if inVar_i.name in usedInConnectors:
+                    inputCode += f"uint64_t {inVar_i.name} = vec_[{brSet.rowOffsetIn} + {i}];" + "\n"
+
+            inputCode += "\n"
+            for dyn_i in range(matrixInstr_i.getNumDynDelays()):
+                inputCode += f"uint8_t d_{dyn_i} = d_[{dyn_i}];" + "\n"
+            
+            # Create output-alignement code
+            outputCode = "\n/* Output Alignment */\n"
+            for i, outVar_i in enumerate(variant_.timingVarSet.outVariables):
+                outputCode += f"vec_[{i}] = {outVar_i.name};" + "\n"
+
+            for statConSet_i in variant_.statConSets:
+                for outVar_i in statConSet_i.outVariables:
+                    if outVar_i.name in usedOutConnectors:
+                        outputCode += f"vec_[{statConSet_i.colOffset} + {outVar_i.traceValue}_] = {outVar_i.name};" + "\n"
+
+            brSet = variant_.branchSet
+            for i, outVar_i in enumerate(brSet.outVariables):
+                if outVar_i.name in usedOutConnectors:
+                    outputCode += f"vec_[{brSet.colOffsetOut} + {i}] = {outVar_i.name};" + "\n"
+
+            code = ""
+            code += inputCode
+            code += computeCode
+            code += bufferCode
+            code += outputCode
+
+            instruction.code = code
+            instructions.append(instruction)
+
+        return instructions
 
     def __getBlocks(self, variant_):
         blocks = []
@@ -891,6 +1050,14 @@ class Block:
             codeLines += len(tStage_i.splitlines())
         return codeLines
 
+class Instruction:
+
+    def __init__(self, name_:str, typeId_:int, branch_:bool):
+        self.name = name_
+        self.typeId = typeId_
+        self.isBranch = branch_
+
+        self.code = ""
 
 class RowExpression:
 

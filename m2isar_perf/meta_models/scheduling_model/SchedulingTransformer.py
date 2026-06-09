@@ -49,6 +49,17 @@ class SchedulingTransformer:
 
             # Create scheduling function and root node
             schedFunc = schedVariant_.createSchedulingFunction(instr_i.name, instr_i.identifier)
+            
+            # TODO: NEED TO GET THIS INFORMATION FROM THE MODEL!
+            if "CV32E40P" in structVariant_.name:
+                if instr_i.identifier in [43, 44, 45, 46, 47, 48, 49, 50, 52, 53]:
+                    schedFunc.isBranch = True
+            elif "CVA6" in structVariant_.name:
+                if instr_i.identifier in [34, 35, 36, 37, 38, 39, 40, 41, 42, 43]:
+                    schedFunc.isBranch = True
+            else:
+                raise RuntimeError(f"Cannot determine branch instructions for variant {structVariant_.name}. Fix or expand hack!")
+
             stageNode = schedFunc.createNode("Enter") # Create root node
             schedFunc.setRootNode(stageNode)
 

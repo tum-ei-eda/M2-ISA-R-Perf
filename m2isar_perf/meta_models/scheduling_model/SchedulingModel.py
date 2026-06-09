@@ -142,6 +142,7 @@ class SchedulingFunction(FrozenBase):
         self.name = name_
         self.identifier = id_
         self.parent = parent_
+        self.isBranch = False
         
         # Owned instances
         self.nodes:List[Node] = []

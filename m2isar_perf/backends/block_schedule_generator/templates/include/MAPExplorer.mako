@@ -8,6 +8,7 @@ ${builder_.getFileHeader()}
 #include "Channel.h"
 
 #include "${builder_.getName()}_BlockSchedulingFunctions.h"
+#include "${builder_.getName()}_InstructionSchedulingFunctions.h"
 
 <% 
 linkList = []
@@ -72,15 +73,17 @@ public:
 
 /* MAP EXPLORER */
 
-using MAPExplorerBase = MAP_Explorer::MAPExplorer<${variant_.getNumResourceGroups()}, ${variant_.getNumCombinations()}, ${variant_.getNumResourceCombinations()}, ${variant_.getNumInstructions()}, ${variant_.getDimension()}, ${variant_.getMaxDynDelayPerInstr()}, ${variant_.getNumTimingVariables()}>;
+template<bool USE_BLK>
+using MAPExplorerBase = MAP_Explorer::MAPExplorer<USE_BLK, ${variant_.getNumResourceGroups()}, ${variant_.getNumCombinations()}, ${variant_.getNumResourceCombinations()}, ${variant_.getNumInstructions()}, ${variant_.getDimension()}, ${variant_.getMaxDynDelayPerInstr()}, ${variant_.getNumTimingVariables()}>;
 
-class ${builder_.getName()}_MAPExplorer : public MAPExplorerBase{
+template<bool USE_BLK>
+class ${builder_.getName()}_MAPExplorer : public MAPExplorerBase<USE_BLK>{
 
 public:
 
-    using CombType = typename MAPExplorerBase::CombType;
-    using DVecType = typename MAPExplorerBase::DVecType;
-    using ResGroupEntryType = typename MAPExplorerBase::ResGroupEntryType;
+    using CombType = typename MAPExplorerBase<USE_BLK>::CombType;
+    using DVecType = typename MAPExplorerBase<USE_BLK>::DVecType;
+    using ResGroupEntryType = typename MAPExplorerBase<USE_BLK>::ResGroupEntryType;
 
     ${builder_.getName()}_MAPExplorer();
     ~${builder_.getName()}_MAPExplorer() = default;

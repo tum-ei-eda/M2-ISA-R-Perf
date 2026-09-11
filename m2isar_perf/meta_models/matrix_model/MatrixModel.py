@@ -1003,18 +1003,15 @@ class CompressedInstructionMatrix(FrozenBase):
 class DynamicElement(FrozenBase):
 
     def __init__(self, orig_=None):
-        fixedAddend = 0
-        symbolicAddends:List[int] = []
+        self.mpElement = None
+        self.symbolIdx = None
         if orig_ is not None:
-            if isinstance(orig_, int):
-                fixedAddend += orig_
-            elif isinstance(orig_, DynamicDelay):
-                symbolicAddends.append(orig_.id)
+            if type(orig_) is tuple:
+                self.mpElement = orig_
+            elif type(orig_) is DynamicDelay:
+                self.symbolIdx = orig_.id
             else:
                 raise RuntimeError("Unsupported object-type for generation of DynamicElement")
-        
-        self.mpLib = MaxPlusLib(allowTempCreation_=False)
-        self.mpElement = self.mpLib.createElement(fixedAddend, symbolicAddends)
 
         self.parentInstr = None
 
@@ -1023,24 +1020,12 @@ class DynamicElement(FrozenBase):
     def __str__(self):
         return "<UNDEFINED>"
 
+    def solveMPElement(self, mpLib_):
+        self.mpElement = mpLib_.createElement(0, [self.symbolIdx])
+        self.symbolIdx = None # Just stored to resolve mpElement. Do not use for something else!
+
     def setParentInstruction(self, parent_):
         self.parentInstr = parent_
-
-    def add(self, elem_):
-        if isinstance(elem_, int):
-            self.mpElement = self.mpLib.mul(self.mpElement, elem_)
-        elif isinstance(elem_, DynamicElement):
-            self.mpElement = self.mpLib.mul(self.mpElement, elem_.mpElement)
-        else:
-            raise RuntimeError("Unsupported object-type for addition with DynamicElement")
-        
-    def max(self, elem_):     
-        if isinstance(elem_, int):
-            self.mpElement = self.mpLib.add(self.mpElement, elem_)
-        elif isinstance(elem_, DynamicElement):
-            self.mpElement = self.mpLib.add(self.mpElement, elem_.mpElement)
-        else:
-            raise RuntimeError("Unsupported object-type for max-operation with DynamicElement")
     
     def resolve(self, dynDelayCnt_:int, instrDescription_:Dict=None): # Returns an element of the MP-Lib, i.e. tuple
         #e = self.mpElement
@@ -1052,9 +1037,18 @@ class DynamicElement(FrozenBase):
         dynDelayMask = e[1]
         minValue = e[3]
         
+        # Own instance of mask-iterator to avoid keeping an mpLib-ref here
+        # TODO: Avoid this code duplication if possible
+        def forAllMaskIdxs(mask_):
+            while mask_:
+                lsb = mask_ & -mask_
+                idx = lsb.bit_length() - 1
+                mask_ ^= lsb
+                yield idx
+
         # For each dynamicDelay, check if conditional
         if instrDescription_ is not None:
-            for dyn_i in self.mpLib.forAllMaskIdxs(dynDelayMask):
+            for dyn_i in forAllMaskIdxs(dynDelayMask):
                 dynDelay = self.parentInstr.getDynamicDelay(dyn_i)
                 if (condition := dynDelay.getCondition()) is not None:
                     if condition.check(instrDescription_):

@@ -5,8 +5,8 @@ top : (corePerfModel_sec
     )* EOF
 ;
 
-corePerfModel_sec : virtual_def | connector_def | resource_def | microaction_def | stage_def | pipeline_def | variant_def | architecture_def;
-externModel_sec : traceValue_def | connectorModel_def | resourceModel_def | model_def ;
+corePerfModel_sec : virtual_def | connector_def | resource_def | microaction_def | stage_def | pipeline_def | register_def | variant_def | architecture_def;
+externModel_sec : traceValue_def | connectorModel_def | resourceModel_def | model_def | configuration_def ;
 instruction_sec : instrGroup_def | microactionMapping_def | traceValueMapping_def ;
 
 //////////////////////////// CONNECTOR_MODEL ////////////////////////////
@@ -14,7 +14,9 @@ instruction_sec : instrGroup_def | microactionMapping_def | traceValueMapping_de
 
 connectorModel_def : 'ConnectorModel' (connectorModel | '{' connectorModel (',' connectorModel)* '}');
 
-connectorModel : name=ID '(' (
+connectorModel : name=ID 
+('[' attributes+=connectorModel_attr (',' attributes+=connectorModel_attr)* ']')? // Optional list of attributes
+'(' (
 	      'trace' ':' (traceVals+=traceValue_ref | '{' traceVals+=traceValue_ref (',' traceVals+=traceValue_ref)* '}')
 	      | 'link' ':' link=STRING
 	      | 'connectorIn' ':' (inCons+=connector_ref | '{' inCons+=connector_ref (',' inCons+=connector_ref)* '}')
@@ -22,16 +24,22 @@ connectorModel : name=ID '(' (
 	      )* ')'
 ;
 
+connectorModel_attr : 'config' | 'info-trace' | 'branch';
+
 //////////////////////////// RESOURCE_MODEL ////////////////////////////
 // NOTE: Replaced by generic MODEL. Kept for backwards compatibility
 
 resourceModel_def : 'ResourceModel' (resourceModel | '{' resourceModel (',' resourceModel)* '}') ;
 
-resourceModel : name=ID '(' (
+resourceModel : name=ID 
+('[' attributes+=resourceModel_attr (',' attributes+=resourceModel_attr)* ']')? // Optional list of attributes
+'(' (
 	      'trace' ':' (traceVals+=traceValue_ref | '{' traceVals+=traceValue_ref (',' traceVals+=traceValue_ref)* '}')
 	      | 'link' ':' link=STRING
 	      )* ')'
 ;
+
+resourceModel_attr : 'config' | 'info-trace' | 'branch';
 
 //////////////////////////// MODEL ////////////////////////////
 // NOTE: Generic MODEL replaced RESOURCE_MODEL and CONNECTOR_MODEL
@@ -49,7 +57,17 @@ model : name=ID
 )* ')'
 ;
 
-model_attr : 'config' | 'info-trace' ;
+model_attr : 'config' | 'info-trace' | 'branch';
+
+//////////////////////////// CONFIGURATION ////////////////////////////
+
+configuration_def : 'Configuration' (configuration | configuration_list);
+
+configuration_list : '{' configuration (',' configuration)* '}';
+
+configuration : name=ID '(' (configuration_instance | configuration_instance (',' configuration_instance)*) ')';
+
+configuration_instance : ( configAssign+=configuration_assign | '{' configAssign+=configuration_assign (',' configAssign+=configuration_assign)* '}' );
 
 //////////////////////////// TRACE_VALUE_MAPPING ////////////////////////////
 
@@ -73,7 +91,11 @@ microactionMapping : instr=instructionOrInstrGroup_ref ':' (microactions+=microa
 
 instrGroup_def : 'InstrGroup' (instrGroup | '{' instrGroup (',' instrGroup)* '}');
 
-instrGroup : name=ID '(' instructions+=(ID|KEYWORD_REST) (',' instructions+=(ID|KEYWORD_REST))* ')';
+instrGroup : name=ID 
+('[' attributes+=instrGroup_attr ']')?
+'(' instructions+=(ID|KEYWORD_REST) (',' instructions+=(ID|KEYWORD_REST))* ')';
+
+instrGroup_attr : 'branch';
 
 //////////////////////////// ARCHITECTURE ////////////////////////////
 
@@ -93,11 +115,34 @@ variant_list : '{' variant (',' variant)* '}';
 
 variant : name=ID '(' (
 	      'use' 'Pipeline' ':' use_pipeline=pipeline_ref
+		  | 'use' 'Register' ':' use_register=register_ref
+		  | 'use' 'BranchPredictorModel' ':' (use_branchPredictor+=branchPredictorModel_ref | 'explore' '{' use_branchPredictor+=branchPredictorModel_ref (',' use_branchPredictor+=branchPredictorModel_ref)* '}')
 	      | 'use' 'ConnectorModel' ':' (conModels+=model_ref | '{' conModels+=model_ref (',' conModels+=model_ref)* '}')
 	      | 'assign' 'Resource' ':' (resAssigns+=resource_assign | '{' resAssigns+=resource_assign (',' resAssigns+=resource_assign)* '}')
 	      | 'assign' 'Microaction' ':' (uActionAssigns+=microaction_assign | '{' uActionAssigns+=microaction_assign (',' uActionAssigns+=microaction_assign)* '}')
 	      )* ')'
 ;
+
+//////////////////////////// REGISTER ////////////////////////////
+
+register_def : 'Register' (register | register_list);
+
+register_list : '{' register (',' register)* '}';
+
+register : name=ID '(' (
+				'size' ':' size=INT
+				| 'flag' ':' (flags+=registerFlag | '{' flags+=registerFlag (',' flags+=registerFlag)* '}')
+)* ')'
+;
+
+registerFlag : name=ID '(' ( 
+				'connectorOut' ':' (outCons+=registerConnectorMapping | '{' outCons+=registerConnectorMapping (',' outCons+=registerConnectorMapping)* '}')
+				| 'connectorIn' ':' (inCons+=registerConnectorMapping | '{' inCons+=registerConnectorMapping (',' inCons+=registerConnectorMapping)* '}')
+				| 'ignore' ':' (ignoreRegs+=INT | '{' ignoreRegs+=INT (',' ignoreRegs+=INT)* '}')
+)* ')'
+; 
+
+registerConnectorMapping : con=connector_ref '@' trVal=traceValue_ref;
 
 //////////////////////////// PIPELINE ////////////////////////////
 
@@ -158,7 +203,11 @@ resource_def : 'Resource' (resource | '{' resource_list '}');
 resource_list : resource (',' resource)*;
 
 resource : name=ID // Resource name
-('(' (res_model=model_ref | delay=INT) ')')? ; // Delay specification (optional)
+('(' (
+	res_model+=model_ref 
+	| delay=INT
+	|  'explore' '{' res_model+=model_ref (',' res_model+=model_ref)* '}'	
+) ')')? ; // Delay specification (optional)
 
 //////////////////////////// VIRTUAL ////////////////////////////
 
@@ -172,6 +221,8 @@ microaction_assign: vir_uA=microaction_ref '=' nvir_uA=microaction_ref;
 
 traceValue_assign: trVal=traceValue_ref '=' description=STRING;
 
+configuration_assign: description=STRING '=' value=INT;
+
 //////////////////////////// REFERENCES ////////////////////////////
 
 connector_ref : name=ID ;
@@ -182,7 +233,11 @@ resourceModel_ref : name=ID ;
 
 connectorModel_ref : name=ID ;
 
-model_ref : name=ID;
+configuration_ref : name=ID ;
+
+model_ref : name=ID ('with' config=configuration_ref)? ;
+
+branchPredictorModel_ref : name=ID ('with' config=configuration_ref)? ;
 
 resource_ref : name=ID ;
 
@@ -197,6 +252,8 @@ instructionOrInstrGroup_ref : name=(ID|KEYWORD_ALL) ;
 stage_ref : name=ID ;
 
 pipeline_ref : name=ID ;
+
+register_ref : name=ID ;
 
 microactionOrPipeline_ref : name=ID ;
 

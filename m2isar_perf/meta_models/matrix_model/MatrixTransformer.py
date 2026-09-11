@@ -16,6 +16,8 @@
 
 from .MatrixModel import MatrixModel, DynamicElement
 from meta_models.scheduling_model.SchedulingModel import SchedulingModel
+from .MaxPlusLib_NEW import MaxPlusLib
+
 
 import networkx as nx
 from itertools import product
@@ -24,12 +26,12 @@ class MatrixTransformer:
 
     def __init__(self, n_I_="0", n_D_="0", n_BrPred_="0"):
         
+        self.mpLib = MaxPlusLib(allowTempCreation_=False)
+
         # TODO: For quick test. Remove
         self.n_I = int(n_I_)
         self.n_D = int(n_D_)
         self.n_BrPred = int(n_BrPred_)
-
-        #pass
 
     def transform(self, schedulingModel_:SchedulingModel):
         matrixModel = MatrixModel(schedulingModel_.name)
@@ -64,10 +66,13 @@ class MatrixTransformer:
                         {'CACHE_DELAY': 1, 'MEMORY_DELAY': 6, 'NUM_WAYS': 16, 'NUM_ROWS': 128}
                     ]
 
-                    n = self.n_I # max: 4
-                    for i in range(2**n):
+                    n = self.n_I
+                    for i in range(self.n_I):
                         mod = rGroup.createResourceModel((rMod_i.name + "_" + str(i)), "map_models/ICacheModel.h", rMod_i.getAllTraceValues())
-                        mod.addConfig(iCacheConfigs[i])
+                        if i < len(iCacheConfigs):
+                            mod.addConfig(iCacheConfigs[i])
+                        else:
+                            mod.addConfig(iCacheConfigs[-1])
 
                 elif rMod_i.name == "dCache":
                     
@@ -92,10 +97,12 @@ class MatrixTransformer:
                         {'CACHE_DELAY': 1, 'MEMORY_DELAY': 6, 'NUM_WAYS': 16, 'NUM_ROWS': 128}
                     ]
 
-                    n = self.n_D # max: 4
-                    for i in range(2**n):
+                    for i in range(self.n_D):
                         mod = rGroup.createResourceModel((rMod_i.name + "_" + str(i)), "map_models/DCacheModel.h", rMod_i.getAllTraceValues())
-                        mod.addConfig(dCacheConfigs[i])
+                        if i < len(dCacheConfigs):
+                            mod.addConfig(dCacheConfigs[i])
+                        else:
+                            mod.addConfig(dCacheConfigs[-1])
 
                 elif rMod_i.name == "divider":
                     if "CV32E40P" in schedVar_i.name:
@@ -134,8 +141,7 @@ class MatrixTransformer:
                     {'NUM_PAGES': 4, 'NUM_ROWS': 16},
                 ]
 
-                n = self.n_BrPred # max: 3
-                for i in range(2**n):
+                for i in range(self.n_BrPred):
                     if i == 0:
                         brGroup.createBranchModel("branch_ant", "map_models/Branch_ant.h", ["pc", "brTarget"]) # always non-taken
                     elif i == 1:
@@ -143,7 +149,10 @@ class MatrixTransformer:
                     else:
                         j = i-2
                         mod = brGroup.createBranchModel("branch_2sat_" + str(j), "map_models/Branch_2sat.h", ["pc", "brTarget"]) # Dynamic 2-sat.
-                        mod.addConfig(branchConfig[j])
+                        if j < len(branchConfig):
+                            mod.addConfig(branchConfig[j])
+                        else:
+                            mod.addConfig(branchConfig[-1])
 
             elif "CVA6" in schedVar_i.name:
 
@@ -158,10 +167,12 @@ class MatrixTransformer:
                     {'BHT_NUM_PAGES': 2, 'BHT_NUM_ROWS': 128, 'BTB_NUM_PAGES': 2, 'BTB_NUM_ROWS': 32, 'RAS_SIZE': 4},
                 ]
 
-                n = self.n_BrPred # max: 3
-                for i in range(2**n):
+                for i in range(self.n_BrPred):
                     mod = brGroup.createBranchModel("branch_cva6_" + str(i), "map_models/Branch_CVA6.h", ["pc", "brTarget", "imm", "typeId", "rs1", "rd"])
-                    mod.addConfig(branchConfig[i]) # Default
+                    if i < len(branchConfig):
+                        mod.addConfig(branchConfig[i])
+                    else:
+                        mod.addConfig(branchConfig[-1])
 
             else:
                 raise RuntimeError("No idea how to generate a branch model here. Expand the hack...")
@@ -197,10 +208,11 @@ class MatrixTransformer:
 
                         if resModel.name == "iCache":
                             weight = DynamicElement(instr.createDynamicDelay(resModel.name.upper(), condition_=("pc & 0xC != 0", ["pc"], 1)))
+                            weight.solveMPElement(self.mpLib)
                         else:
                             weight = DynamicElement(instr.createDynamicDelay(resModel.name.upper()))
+                            weight.solveMPElement(self.mpLib)
                         
-                        #weight = DynamicElement(instr.createDynamicDelay(resModel.name.upper()))
                     else:
                         weight = curNode.getDelay()
 
@@ -239,28 +251,25 @@ class MatrixTransformer:
                             continue
 
                         maxWeight = -1
+                        symbolWeight = False
                         for path_i in paths:
                             weight = self.__getPathWeight(schedGraph, path_i)
+                            
+                            if type(weight) is DynamicElement:
+                                symbolWeight = True
+                                weight = weight.mpElement
+                            
                             if maxWeight == -1:
                                 maxWeight = weight
                             else:
-                                if isinstance(maxWeight, DynamicElement):
-                                    maxWeight.max(weight)
-                                else:
-                                    if isinstance(weight, DynamicElement):
-                                        maxWeight = DynamicElement(maxWeight)
-                                        maxWeight.max(weight)
-                                    else:
-                                        maxWeight = max(maxWeight, weight)                            
+                                maxWeight = self.mpLib.add(maxWeight, weight)                         
+
+                        if symbolWeight:
+                            maxWeight = DynamicElement(maxWeight)
 
                         cInstrMatrix.addElement(inVar_i, outVar_i, maxWeight)
 
                 cInstrMatrix.finalize()
-
-                #if instr.name == "divu":
-                #    cInstrMatrix.show()
-                #    print()
-                #    raise RuntimeError("COFO")
 
             matrixVar.finalize()
 
@@ -276,18 +285,23 @@ class MatrixTransformer:
 
     def __getPathWeight(self, schedGraph_, path_):
         weight = 0
+        symbolWeight = False
         for i, j in zip(path_[:-1], path_[1:]):
             w = schedGraph_[i][j]["weight"]
-            if isinstance(weight, DynamicElement):
-                weight.add(w)
-            else:
-                if isinstance(w, DynamicElement):
-                    weight = DynamicElement(weight)
-                    weight.add(w)
-                else:
-                    weight += w
-        return weight
+            if type(w) is DynamicElement:
+                w = w.mpElement
+                symbolWeight = True
 
+            if symbolWeight:
+                weight = self.mpLib.mul(weight, w)
+            else:
+                weight += w
+
+        if symbolWeight:
+            weight = DynamicElement(weight)
+        
+        return weight    
+            
     def __getEdgeName(self, edge_):
         if not edge_.isDynamic():
             tv = edge_.getTimingVariable()

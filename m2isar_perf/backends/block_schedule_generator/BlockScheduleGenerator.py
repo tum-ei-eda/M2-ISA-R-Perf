@@ -23,8 +23,62 @@ import time # TODO: Debug
 from .CodeBuilder import CodeBuilder
 from backends.common import dirUtils
 
+#from meta_models.matrix_model.MaxPlusLib_NEW import MaxPlusLib, MaxPlusElement
 from meta_models.matrix_model.MaxPlusLib_NEW import MaxPlusLib, MaxPlusElement
-from meta_models.matrix_model.MaxPlusLib import MaxPlusTerm
+#from meta_models.matrix_model.MaxPlusLib import MaxPlusTerm
+
+################################ SUPPORT FUNCTIONS ################################
+
+def checkOffsetRow(row_i_, row_ii_):
+    offset = None
+    for e_i, e_ii in zip(row_i_, row_ii_):
+        if e_i.isZeroElement() and e_ii.isZeroElement():
+            continue
+        elif e_i.isZeroElement() or e_ii.isZeroElement():
+            return None
+        
+        if (o := e_i.getOffset(e_ii)) is None:
+            return None
+        else:
+            if offset is None:
+                offset = o
+            elif not offset.isIdentical(o):
+                return None
+            
+    if offset is None:
+        raise RuntimeError("Failed to indentify a valid row-offset")
+    return offset
+
+def checkDimShiftRow(row_i_, row_ii_):
+    dimensions = []
+    offset = None
+
+    for i, (e_i, e_ii) in enumerate(zip(row_i_, row_ii_)):
+        if e_i.isZeroElement():
+            if e_ii.isZeroElement():
+                continue
+            else:
+                return None
+        else:
+            if e_ii.isZeroElement():
+                dimensions.append((i, e_i))
+            else:
+                if (o := e_i.getOffset(e_ii)) is None:
+                    return None
+                else:
+                    if offset is None:
+                        offset = o
+                    elif not offset.isIdentical(o):
+                        return None
+                    
+    if offset is None:
+        raise RuntimeError("Cannot find valid offset")
+    if not dimensions:
+        raise RuntimeError("Cannot find any \"free dimensions\"")
+    
+    return (offset, dimensions)
+
+###################################################################################
 
 class BlockScheduleGenerator:
 
@@ -36,20 +90,53 @@ class BlockScheduleGenerator:
         self.maxDynDelayCnt = 0 # Max number of dynamic delays per block
 
         self.totalNumTemps = 0
+        self.maxTempsPerBlock = 0
+
         self.matrixGenTime = 0
         self.matrixOptTime = 0
+
+        self.matrixTempCnt = 0
+        self.supportTempCnt = 0
 
         self.MAX_DYN_DELAYS_PER_BLOCK = 100
         self.MAX_TEMP_COUNT_PER_BLOCK = 600
         self.CODE_LINE_LIMIT = 10000
 
+
+        self.totalTemps_max = 0
+        self.matrixTemps_max = 0
+        self.supportTemps_max = 0
+        self.dupTemps_max = 0
+
+        self.numBlocks = 0
+        self.totalTemps_acc = 0
+        self.matrixTemps_acc = 0
+        self.supportTemps_acc = 0
+        self.dupTemps_acc = 0
+
+    def analyze(self, file_):
+        self.analysisFile = file_
+
     def getInfo(self):
         print("+++++++++++++++++++++++++++++++++++++++")
         print("BLOCK_GEN:")
-        #print(f"MaxDynDelayCnt: {self.maxDynDelayCnt}")
-        print(f"Total number temps: {self.totalNumTemps}")
         print(f"Matrix-Gen Time: {self.matrixGenTime}s")
         print(f"Matrix-Opt Time: {self.matrixOptTime}s")
+        print()
+        #print("Temp. use (max per block)")
+        #print(f"Total temps: {self.totalTemps_max}")
+        #print(f"Matrix temps: {self.matrixTemps_max}")
+        #print(f"Support temps: {self.supportTemps_max}")
+        #print(f"Unused temps: {self.totalTemps_max - (self.matrixTemps_max + self.supportTemps_max)}")
+        #print(f"Duplicated matrix-temps: {self.dupTemps_max}")
+        #print()
+        #print("Temp. use (avg per block)")
+        #print(f"Total temps: {self.totalTemps_acc / self.numBlocks}")
+        #print(f"Matrix temps: {self.matrixTemps_acc / self.numBlocks}")
+        #print(f"Support temps: {self.supportTemps_acc / self.numBlocks}")
+        #print(f"Duplicated matrix-temps: {self.dupTemps_acc / self.numBlocks}")
+
+
         print("+++++++++++++++++++++++++++++++++++++++")
 
     def execute(self, model_, schedModel_, blockList_, outDir_):
@@ -312,27 +399,27 @@ class BlockScheduleGenerator:
             mpLib = MaxPlusLib()
             dynDelayCnt = 0
 
-
 #            print("++++++++++++++++++++++++++++++++++++++++++++++")
 #            print("My test")
-#            d0 = (0, 1, 0, 1)
-#            x1 = mpLib.add(2, d0)
-#            print(f"2 + d0 = {x1}")
-#            for i, temp_i in enumerate(mpLib.getTempList()):
-#                print(f"> t_{i}: {temp_i.getExpression()} -> minVal: {temp_i.minVal}")
+#            a = (0, 2, 0, 1) # d1
+#            t1 = mpLib.add(a, 2) # d1 + 2
+#            
+#            print("d1 + 2")
+#            for i, temp_i in enumerate(mpLib.forAllTemps()):
+#                print(f"> t_{i}: {temp_i.getExpressions()}")
+#            print()
 #
+#            b = (0, 0b01000010, 0, 2) # d1d6
+#            t4 = mpLib.add(b, t1) # d1d6 + t1 -> d1d6
+#
+#            print("d1d6 + t1")
+#            for i, temp_i in enumerate(mpLib.forAllTemps()):
+#                print(f"> t_{i}: {temp_i.getExpressions()}")
 #            print()
-#            d1 = (1, 1, 0, 2)
-#            x2 = mpLib.add(x1, d1, True)
-#            print()
-#            print(f"2 + d0 + 1d0 = {x2}")
-#            for i, temp_i in enumerate(mpLib.getTempList()):
-#                print(f"> t_{i}: {temp_i.getExpression()} -> minVal: {temp_i.minVal}")
 #
 #            print("++++++++++++++++++++++++++++++++++++++++++++++")
 #            print()
 #            raise RuntimeError("COFO")
-
 
             #numInstr = len(block_i["instrs"])
             prevPc = None
@@ -341,6 +428,7 @@ class BlockScheduleGenerator:
 
                 # Check if block should be splitted
                 if ((dynDelayCnt + instr.getNumDynDelays()) > self.MAX_DYN_DELAYS_PER_BLOCK) or (mpLib.getNumTemps() > self.MAX_TEMP_COUNT_PER_BLOCK):
+                #if ((dynDelayCnt + instr.getNumDynDelays()) > self.MAX_DYN_DELAYS_PER_BLOCK):
 
                     # Finalize block
                     t = time.time()
@@ -362,27 +450,20 @@ class BlockScheduleGenerator:
                 if blockMatrix is None:
                     blockMatrix = instr.getMatrix(instr_i, dynDelayCnt)
                     #print()
-                    #for i, temp_i in enumerate(mpLib.forAllTemps()):
-                    #    print(f"t_{i}: {temp_i.getExpression()} -> minVal: {temp_i.minVal}")
+                    #for i, temp_i in enumerate(mpLib.forAllActiveTemps()):")
+                    #    print(f"t_{i}: {temp_i.getExpressions()}")
                     #print()
                     #variant_.showMatrix(blockMatrix.matrix)
                     #print()
                 else:
                     blockMatrix = instr.mulMatrix(blockMatrix, instr_i, dynDelayCnt, mpLib, False)
                     #print()
-                    #for i, temp_i in enumerate(mpLib.forAllTemps()):
-                    #    print(f"t_{i}: {temp_i.getExpression()} -> minVal: {temp_i.minVal}")
+                    #for i, temp_i in enumerate(mpLib.forAllActiveTemps()):
+                    #    print(f"t_{i}: {temp_i.getExpressions()}")
                     #print()
                     #variant_.showMatrix(blockMatrix.matrix)
                     #print()
                 self.matrixGenTime += (time.time() - t)
-
-                #if len(mpLib.getTempList()) > 300:
-                #    print(" > More than 300 temps")
-                #    print(f" >> Num instr: {i}")
-                #    print(f" >> Block-ID: {block_i['id']}")
-                #    print()
-                #    raise RuntimeError("COFO")
 
                 # Update loop variables
                 dynDelayCnt += instr.getNumDynDelays()
@@ -390,13 +471,22 @@ class BlockScheduleGenerator:
 
             # Finalize (last) block
             t = time.time()
+            #block.code = self.__getScheduleFunctionCode(blockMatrix, mpLib, verbose_=(block_i['id'] == 1))
             block.code = self.__getScheduleFunctionCode(blockMatrix, mpLib)
+
+
             #self.__createScheduleFunctionCode(block, blockMatrix, mpLib)
             self.matrixOptTime += (time.time() - t)
             block.setEndPc(block_i['endPc'])
             blocks.append(block)
 
-            #if block_i['id'] == 0:
+            #if len(mpLib._tempList) > 0:
+            #    for i, temp_i in enumerate(mpLib.forAllActiveTemps()):
+            #        print(f"t_{i}: {temp_i.getExpressions()}")
+            #    print()
+            #    raise RuntimeError("TRAP")
+
+            #if block_i['id'] == 2:
             #    print()
             #    raise RuntimeError("TRAP")
 
@@ -405,125 +495,136 @@ class BlockScheduleGenerator:
         blocks.sort(key=lambda x: x.callCnt, reverse=True)
         return blocks
 
-#    def __getBlocks(self, variant_):
-#        blocks = []
-#
-#        for block_i in self.blockDict["blocks"]:
-#
-#            verbose = False
-#            #verbose = block_i['id'] == 1
-#
-#            block = Block(block_i['id'], block_i['startPc'], block_i['endPc'], block_i['callCnt'])
-#
-#            dynDelayCnt = 0
-#
-#            mpLib = MaxPlusLib()
-#
-#            startMatrixGen = time.time()
-#            blockMatrix = None
-#
-#            #t0 = time.time()
-#
-#            for i, instr_i in enumerate(block_i["instrs"]):
-#
-#                instr = variant_.getInstruction(instr_i["typeId"])
-#
-#                #print(f"Handling block: {block_i['id']}/{len(self.blockDict['blocks'])} - {i}/{len(block_i['instrs'])}")
-#
-#                #t1 = time.time()
-#                if blockMatrix is None:
-#                    blockMatrix = instr.getMatrix(instr_i, dynDelayCnt)
-#                    if verbose:
-#                        print("getMatrix()", end="")
-#                else:
-#                    blockMatrix = instr.mulMatrix(blockMatrix, instr_i, dynDelayCnt, mpLib, False)
-#                    if verbose:
-#                        print("mulMatrix()", end="")
-#                
-#                if verbose:
-#                    print(f" -> {float(time.time() - t1)}s")
-#                    mulTime, addTime = instr.getInfo()
-#                    print("\t" + f"mulTime -> {mulTime}")
-#                    print("\t" + f"addTime -> {addTime}")
-#
-#
-#
-#                #if verbose:
-#                #    print(instr_i)
-#                #    variant_.showMatrix(blockMatrix.matrix)
-#                #    print(f"new blkMatrix unit-cols: {blockMatrix.getUnitColIdxs()}")
-#                #    print(f"new blkMatrix zero-cols: {blockMatrix.getZeroColIdxs()}")
-#                #    print()
-#
-#                dynDelayCnt += instr.getNumDynDelays()
-#
-#            if verbose:
-#                print(f"Total -> {time.time() - t0}s")
-#                raise RuntimeError("COFO")
-#
-#
-#            #print()
-#            #print(f"Block-ID: {block_i['id']}")
-#            #variant_.showMatrix(blockMatrix.matrix)
-#            #print()
-#
-#            endMatrixGen = time.time()
-#            self.matrixGenTime += (endMatrixGen - startMatrixGen)
-#            
-#            startMatrixOpt = time.time()
-#            block.code = self.__getScheduleFunctionCode(blockMatrix, mpLib)
-#            endMatrixOpt = time.time()
-#            self.matrixOptTime += (endMatrixOpt - startMatrixOpt)
-#            
-#            blocks.append(block)
-#
-#            self.maxDynDelayCnt = max(self.maxDynDelayCnt, dynDelayCnt)
-#
-#        blocks.sort(key=lambda x: x.callCnt, reverse=True)
-#        return blocks
-
     def __getScheduleFunctionCode(self, blkMatrix_, mpLib_, verbose_=False):
 
-        self.totalNumTemps += mpLib_.getNumTemps()
-        tempUsed = [False]*mpLib_.getNumTemps()
+        #self.totalNumTemps += mpLib_.getNumTemps()
+        #tempUsed = [False]*mpLib_.getNumTemps()
+
+        tempMatrixUsed = [False]*mpLib_.getNumTemps()
+        tempSupportUsed = [False]*mpLib_.getNumTemps()
+
+        self.maxTempsPerBlock = max(self.maxTempsPerBlock, mpLib_.getNumTemps())
 
         mainCode = ""
 
-        unhandledRowExps = self.__getRowExpressions(blkMatrix_, mpLib_, verbose_)
-        
-        handledIdxs = []
-        while unhandledRowExps:
+        unhandledRowExps, unhandledSubRowExps = self.__getRowExpressions(blkMatrix_, mpLib_, verbose_)
 
-            for rowExp_i in unhandledRowExps:
+        #rowExpsCpy = unhandledRowExps[:]
 
-                if rowExp_i.isStandAloneRow() or (rowExp_i.refIdx in handledIdxs):
-                    mainCode += rowExp_i.getCodeLine()
-                    handledIdxs.append(rowExp_i.idx)
+        def handleRowExpressions(unhandledExpressions_, code_, tempUsed_):
+            handledIdxs = []
 
-                    # Mark all temps used in the expression as used
-                    for tempMask_i in rowExp_i.forAllTempMasks():
-                        for temp_i in mpLib_.forAllMaskIdxs(tempMask_i):
-                            tempUsed[temp_i] = True
+            while unhandledExpressions_:
+                for rowExp_i in unhandledExpressions_:
+                    if rowExp_i.isStandAloneRow() or (rowExp_i.refIdx in handledIdxs):
+                        code_ += rowExp_i.getCodeLine()
+                        handledIdxs.append(rowExp_i.idx)
 
-            unhandledRowExps = [rowExp_i for rowExp_i in unhandledRowExps if rowExp_i.idx not in handledIdxs]
+                        # Mark all temps used in the expression
+                        for tempMask_i in rowExp_i.forAllTempMasks():
+                            for temp_i in mpLib_.forAllMaskIdxs(tempMask_i):
+                                tempUsed_[temp_i] = True
+
+                unhandledExpressions_ = [rowExp_i for rowExp_i in unhandledExpressions_ if rowExp_i.idx not in handledIdxs]
+
+            return code_, handledIdxs
+
+        mainCode, _ = handleRowExpressions(unhandledSubRowExps, mainCode, tempMatrixUsed)
+        mainCode += "\n"
+        mainCode, usedRowIdxs = handleRowExpressions(unhandledRowExps, mainCode, tempMatrixUsed)
+
+
+#        handledRowIdxs = []
+#        while unhandledRowExps:
+#
+#            for rowExp_i in unhandledRowExps:
+#
+#                if rowExp_i.isStandAloneRow() or (rowExp_i.refIdx in handledRowIdxs):
+#                    mainCode += rowExp_i.getCodeLine()
+#                    handledRowIdxs.append(rowExp_i.idx)
+#
+#                    # Mark all temps used in the expression
+#                    for tempMask_i in rowExp_i.forAllTempMasks():
+#                        for temp_i in mpLib_.forAllMaskIdxs(tempMask_i):
+#                            tempMatrixUsed[temp_i] = True
+#
+#            unhandledRowExps = [rowExp_i for rowExp_i in unhandledRowExps if rowExp_i.idx not in handledRowIdxs]
 
         mainCode += "\n"
 
-        for idx_i in handledIdxs:
+        for idx_i in usedRowIdxs:
             mainCode += "\n\t" + f"vec_[{idx_i}] = out_{idx_i};"
                 
         tempCode = ""
 
         # Mark all temps, used by other temps, as used
         for temp_i in mpLib_.forAllTemps_reversed():
-            if tempUsed[temp_i.getId()]:
+            if tempMatrixUsed[temp_i.id] or tempSupportUsed[temp_i.id]:
                 for tempMask_i in temp_i.forAllTempMasks():
                     for idx_i in mpLib_.forAllMaskIdxs(tempMask_i):
-                        tempUsed[idx_i] = True
-
+                        if not tempMatrixUsed[idx_i]:
+                            tempSupportUsed[idx_i] = True
+                     
         for temp_i in mpLib_.forAllTemps():
-            if tempUsed[temp_i.getId()]:
-                tempCode += getMaxExpression(temp_i.getSplitExpression(), f"t_{temp_i.getId()}")
+            if tempMatrixUsed[temp_i.id] or tempSupportUsed[temp_i.id]:
+                tempCode += getMaxExpression(temp_i.getExpressions(), f"t_{temp_i.id}")
+
+
+
+#        matrixTempCnt = 0
+#        for i in tempMatrixUsed:
+#            if i:
+#                matrixTempCnt += 1
+#
+#        supportTempCnt = 0
+#        for i in tempSupportUsed:
+#            if i:
+#                supportTempCnt += 1
+
+#        matrixDups = mpLib_.checkDuplicates(tempMatrixUsed)
+
+#        if matrixDups > 0:
+#            #for col_i in range(blkMatrix_.dimension):
+#            #    colCode = ""
+#            #    for exp_i in rowExpsCpy:
+#            #        if exp_i.isStandAloneRow():
+#            #            for dim_i in exp_i.dimensions:
+#            #                if dim_i[0] == col_i:
+#            #                    colCode += "\t" + f"row[{exp_i.idx}]: {dim_i[1].getExpression()}" + "\n"
+#            #    if colCode != "":
+#            #        print(f"COL[{col_i}]:")
+#            #        print(colCode)
+#            #        print()
+#
+#            raise RuntimeError("TRAP")
+            
+
+#        if mpLib_.getNumTemps() > self.totalTemps_max:
+#            self.totalTemps_max = mpLib_.getNumTemps()
+#            self.matrixTemps_max = matrixTempCnt
+#            self.supportTemps_max = supportTempCnt
+#            self.dupTemps_max = matrixDups
+#
+#        self.totalTemps_acc += mpLib_.getNumTemps()
+#        self.matrixTemps_acc += matrixTempCnt
+#        self.supportTemps_acc += supportTempCnt
+#        self.dupTemps_acc += matrixDups
+#        self.numBlocks += 1
+
+
+
+#        for temp_i in mpLib_.forAllActiveTemps():
+#            exps = temp_i.getExpressions()
+#
+#            if len(exps) == 0:
+#                raise RuntimeError("Empty temp-value")
+#            elif len(exps) == 1: # TODO: Check if this scenario is still applicable?
+#                ex = exps[0]
+#                tempCode += "\t" + f"uint64_t t_{temp_i.id} = "
+#                tempCode += ex[1:] if ex.startswith('+') else ex
+#                tempCode += ";\n"
+#            else:
+#                tempCode += getMaxExpression(exps, f"t_{temp_i.id}")
 
         code = ""
         code += tempCode
@@ -541,254 +642,172 @@ class BlockScheduleGenerator:
 
         return code
    
-
-    def __createScheduleFunctionCode(self, block_, blkMatrix_, mpLib_, verbose_=False):
-
-        #code = ""
-        tempStages = []
-
-        block_.numTemps = mpLib_.getNumTemps()
-
-        #code += "\t" + f"uint64 t[{len(tempList)}];" + "\n" # TODO: Do we really need uint64_t? vec_ not part of this. uint32_t might be sufficient?
-
-        tempCnt = 0
-        tempStageCode = ""
-        for temp_i in mpLib_.forAllTemps():
-            tempStageCode += getMaxExpression(temp_i.getSplitExpression(), f"t[{temp_i.getId()}]", useTypeDef_="")
-            tempCnt += 1
-
-            if tempCnt >= 30:
-                tempStages.append(tempStageCode)
-                tempCnt = 0
-                tempStageCode = ""
-
-        if tempStageCode != "":
-            tempStages.append(tempStageCode)
-        block_.tempStages = tempStages
-
-        #code += "\n"
-
-        code = ""
-
-        unhandledRowExps = self.__getRowExpressions(blkMatrix_, mpLib_, verbose_)
-        
-        handledIdxs = []
-        while unhandledRowExps:
-
-            for rowExp_i in unhandledRowExps:
-
-                if rowExp_i.isStandAloneRow():
-                    code += rowExp_i.getCodeLine()
-                    handledIdxs.append(rowExp_i.idx)
-
-                elif rowExp_i.refIdx in handledIdxs:
-                    code += rowExp_i.getCodeLine()
-                    handledIdxs.append(rowExp_i.idx)
-
-            unhandledRowExps = [rowExp_i for rowExp_i in unhandledRowExps if rowExp_i.idx not in handledIdxs]
-
-        code += "\n"
-
-        for idx_i in handledIdxs:
-            code += "\n\t" + f"vec_[{idx_i}] = out_{idx_i};"
-                
-
-        if verbose_:
-            print()
-            print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-            print()
-            print(code)
-            print()
-            print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-            print()
-
-        block_.code = code
-        return
-
-        #return code
-
-
-
-
-#    def __getRowExpressions2(self, blkMatrix_, mpLib_, verbose_=False):
-#        rowExpressions = []
+#    def __getRolledOutTemps(self, mpLib_):
 #
-#        matrix = blkMatrix_.matrix
-#        dim = blkMatrix_.dimension
-#        unhandledIdxs = list(range(dim))
+#        def checkInsert(elem_, sum_):
+#            insert = True
+#            rmv = []
+#            for s_i in sum_:
+#                _, e_mask, _, e_minVal = elem_
+#                _, s_mask, _, s_minVal = s_i
 #
-#        #rowHandled = [False]*dim
+#                common_mask = e_mask & s_mask
 #
-#        # Iterate matrix from bottom to top
-#        for idx_i in range(dim-1, -1, -1):
-#            row_i = matrix[idx_i]
+#                # s dominates e
+#                if(e_mask == common_mask) and (s_minVal >= e_minVal):
+#                    insert = False
+#                    break
 #
-#            ## Discard index if empty or unit-row
-#            #if blkMatrix_.isUnitRow(idx_i) or blkMatrix_.isZeroRow(idx_i):
-#            #    #unhandledIdxs.remove(idx_i)
-#            #    rowHandled[idx_i] = True
-#            #    continue
+#                # e dominates s
+#                if(s_mask == common_mask) and (e_minVal >= s_minVal):
+#                    rmv.append(s_i)
 #
-#            # Discard index if empty or unit-row
-#            if self.__isUnitOrEmpty(idx_i, row_i):
-#                unhandledIdxs.remove(idx_i)
-#                continue
-#            
-#            # Convert matrix content to MaxPlusElement
-#            for j, e_j in enumerate(row_i):
-#                if not isinstance(e_j, MaxPlusElement):
-#                    row_i[j] = mpLib_.resolveElement(e_j)
+#            if insert:
+#                sum_.append(elem_)
 #
-#            # Check if simple set row (e.g. out_7 = vec_[6])
-#            if (res := self.__checkSimpleSetRow(row_i)) is not None:
-#                rowExp = RowExpression(idx_i).setSimpleSetRow(res)
-#                rowExpressions.append(rowExp)
-#                unhandledIdxs.remove(idx_i)
-#                #rowHandled[idx_i] = True
-#                continue
+#            res = [e for e in sum_ if e not in rmv]
+#            return res
 #
-#            # Check if identical to any row below
-#            for idx_ii in range(idx_i+1, dim):
-#                if idx_ii not in unhandledIdxs:
-#                    continue
-#                #if rowHandled[idx_ii]:
-#                #    continue
+#        def rollOut(op_):
+#            val, symMask, tempMask, _ = op_
+#                    
+#            if tempMask == 0:
+#                return [op_]
+#              
+#            fix = (val, symMask, 0, symMask.bit_count() + val)
+#            res = [fix]
+#
+#            for tempIdx_i in mpLib_.forAllMaskIdxs(tempMask):
+#                update = []
+#                for op_i in res:
+#                    for op_ii in unrolledTemps[tempIdx_i]:
+#                        e = mpLib_.mul(op_i, op_ii)
+#                        update = checkInsert(e,update)
+#                res = update
+#            return res
+#
+#
+#        unrolledTemps = []
+#        for temp_i in mpLib_._tempList:
+#            op_a, op_b = temp_i[1]
+#            unrolled = rollOut(op_a)
+#            for e_i in rollOut(op_b):
+#                unrolled = checkInsert(e_i, unrolled)
+#            unrolledTemps.append(unrolled)
+#
+#        return unrolledTemps
+
+#    def __createScheduleFunctionCode(self, block_, blkMatrix_, mpLib_, verbose_=False):
+#
+#        #code = ""
+#        tempStages = []
+#
+#        block_.numTemps = mpLib_.getNumTemps()
+#
+#        #code += "\t" + f"uint64 t[{len(tempList)}];" + "\n" # TODO: Do we really need uint64_t? vec_ not part of this. uint32_t might be sufficient?
+#
+#        tempCnt = 0
+#        tempStageCode = ""
+#        for temp_i in mpLib_.forAllTemps():
+#            tempStageCode += getMaxExpression(temp_i.getSplitExpression(), f"t[{temp_i.getId()}]", useTypeDef_="")
+#            tempCnt += 1
+#
+#            if tempCnt >= 30:
+#                tempStages.append(tempStageCode)
+#                tempCnt = 0
+#                tempStageCode = ""
+#
+#        if tempStageCode != "":
+#            tempStages.append(tempStageCode)
+#        block_.tempStages = tempStages
+#
+#
+#        code = ""
+#
+#        unhandledRowExps = self.__getRowExpressions(blkMatrix_, mpLib_, verbose_)
+#        
+#        handledIdxs = []
+#        while unhandledRowExps:
+#
+#            for rowExp_i in unhandledRowExps:
+#
+#                if rowExp_i.isStandAloneRow():
+#                    code += rowExp_i.getCodeLine()
+#                    handledIdxs.append(rowExp_i.idx)
+#
+#                elif rowExp_i.refIdx in handledIdxs:
+#                    code += rowExp_i.getCodeLine()
+#                    handledIdxs.append(rowExp_i.idx)
+#
+#            unhandledRowExps = [rowExp_i for rowExp_i in unhandledRowExps if rowExp_i.idx not in handledIdxs]
+#
+#        code += "\n"
+#
+#        for idx_i in handledIdxs:
+#            code += "\n\t" + f"vec_[{idx_i}] = out_{idx_i};"
 #                
-#                row_ii = matrix[idx_ii]
-#                if self.__checkIdenticalRow(row_i, row_ii):
-#                    rowExp = RowExpression(idx_i).setIdenticalRow(idx_ii)
-#                    rowExpressions.append(rowExp)
-#                    unhandledIdxs.remove(idx_i)
-#                    #rowHandled[idx_i] = True
-#                    break
 #
+#        if verbose_:
+#            print()
+#            print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+#            print()
+#            print(code)
+#            print()
+#            print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+#            print()
 #
-#        # Iterate remaining unhandled indexes to identify offset-rows
-#        newHandledIdxs = []
-#        for idx_i in unhandledIdxs:
-#            #if handled_i:
-#            #    continue
-#            for idx_ii in unhandledIdxs:
-#                #if handled_ii:
-#                #    continue
-#                if idx_i == idx_ii or (idx_ii in newHandledIdxs):
-#                    continue
-#
-#                row_i = matrix[idx_i]
-#                row_ii = matrix[idx_ii]
-# 
-#                if (offset := self.__checkOffsetRow(row_i, row_ii)) is not None:
-#                    rowExp = RowExpression(idx_i).setOffsetRow(idx_ii, offset)
-#                    rowExpressions.append(rowExp)
-#                    newHandledIdxs.append(idx_i)
-#                    break
-#        unhandledIdxs = [i for i in unhandledIdxs if not i in newHandledIdxs]
-#        #for idx_i in newHandledIdxs:
-#        #    rowHandled[idx_i] = True
-#
-#        # Iterate remaining unhandled indexes to indentify dim-shift-rows
-#        newHandledIdxs = []
-#        for idx_i in unhandledIdxs:        
-#            #if handled_i:
-#            #    continue
-#            
-#            numDims = None
-#            expressionFound = False
-#            rowExp = None
-#    
-#            for idx_ii in unhandledIdxs:
-#                #if handled_ii:
-#                #    continue
-#                if idx_i == idx_ii:
-#                    continue
-#
-#                row_i = matrix[idx_i]
-#                row_ii = matrix[idx_ii]
-#                #print(f"Checking: {idx_i} vs. {idx_ii}")
-#                if (res := self.__checkDimShiftRow(row_i, row_ii)) is not None:
-#                    offset, dims = res
-#                    if (numDims is None) or (len(dims) < numDims):
-#                        expressionFound = True
-#                        rowExp = RowExpression(idx_i).setDimShiftRow(idx_ii, offset, dims)
-#
-#            if expressionFound:
-#                rowExpressions.append(rowExp)
-#                newHandledIdxs.append(idx_i)
-#        unhandledIdxs = [i for i in unhandledIdxs if not i in newHandledIdxs]
-#        #for idx_i in newHandledIdxs:
-#        #    rowHandled[idx_i] = True
-#
-#        # Translate remaining rows to RowExpression
-#        for idx_i in unhandledIdxs:
-#            #if handled_i:
-#            #    continue
-#
-#            row_i = matrix[idx_i]
-#            rowExp = RowExpression(idx_i)
-#            for j, e_j in enumerate(row_i):
-#                if not e_j.isZeroElement():
-#                    rowExp.addDimension(j, e_j)
-#            rowExpressions.append(rowExp)           
-#
-#        return rowExpressions
-    
+#        block_.code = code
+#        return
 
     def __getRowExpressions(self, blkMatrix_, mpLib_, verbose_=False):
         rowExpressions = []
 
         matrix = blkMatrix_.matrix
         dim = blkMatrix_.dimension
-        #unhandledIdxs = list(range(dim))
 
         rowHandled = [False]*dim
 
         # Iterate matrix from bottom to top
         for idx_i in range(dim-1, -1, -1):
             
-
             # Discard index if empty or unit-row
             if blkMatrix_.isUnitRow(idx_i) or blkMatrix_.isZeroRow(idx_i):
-                #unhandledIdxs.remove(idx_i)
                 rowHandled[idx_i] = True
                 continue
-
-            ## Discard index if empty or unit-row
-            #if self.__isUnitOrEmpty(idx_i, row_i):
-            #    unhandledIdxs.remove(idx_i)
-            #    continue
             
             row_i = matrix[idx_i]
 
+            # Handle simple-set rows
             if blkMatrix_.isSetRow(idx_i):
                 res = None
                 for i, e_i in enumerate(row_i):
                     if e_i == 0:
                         res = (i, mpLib_.resolveElement(e_i))
                         break
-                #if res is None:
-                #    print(f"row_i[{idx_i}]: {row_i}")
-                #    raise RuntimeError("Did not find res")
                 rowExp = RowExpression(idx_i).setSimpleSetRow(res)
                 rowExpressions.append(rowExp)
                 rowHandled[idx_i] = True
                 continue
 
+            # Identify temps used by the matrix
+            for e_i in row_i:
+                mpLib_.registerUsedTemps(e_i)
+            
+        #mpLib_.resolveTemps()
+
+        for idx_i in range(dim-1, -1, -1):
+
+            if rowHandled[idx_i]:
+                continue
+
+            row_i = matrix[idx_i]
+
             # Convert matrix content to MaxPlusElement
             for j, e_j in enumerate(row_i):
                 row_i[j] = mpLib_.resolveElement(e_j)
 
-            ## Check if simple set row (e.g. out_7 = vec_[6])
-            #if (res := self.__checkSimpleSetRow(row_i)) is not None:
-            #    rowExp = RowExpression(idx_i).setSimpleSetRow(res)
-            #    rowExpressions.append(rowExp)
-            #    #unhandledIdxs.remove(idx_i)
-            #    rowHandled[idx_i] = True
-            #    continue
-
             # Check if identical to any row below
             for idx_ii in range(idx_i+1, dim):
-                #if idx_ii not in unhandledIdxs:
-                #    continue
                 if rowHandled[idx_ii]:
                     continue
                 
@@ -796,7 +815,6 @@ class BlockScheduleGenerator:
                 if self.__checkIdenticalRow(row_i, row_ii):
                     rowExp = RowExpression(idx_i).setIdenticalRow(idx_ii)
                     rowExpressions.append(rowExp)
-                    #unhandledIdxs.remove(idx_i)
                     rowHandled[idx_i] = True
                     break
 
@@ -815,12 +833,12 @@ class BlockScheduleGenerator:
                 row_i = matrix[idx_i]
                 row_ii = matrix[idx_ii]
  
-                if (offset := self.__checkOffsetRow(row_i, row_ii)) is not None:
+                #if (offset := self.__checkOffsetRow(row_i, row_ii)) is not None:
+                if (offset := checkOffsetRow(row_i, row_ii)) is not None:
                     rowExp = RowExpression(idx_i).setOffsetRow(idx_ii, offset)
                     rowExpressions.append(rowExp)
                     newHandledIdxs.append(idx_i)
                     break
-        #unhandledIdxs = [i for i in unhandledIdxs if not i in newHandledIdxs]
         for idx_i in newHandledIdxs:
             rowHandled[idx_i] = True
 
@@ -843,7 +861,8 @@ class BlockScheduleGenerator:
                 row_i = matrix[idx_i]
                 row_ii = matrix[idx_ii]
                 #print(f"Checking: {idx_i} vs. {idx_ii}")
-                if (res := self.__checkDimShiftRow(row_i, row_ii)) is not None:
+                #if (res := self.__checkDimShiftRow(row_i, row_ii)) is not None:
+                if (res := checkDimShiftRow(row_i, row_ii)) is not None:
                     offset, dims = res
                     if (numDims is None) or (len(dims) < numDims):
                         expressionFound = True
@@ -852,8 +871,85 @@ class BlockScheduleGenerator:
             if expressionFound:
                 rowExpressions.append(rowExp)
                 newHandledIdxs.append(idx_i)
-        #unhandledIdxs = [i for i in unhandledIdxs if not i in newHandledIdxs]
         for idx_i in newHandledIdxs:
+            rowHandled[idx_i] = True
+
+
+        # Iterate remaining unhandled indexes to identify sub-rows
+        subRowReg = SubRowRegister()
+        splitRowIdxs = []
+        for idx_i, handled_i in enumerate(rowHandled):
+            if handled_i:
+                continue
+
+            row_i = matrix[idx_i]
+
+            # Check for possible sub-rows by checking against all other unhandled rows
+            possibleSubRows = []
+            for idx_ii, handled_ii in enumerate(rowHandled):
+                if handled_ii or (idx_i == idx_ii):
+                    continue
+
+                row_ii = matrix[idx_ii]
+                if (subRowDict := self.__checkSubRows(row_i, row_ii)) is not None:
+                    for offset_i, subRow_i in subRowDict.values():
+                        if subRow_i.getLength() >= 4:
+                            possibleSubRows.append((offset_i, subRow_i))
+
+            # Discard sub-rows, if their columns are covered completely by another sub-row
+            selectedSubRows = []
+            for i, (offset_i, subRow_i) in enumerate(possibleSubRows):
+                if i == 0:
+                    selectedSubRows.append((offset_i, subRow_i))
+                else:
+                    appendSubRow = True
+                    for ii, (_, subRow_ii) in enumerate(selectedSubRows):
+                        if subRow_ii.covers(subRow_i):
+                            appendSubRow = False
+                            break
+                        elif subRow_i.covers(subRow_ii):
+                            selectedSubRows[ii] = (offset_i, subRow_i)
+                            appendSubRow = False
+                            break
+                    if appendSubRow:
+                        selectedSubRows.append((offset_i, subRow_i))
+
+            # Register selected sub-rows and create split-row expression for row with idx_i
+            if selectedSubRows:
+                rowExp = RowExpression(idx_i)
+                coveredCols = set()
+                for offset_i, subRow_i in selectedSubRows:
+                    coveredCols.update(subRow_i.getCols())
+                    sRowIdx = subRowReg.register(subRow_i)
+                    rowExp.addSubRow(sRowIdx, offset_i)
+
+                for j, e_j in enumerate(row_i):
+                    if e_j.isZeroElement():
+                        continue
+                    elif j in coveredCols:
+                        continue
+                    rowExp.addDimension(j, e_j)
+                
+                rowExpressions.append(rowExp)
+                splitRowIdxs.append(idx_i)
+
+#            if selectedSubRows:
+#                rowExp = RowExpression(idx_i)
+#                for offset_i, subRow_i in selectedSubRows:
+#                    sRowIdx = subRowReg.register(subRow_i)
+#                    rowExp.addSubRow(sRowIdx, offset_i)
+#                    for j, e_j in enumerate(row_i):
+#                        if e_j.isZeroElement():
+#                            continue
+#                        elif subRow_i.coversCol(j):
+#                            continue
+#                        rowExp.addDimension(j, e_j)
+#                rowExpressions.append(rowExp)
+#                splitRowIdxs.append(idx_i)
+
+        # Mark all rows with sub-rows as handled
+        # Delay this until here, as we want to consider all remaining rows during sub-row search
+        for idx_i in splitRowIdxs:
             rowHandled[idx_i] = True
 
         # Translate remaining rows to RowExpression
@@ -868,9 +964,8 @@ class BlockScheduleGenerator:
                     rowExp.addDimension(j, e_j)
             rowExpressions.append(rowExp)           
 
-        return rowExpressions
-
-
+        #return rowExpressions, []
+        return rowExpressions, subRowReg.getRowExpressions()
 
 
     # TODO: These functions are only called from one callee? Move functionality there!?
@@ -905,55 +1000,72 @@ class BlockScheduleGenerator:
                 return False
         return True
     
-    def __checkOffsetRow(self, row_i_, row_ii_):
-        offset = None
-        for e_i, e_ii in zip(row_i_, row_ii_):
-            if e_i.isZeroElement() and e_ii.isZeroElement():
-                continue
-            elif e_i.isZeroElement() or e_ii.isZeroElement():
-                return None
-            
-            if (o := e_i.getOffset(e_ii)) is None:
-                return None
-            else:
-                if offset is None:
-                    offset = o
-                elif not offset.isIdentical(o):
-                    return None
-                
-        if offset is None:
-            raise RuntimeError("Failed to indentify a valid row-offset")
-        return offset
-
-    def __checkDimShiftRow(self, row_i_, row_ii_):
-        dimensions = []
-        offset = None
+#    def __checkOffsetRow(self, row_i_, row_ii_):
+#        offset = None
+#        for e_i, e_ii in zip(row_i_, row_ii_):
+#            if e_i.isZeroElement() and e_ii.isZeroElement():
+#                continue
+#            elif e_i.isZeroElement() or e_ii.isZeroElement():
+#                return None
+#            
+#            if (o := e_i.getOffset(e_ii)) is None:
+#                return None
+#            else:
+#                if offset is None:
+#                    offset = o
+#                elif not offset.isIdentical(o):
+#                    return None
+#                
+#        if offset is None:
+#            raise RuntimeError("Failed to indentify a valid row-offset")
+#        return offset
+#
+#    def __checkDimShiftRow(self, row_i_, row_ii_):
+#        dimensions = []
+#        offset = None
+#
+#        for i, (e_i, e_ii) in enumerate(zip(row_i_, row_ii_)):
+#            if e_i.isZeroElement():
+#                if e_ii.isZeroElement():
+#                    continue
+#                else:
+#                    return None
+#            else:
+#                if e_ii.isZeroElement():
+#                    dimensions.append((i, e_i))
+#                else:
+#                    if (o := e_i.getOffset(e_ii)) is None:
+#                        return None
+#                    else:
+#                        if offset is None:
+#                            offset = o
+#                        elif not offset.isIdentical(o):
+#                            return None
+#
+#        if offset is None:
+#            raise RuntimeError("Cannot find valid offset")
+#        if not dimensions:
+#            raise RuntimeError("Cannot find any \"free dimensions\"")
+#        
+#        return (offset, dimensions)
+    
+    def __checkSubRows(self, row_i_, row_ii_):
+        subRowDict = {}
 
         for i, (e_i, e_ii) in enumerate(zip(row_i_, row_ii_)):
-            if e_i.isZeroElement():
-                if e_ii.isZeroElement():
-                    continue
-                else:
-                    return None
+            if e_i.isZeroElement() or e_ii.isZeroElement():
+                continue
             else:
-                if e_ii.isZeroElement():
-                    dimensions.append((i, e_i))
-                else:
-                    if (o := e_i.getOffset(e_ii)) is None:
-                        return None
+                if (offset := e_i.getOffset(e_ii)) is not None:
+                    if (entry := subRowDict.get(offset.getKey())) is None:
+                        subRowDict[offset.getKey()] = (offset, SubRow(i, e_ii))
                     else:
-                        if offset is None:
-                            offset = o
-                        elif not offset.isIdentical(o):
-                            return None
+                        entry[1].addColumn(i, e_ii)
+                        #_, subRow = entry
+                        #subRow.addColumn(i, e_ii)
 
-        if offset is None:
-            raise RuntimeError("Cannot find valid offset")
-        if not dimensions:
-            raise RuntimeError("Cannot find any \"free dimensions\"")
-        
-        return (offset, dimensions)
-    
+        return subRowDict if len(subRowDict) > 0 else None
+
                 
 ## HELPER FUNCTIONS ##
 
@@ -1061,11 +1173,13 @@ class Instruction:
 
 class RowExpression:
 
-    def __init__(self, idx_):
+    def __init__(self, idx_, isSubRow_=False):
         self.idx = idx_
+        self.isSubRow = isSubRow_
         self.refIdx = None
         self.offset = None
         self.dimensions = [] # (colIdx, elem)
+        self.subRows = [] # (subRowIdx, elem)
 
     def isStandAloneRow(self):
         return (self.refIdx is None)
@@ -1101,40 +1215,233 @@ class RowExpression:
     def addDimension(self, colIdx_, elem_):
         self.dimensions.append((colIdx_, elem_))
         return self
+    
+    def addSubRow(self, subRowIdx_, elem_):
+        self.subRows.append((subRowIdx_, elem_))
 
     def forAllTempMasks(self):
         if (self.offset is not None) and ((t := self.offset.getTempMask()) != 0):
             yield t
+        for sub_i in self.subRows:
+            if ((t := sub_i[1].getTempMask()) != 0):
+                yield t
         for dim_i in self.dimensions:
             if ((t := dim_i[1].getTempMask()) != 0):
                 yield t
 
     def getCodeLine(self):
-        
-        resName = f"out_{self.idx}"
 
-        if len(self.dimensions) == 0:
+        if self.isSubRow:
+            resName = f"x_{self.idx}"
+        else:    
+            resName = f"out_{self.idx}"
+
+        # TODO: Easier to let getMaxExpression handle case of a single operand?
+        # -> Could avoid special-case handling here!?
+
+        if (len(self.dimensions) == 0) and (len(self.subRows) == 0):
             if self.refIdx is None:
-                raise RuntimeError("Row expression without any dimensions and refIdx")
+                raise RuntimeError("Row expression without any dimensions, subRows and refIdx")
             ret = "\t" + f"uint64_t {resName} = {self.__getRefExpression()};" + "\n"
 
         # simpleSetRow
-        elif (len(self.dimensions) == 1) and (self.refIdx is None):
+        elif (len(self.dimensions) == 1) and (len(self.subRows) == 0) and (self.refIdx is None):
             dim = self.dimensions[0]
             ret = "\t" + f"uint64_t {resName} = vec_[{dim[0]}] " + dim[1].getExpression() + ";\n"
+
+        elif (len(self.dimensions) == 0) and (len(self.subRows) == 1) and (self.refIdx is None):
+            sRow = self.subRows[0]
+            ret = "\t" + f"uint64_t {resName} = x_{sRow[0]} " + sRow[1].getExpression() + ";\n"
 
         else:
             maxOps = []
             if self.refIdx is not None:
                 maxOps.append(self.__getRefExpression())
+            for sRow_i in self.subRows:
+                maxOps.append(f"x_{sRow_i[0]}" + sRow_i[1].getExpression())
             for dim_i in self.dimensions:
                 maxOps.append(f"vec_[{dim_i[0]}] " + dim_i[1].getExpression())
-            ret = getMaxExpression(maxOps, f"out_{self.idx}")
+            ret = getMaxExpression(maxOps, resName)
 
         return ret
     
     def __getRefExpression(self):
-        ret = f"out_{self.refIdx}"
+        if self.isSubRow:
+            ret = f"x_{self.refIdx}"
+        else:
+            ret = f"out_{self.refIdx}"
+        
+        
         if self.offset is not None:
             ret += " " + self.offset.getExpression()
         return ret
+    
+class SubRow:
+
+    def __init__(self, col_, elem_):
+        self.dimensions = [(col_, elem_)] # (colIdx, elem)
+
+    def addColumn(self, col_, elem_):
+        self.dimensions.append((col_, elem_))
+
+    def getLength(self):
+        return len(self.dimensions)
+    
+    def covers(self, subRow_):
+        return set(subRow_.getCols()) <= set(self.getCols())
+    
+    def identicalCols(self, subRow_):
+        return set(subRow_.getCols()) == set(self.getCols())
+    
+    def coversCol(self, col_):
+        return col_ in self.getCols()
+
+    def getCols(self):
+        return [c for c,_ in self.dimensions]
+    
+class SubRowRegister:
+
+    def __init__(self):
+        self.subRows = []
+
+    def register(self, subRow_):
+        
+        # Check if new subRow_ is identical to an already registered sub-row
+        for idx_i, subRow_i in enumerate(self.subRows): 
+            if not subRow_i.identicalCols(subRow_):
+                continue
+            
+            isDuplicate = True
+            for (col_i, elem_i), (col_ii, elem_ii) in zip(subRow_.dimensions, subRow_i.dimensions):
+                if col_i != col_ii:
+                    raise RuntimeError("Columns do not match. This should never happen due to check above")
+                if not elem_i.isIdentical(elem_ii):
+                    isDuplicate = False
+                    break
+            if isDuplicate:
+                return idx_i
+
+        self.subRows.append(subRow_)
+        return len(self.subRows) - 1
+
+    def __correctDimensions(self, dims_, allCols_):
+        for i, dim_i in enumerate(dims_):
+            col_i, elem_i = dim_i
+            corrected = (allCols_[col_i], elem_i)
+            dims_[i] = corrected
+
+    def getRowExpressions(self):
+        expressions = []
+        rowHandled = [False]*len(self.subRows)
+        
+        sparseRows = [dict(row_i.dimensions) for row_i in self.subRows]
+        allCols = sorted({col_i for row_i in self.subRows for col_i, _ in row_i.dimensions})
+        allignedRows = [[row_i.get(col_i, MaxPlusElement(-1)) for col_i in allCols] for row_i in sparseRows]
+
+        # Identify sub-rows that can be expressed via an offset to another sub-row
+        for idx_i, handled_i in enumerate(rowHandled):
+            if handled_i:
+                continue
+
+            for idx_ii, handled_ii in enumerate(rowHandled):
+                if handled_ii or (idx_i == idx_ii):
+                    continue
+
+                row_i = allignedRows[idx_i]
+                row_ii = allignedRows[idx_ii]
+
+                if (offset := checkOffsetRow(row_i, row_ii)) is not None:
+                    rowExp = RowExpression(idx_i, isSubRow_=True).setOffsetRow(idx_ii, offset)
+                    expressions.append(rowExp)
+                    rowHandled[idx_i] = True
+                    break
+
+        # Identify sub-rows that can be expressed as dim-shift rows of another sub-row
+        for idx_i, handled_i in enumerate(rowHandled):
+            if handled_i:
+                continue
+
+            numDims = None
+            expressionFound = False
+            rowExp = None
+
+            for idx_ii, handled_ii in enumerate(rowHandled):
+                if handled_ii or (idx_i == idx_ii):
+                    continue
+
+                row_i = allignedRows[idx_i]
+                row_ii = allignedRows[idx_ii]
+
+                if (res := checkDimShiftRow(row_i, row_ii)) is not None:
+                    offset, dims = res
+                    if (numDims is None) or (len(dims) < numDims):
+                        expressionFound = True
+                        self.__correctDimensions(dims, allCols)
+                        rowExp = RowExpression(idx_i, isSubRow_=True).setDimShiftRow(idx_ii, offset, dims)
+
+            if expressionFound:
+                expressions.append(rowExp)
+                rowHandled[idx_i] = True
+
+
+#                baseExp = RowExpression(idx_i, isSubRow_=True)
+#                for j, elem_j in self.subRows[idx_i].dimensions:
+#                    baseExp.addDimension(j, elem_j)
+#                print(baseExp.getCodeLine())
+#                print()
+#
+#                refExp = RowExpression(rowExp.refIdx, isSubRow_=True)
+#                for j, elem_j in self.subRows[rowExp.refIdx].dimensions:
+#                    refExp.addDimension(j, elem_j)
+#                print(refExp.getCodeLine())
+#                print()
+#
+#
+#                print(rowExp.getCodeLine())
+#                print()
+#                raise RuntimeError("TRAP")
+
+        # Translate remaining rows to row-expressions
+        for idx_i, handled_i in enumerate(rowHandled):
+            if handled_i:
+                continue
+            subRow = self.subRows[idx_i]
+            exp = RowExpression(idx_i, isSubRow_=True)
+            for j, elem_j in subRow.dimensions:
+                exp.addDimension(j, elem_j)            
+            expressions.append(exp)
+        
+        return expressions
+    
+
+#            # Iterate remaining unhandled indexes to indentify dim-shift-rows
+#        newHandledIdxs = []
+#        for idx_i, handled_i in enumerate(rowHandled):        
+#            if handled_i:
+#                continue
+#            
+#            numDims = None
+#            expressionFound = False
+#            rowExp = None
+#    
+#            for idx_ii, handled_ii in enumerate(rowHandled):
+#                if handled_ii:
+#                    continue
+#                if idx_i == idx_ii:
+#                    continue
+#
+#                row_i = matrix[idx_i]
+#                row_ii = matrix[idx_ii]
+#                #print(f"Checking: {idx_i} vs. {idx_ii}")
+#                #if (res := self.__checkDimShiftRow(row_i, row_ii)) is not None:
+#                if (res := checkDimShiftRow(row_i, row_ii)) is not None:
+#                    offset, dims = res
+#                    if (numDims is None) or (len(dims) < numDims):
+#                        expressionFound = True
+#                        rowExp = RowExpression(idx_i).setDimShiftRow(idx_ii, offset, dims)
+#
+#            if expressionFound:
+#                rowExpressions.append(rowExp)
+#                newHandledIdxs.append(idx_i)
+#        for idx_i in newHandledIdxs:
+#            rowHandled[idx_i] = True

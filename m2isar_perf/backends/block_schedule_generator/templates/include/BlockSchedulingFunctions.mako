@@ -3,7 +3,7 @@ ${builder_.getFileHeader()}
 #ifndef ${builder_.getHeaderGuardPrefix()}_BLOCK_SCHEDULING_FUNCTIONS_H
 #define ${builder_.getHeaderGuardPrefix()}_BLOCK_SCHEDULING_FUNCTIONS_H
 
-#include "BlockSchedulingFunctions.h"
+#include "BlockSchedulingDictionary.h"
 
 namespace ${builder_.getName()}{
 

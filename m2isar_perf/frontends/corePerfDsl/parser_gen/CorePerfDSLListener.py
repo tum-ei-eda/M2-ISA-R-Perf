@@ -62,6 +62,15 @@ class CorePerfDSLListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by CorePerfDSLParser#connectorModel_attr.
+    def enterConnectorModel_attr(self, ctx:CorePerfDSLParser.ConnectorModel_attrContext):
+        pass
+
+    # Exit a parse tree produced by CorePerfDSLParser#connectorModel_attr.
+    def exitConnectorModel_attr(self, ctx:CorePerfDSLParser.ConnectorModel_attrContext):
+        pass
+
+
     # Enter a parse tree produced by CorePerfDSLParser#resourceModel_def.
     def enterResourceModel_def(self, ctx:CorePerfDSLParser.ResourceModel_defContext):
         pass
@@ -77,6 +86,15 @@ class CorePerfDSLListener(ParseTreeListener):
 
     # Exit a parse tree produced by CorePerfDSLParser#resourceModel.
     def exitResourceModel(self, ctx:CorePerfDSLParser.ResourceModelContext):
+        pass
+
+
+    # Enter a parse tree produced by CorePerfDSLParser#resourceModel_attr.
+    def enterResourceModel_attr(self, ctx:CorePerfDSLParser.ResourceModel_attrContext):
+        pass
+
+    # Exit a parse tree produced by CorePerfDSLParser#resourceModel_attr.
+    def exitResourceModel_attr(self, ctx:CorePerfDSLParser.ResourceModel_attrContext):
         pass
 
 
@@ -113,6 +131,42 @@ class CorePerfDSLListener(ParseTreeListener):
 
     # Exit a parse tree produced by CorePerfDSLParser#model_attr.
     def exitModel_attr(self, ctx:CorePerfDSLParser.Model_attrContext):
+        pass
+
+
+    # Enter a parse tree produced by CorePerfDSLParser#configuration_def.
+    def enterConfiguration_def(self, ctx:CorePerfDSLParser.Configuration_defContext):
+        pass
+
+    # Exit a parse tree produced by CorePerfDSLParser#configuration_def.
+    def exitConfiguration_def(self, ctx:CorePerfDSLParser.Configuration_defContext):
+        pass
+
+
+    # Enter a parse tree produced by CorePerfDSLParser#configuration_list.
+    def enterConfiguration_list(self, ctx:CorePerfDSLParser.Configuration_listContext):
+        pass
+
+    # Exit a parse tree produced by CorePerfDSLParser#configuration_list.
+    def exitConfiguration_list(self, ctx:CorePerfDSLParser.Configuration_listContext):
+        pass
+
+
+    # Enter a parse tree produced by CorePerfDSLParser#configuration.
+    def enterConfiguration(self, ctx:CorePerfDSLParser.ConfigurationContext):
+        pass
+
+    # Exit a parse tree produced by CorePerfDSLParser#configuration.
+    def exitConfiguration(self, ctx:CorePerfDSLParser.ConfigurationContext):
+        pass
+
+
+    # Enter a parse tree produced by CorePerfDSLParser#configuration_instance.
+    def enterConfiguration_instance(self, ctx:CorePerfDSLParser.Configuration_instanceContext):
+        pass
+
+    # Exit a parse tree produced by CorePerfDSLParser#configuration_instance.
+    def exitConfiguration_instance(self, ctx:CorePerfDSLParser.Configuration_instanceContext):
         pass
 
 
@@ -188,6 +242,15 @@ class CorePerfDSLListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by CorePerfDSLParser#instrGroup_attr.
+    def enterInstrGroup_attr(self, ctx:CorePerfDSLParser.InstrGroup_attrContext):
+        pass
+
+    # Exit a parse tree produced by CorePerfDSLParser#instrGroup_attr.
+    def exitInstrGroup_attr(self, ctx:CorePerfDSLParser.InstrGroup_attrContext):
+        pass
+
+
     # Enter a parse tree produced by CorePerfDSLParser#architecture_def.
     def enterArchitecture_def(self, ctx:CorePerfDSLParser.Architecture_defContext):
         pass
@@ -230,6 +293,51 @@ class CorePerfDSLListener(ParseTreeListener):
 
     # Exit a parse tree produced by CorePerfDSLParser#variant.
     def exitVariant(self, ctx:CorePerfDSLParser.VariantContext):
+        pass
+
+
+    # Enter a parse tree produced by CorePerfDSLParser#register_def.
+    def enterRegister_def(self, ctx:CorePerfDSLParser.Register_defContext):
+        pass
+
+    # Exit a parse tree produced by CorePerfDSLParser#register_def.
+    def exitRegister_def(self, ctx:CorePerfDSLParser.Register_defContext):
+        pass
+
+
+    # Enter a parse tree produced by CorePerfDSLParser#register_list.
+    def enterRegister_list(self, ctx:CorePerfDSLParser.Register_listContext):
+        pass
+
+    # Exit a parse tree produced by CorePerfDSLParser#register_list.
+    def exitRegister_list(self, ctx:CorePerfDSLParser.Register_listContext):
+        pass
+
+
+    # Enter a parse tree produced by CorePerfDSLParser#register.
+    def enterRegister(self, ctx:CorePerfDSLParser.RegisterContext):
+        pass
+
+    # Exit a parse tree produced by CorePerfDSLParser#register.
+    def exitRegister(self, ctx:CorePerfDSLParser.RegisterContext):
+        pass
+
+
+    # Enter a parse tree produced by CorePerfDSLParser#registerFlag.
+    def enterRegisterFlag(self, ctx:CorePerfDSLParser.RegisterFlagContext):
+        pass
+
+    # Exit a parse tree produced by CorePerfDSLParser#registerFlag.
+    def exitRegisterFlag(self, ctx:CorePerfDSLParser.RegisterFlagContext):
+        pass
+
+
+    # Enter a parse tree produced by CorePerfDSLParser#registerConnectorMapping.
+    def enterRegisterConnectorMapping(self, ctx:CorePerfDSLParser.RegisterConnectorMappingContext):
+        pass
+
+    # Exit a parse tree produced by CorePerfDSLParser#registerConnectorMapping.
+    def exitRegisterConnectorMapping(self, ctx:CorePerfDSLParser.RegisterConnectorMappingContext):
         pass
 
 
@@ -449,6 +557,15 @@ class CorePerfDSLListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by CorePerfDSLParser#configuration_assign.
+    def enterConfiguration_assign(self, ctx:CorePerfDSLParser.Configuration_assignContext):
+        pass
+
+    # Exit a parse tree produced by CorePerfDSLParser#configuration_assign.
+    def exitConfiguration_assign(self, ctx:CorePerfDSLParser.Configuration_assignContext):
+        pass
+
+
     # Enter a parse tree produced by CorePerfDSLParser#connector_ref.
     def enterConnector_ref(self, ctx:CorePerfDSLParser.Connector_refContext):
         pass
@@ -485,12 +602,30 @@ class CorePerfDSLListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by CorePerfDSLParser#configuration_ref.
+    def enterConfiguration_ref(self, ctx:CorePerfDSLParser.Configuration_refContext):
+        pass
+
+    # Exit a parse tree produced by CorePerfDSLParser#configuration_ref.
+    def exitConfiguration_ref(self, ctx:CorePerfDSLParser.Configuration_refContext):
+        pass
+
+
     # Enter a parse tree produced by CorePerfDSLParser#model_ref.
     def enterModel_ref(self, ctx:CorePerfDSLParser.Model_refContext):
         pass
 
     # Exit a parse tree produced by CorePerfDSLParser#model_ref.
     def exitModel_ref(self, ctx:CorePerfDSLParser.Model_refContext):
+        pass
+
+
+    # Enter a parse tree produced by CorePerfDSLParser#branchPredictorModel_ref.
+    def enterBranchPredictorModel_ref(self, ctx:CorePerfDSLParser.BranchPredictorModel_refContext):
+        pass
+
+    # Exit a parse tree produced by CorePerfDSLParser#branchPredictorModel_ref.
+    def exitBranchPredictorModel_ref(self, ctx:CorePerfDSLParser.BranchPredictorModel_refContext):
         pass
 
 
@@ -545,6 +680,15 @@ class CorePerfDSLListener(ParseTreeListener):
 
     # Exit a parse tree produced by CorePerfDSLParser#pipeline_ref.
     def exitPipeline_ref(self, ctx:CorePerfDSLParser.Pipeline_refContext):
+        pass
+
+
+    # Enter a parse tree produced by CorePerfDSLParser#register_ref.
+    def enterRegister_ref(self, ctx:CorePerfDSLParser.Register_refContext):
+        pass
+
+    # Exit a parse tree produced by CorePerfDSLParser#register_ref.
+    def exitRegister_ref(self, ctx:CorePerfDSLParser.Register_refContext):
         pass
 
 

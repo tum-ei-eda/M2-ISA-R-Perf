@@ -9,6 +9,10 @@ ${builder_.getFileHeader()}
 #include "${builder_.getName()}_BlockSchedulingFunctions.h"
 #include "${builder_.getName()}_InstructionSchedulingFunctions.h"
 
+#include <array>
+#include <cstddef>
+#include <cstdint>
+
 namespace ${builder_.getName()}{
 
 /* BRANCH GROUP */
@@ -101,6 +105,79 @@ void ${builder_.getResourceGroupClassName(gr_i)}::connectChannel(Channel* channe
 // a) Duplication of code for USE_BLK true/false
 // b) Static objects are constructed even if MAPExplorer is not used
 
+// delayVectors and combs used to be emitted as fully-enumerated std::array
+// aggregate initializers (one source line per element). For large design
+// spaces that is tens of thousands of lines, which the compiler parses and
+// optimizes extremely slowly (minutes, multiple GB of RAM at -O2).
+//
+// Instead we emit the same data in a compact form and rebuild the arrays at
+// static-init time by calling the SAME element constructors in the SAME order.
+// Runtime is unaffected (identical objects, layout and construction side
+// effects); only a one-time fill loop is added. This is fully generic over the
+// number of resource groups and the number of models per group.
+namespace {
+
+// One model pointer per (resource combination, resource group); group order
+// matches the order DVecType expects.
+static map_models::ResourceModel* const dvecModels[${variant_.getNumResourceCombinations()}][${variant_.getNumResourceGroups()}] = {
+    % for resComb_i in variant_.getAllResourceCombinations():
+    {${", ".join("&" + str(x.name) for x in resComb_i.getAllResourceModels())}}${"" if loop.last else ","}
+    % endfor
+};
+
+// Branch model table, indexed by BranchModel::id.
+static map_models::BranchModel* const branchModels[${variant_.getBranchGroup().getNumModels()}] = {
+    % for mod_i in variant_.getBranchGroup().getAllModels():
+    &${mod_i.name}${"" if loop.last else ","}
+    % endfor
+};
+
+// Per combination: which resource combination and which branch model.
+// Stored as plain indices (no per-element constructors / address constants),
+// which is what makes this cheap to parse compared to the old aggregate.
+static const std::uint32_t combResCombIdx[${variant_.getNumCombinations()}] = {
+    % for comb_i in variant_.getAllCombinations():
+    ${comb_i.getResourceCombination().id}${"" if loop.last else ","}
+    % endfor
+};
+static const std::uint32_t combBranchIdx[${variant_.getNumCombinations()}] = {
+    % for comb_i in variant_.getAllCombinations():
+    ${comb_i.getBranchModel().id}${"" if loop.last else ","}
+    % endfor
+};
+
+// Plain loop builders. The arrays are default-constructed and then every
+// element is overwritten with its real value, so the resulting state is
+// identical to the old fully-enumerated tables. (This relies on DVecType and
+// CombType being default-constructible.)
+template <bool BLK>
+std::array<typename ${builder_.getName()}_MAPExplorer<BLK>::DVecType, ${variant_.getNumResourceCombinations()}>
+buildDelayVectors() {
+    std::array<typename ${builder_.getName()}_MAPExplorer<BLK>::DVecType, ${variant_.getNumResourceCombinations()}> dvecs;
+    for (std::size_t i = 0; i < ${variant_.getNumResourceCombinations()}; ++i) {
+        std::array<map_models::ResourceModel*, ${variant_.getNumResourceGroups()}> models{};
+        for (std::size_t g = 0; g < ${variant_.getNumResourceGroups()}; ++g) {
+            models[g] = dvecModels[i][g];
+        }
+        dvecs[i] = typename ${builder_.getName()}_MAPExplorer<BLK>::DVecType(models);
+    }
+    return dvecs;
+}
+
+// delayVectors is a private static member, so it is passed in from the
+// member-definition context (which has access) rather than read directly here.
+template <bool BLK>
+std::array<typename ${builder_.getName()}_MAPExplorer<BLK>::CombType, ${variant_.getNumCombinations()}>
+buildCombs(std::array<typename ${builder_.getName()}_MAPExplorer<BLK>::DVecType, ${variant_.getNumResourceCombinations()}>& dvecs) {
+    std::array<typename ${builder_.getName()}_MAPExplorer<BLK>::CombType, ${variant_.getNumCombinations()}> combs;
+    for (std::size_t k = 0; k < ${variant_.getNumCombinations()}; ++k) {
+        combs[k] = typename ${builder_.getName()}_MAPExplorer<BLK>::CombType(&dvecs[combResCombIdx[k]], branchModels[combBranchIdx[k]]);
+    }
+    return combs;
+}
+
+} // anonymous namespace
+
 % for i, useBlk_i in enumerate(["true", "false"]):
 // USE_BLK: ${useBlk_i}
 
@@ -131,19 +208,13 @@ ${builder_.getName()}_MAPExplorer<${useBlk_i}>::resGroupLUT = {{
 
 template<>
 std::array<${builder_.getName()}_MAPExplorer<${useBlk_i}>::DVecType, ${variant_.getNumResourceCombinations()}>
-${builder_.getName()}_MAPExplorer<${useBlk_i}>::delayVectors = {{
-    % for resComb_i in variant_.getAllResourceCombinations():
-    {{{${", ".join( "&" + str(x.name) for x in resComb_i.getAllResourceModels())}}}}${"" if loop.last else ","}
-    % endfor
-}};
+${builder_.getName()}_MAPExplorer<${useBlk_i}>::delayVectors =
+    buildDelayVectors<${useBlk_i}>();
 
 template<>
 std::array<${builder_.getName()}_MAPExplorer<${useBlk_i}>::CombType, ${variant_.getNumCombinations()}>
-${builder_.getName()}_MAPExplorer<${useBlk_i}>::combs = {{
-    % for comb_i in variant_.getAllCombinations():
-    {&delayVectors[${comb_i.getResourceCombination().id}], &${comb_i.getBranchModel().name}}${"" if loop.last else ","}
-    % endfor
-}};
+${builder_.getName()}_MAPExplorer<${useBlk_i}>::combs =
+    buildCombs<${useBlk_i}>(${builder_.getName()}_MAPExplorer<${useBlk_i}>::delayVectors);
 
 template<>
 ${builder_.getName()}_MAPExplorer<${useBlk_i}>::${builder_.getName()}_MAPExplorer()

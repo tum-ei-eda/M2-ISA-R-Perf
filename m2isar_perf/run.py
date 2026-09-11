@@ -55,10 +55,59 @@ argParser.add_argument("-t1", "--test_1", help="Num. of I\$ variants")
 argParser.add_argument("-t2", "--test_2", help="Num. of D\$ variants")
 argParser.add_argument("-t3", "--test_3", help="Num. of Br.Pred variants")
 
+argParser.add_argument("-vi", "--variants_icache", help="Num. of I\$ variants")
+argParser.add_argument("-vd", "--variants_dcache", help="Num. of D\$ variants")
+argParser.add_argument("-vb", "--variants_branch", help="Num. of Br.Pred. variants")
+
 args = argParser.parse_args()
 
 # Resolve outDir
 outDir = cf.resolveOutDir(args.output_dir, __file__, 1)
+
+#print("+"*50)
+#
+#tempMinVal = {
+#    1 : 2,
+#    2 : 2,
+#    3 : 4
+#}
+#
+#a = (3, 4, 1, 6)
+#b = (1, 6, 3, 7)
+#
+#print(f"a: {a}")
+#print(f"b: {b}")
+#print("-----")
+#
+#val_a, symMask_a, tempMask_a, minVal_a = a
+#val_b, symMask_b, tempMask_b, minVal_b = b
+#
+#val_common = min(val_a, val_b)
+#symMask_common = symMask_a & symMask_b
+#tempMask_common = tempMask_a & tempMask_b
+#minVal_common = val_common + symMask_common.bit_count() + tempMinVal[tempMask_common]
+#
+#val_a -= val_common
+#symMask_a &= ~symMask_common
+#tempMask_a &= ~tempMask_common
+#minVal_a -= minVal_common
+#a = (val_a, symMask_a, tempMask_a, minVal_a)
+#
+#val_b -= val_common
+#symMask_b &= ~symMask_common
+#tempMask_b &= ~tempMask_common
+#minVal_b -= minVal_common
+#b = (val_b, symMask_b, tempMask_b, minVal_b)
+#
+#common = (val_common, symMask_common, tempMask_common, minVal_common)
+#
+#print(f"a: {a}")
+#print(f"b: {b}")
+#print(f"c: {common}")
+#
+#print("+"*50)
+#print()
+#raise RuntimeError("TRAP")
 
 # Call frontend to generate structural-model
 if args.description.endswith('.corePerfDsl'):
@@ -70,8 +119,8 @@ else:
 if args.code_gen or args.info_print or (args.block_gen is not None):
     schedModel = SchedulingTransformer().transform(structModel)
     if args.block_gen is not None:
-        if (args.test_1 is not None) and (args.test_2 is not None) and (args.test_3 is not None):
-            matrixModel = MatrixTransformer(args.test_1, args.test_2, args.test_3).transform(schedModel)
+        if (args.variants_icache is not None) and (args.variants_dcache is not None) and (args.variants_branch is not None):
+            matrixModel = MatrixTransformer(args.variants_icache, args.variants_dcache, args.variants_branch).transform(schedModel)
         else:
             matrixModel = MatrixTransformer().transform(schedModel)
             transTime = time.time()
@@ -87,7 +136,10 @@ if args.block_ext:
 if args.block_gen is not None:
     gen = BlockScheduleGenerator()
     
+    
+
     gen.execute(matrixModel, schedModel, args.block_gen, outDir)
+    gen.analyze(pathlib.Path(__file__).resolve().parent / "analysis.json")
     gen.getInfo()
     
     #BlockScheduleGenerator().execute(matrixModel, args.block_gen, outDir)

@@ -186,7 +186,8 @@ class Extractor(CorePerfDSLVisitor):
             if ctx.delay: # Static delay
                 delay = int(ctx.delay.text)
             elif ctx.res_model: # Dynamic delay (external resource model)
-                delay = self.visit(ctx.res_model)
+                # TODO: Currently only using one external model. Change to support "explore" mechanism
+                delay = self.visit(ctx.res_model[0])
                 dynDelay = True
 
             # Add resource
